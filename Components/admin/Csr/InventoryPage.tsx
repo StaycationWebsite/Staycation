@@ -24,6 +24,7 @@ import { useEffect, useMemo, useState } from "react";
 import AddItem from "./Modals/AddItem";
 import EditItem, { EditInventoryItemInput } from "./Modals/EditItem";
 import ViewItem, { ViewInventoryItem } from "./Modals/ViewItem";
+import DeleteConfirmation from "./Modals/DeleteConfirmation";
 
 type InventoryStatus = "In Stock" | "Low Stock" | "Out of Stock";
 
@@ -109,6 +110,10 @@ export default function InventoryPage() {
   const [isAddItemOpen, setIsAddItemOpen] = useState(false);
   const [viewItem, setViewItem] = useState<ViewInventoryItem | null>(null);
   const [editItem, setEditItem] = useState<EditInventoryItemInput | null>(null);
+  const [deleteItem, setDeleteItem] = useState<InventoryRow | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteSuccess, setDeleteSuccess] = useState<string | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<"all" | InventoryStatus>("all");
@@ -230,22 +235,32 @@ export default function InventoryPage() {
     }
   };
 
-  const deleteRow = async (row: InventoryRow) => {
-    const confirmed = window.confirm(`Delete ${row.item_name}?`);
-    if (!confirmed) return;
+  const confirmDelete = async () => {
+    if (!deleteItem) return;
+
+    setIsDeleting(true);
+    setDeleteError(null);
+    setDeleteSuccess(null);
     try {
       const res = await fetch("/api/inventory", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ item_id: row.item_id }),
+        body: JSON.stringify({ item_id: deleteItem.item_id }),
       });
       const payload = await res.json().catch(() => ({}));
       if (!res.ok) {
         throw new Error(payload?.error || payload?.message || "Failed to delete item");
       }
+      setDeleteSuccess("Item deleted successfully.");
       await loadInventory();
+      window.setTimeout(() => {
+        setDeleteItem(null);
+        setDeleteSuccess(null);
+      }, 1500);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to delete item");
+      setDeleteError(err instanceof Error ? err.message : "Failed to delete item");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -458,6 +473,21 @@ export default function InventoryPage() {
           }}
         />
       )}
+      {deleteItem && (
+        <DeleteConfirmation
+          itemName={deleteItem.item_name}
+          itemId={deleteItem.item_id}
+          onConfirm={confirmDelete}
+          onCancel={() => {
+            setDeleteItem(null);
+            setDeleteError(null);
+            setDeleteSuccess(null);
+          }}
+          isDeleting={isDeleting}
+          error={deleteError}
+          success={deleteSuccess}
+        />
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
@@ -558,7 +588,7 @@ export default function InventoryPage() {
               <button
                 type="button"
                 onClick={handleExportPdf}
-                className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+                className="inline-flex items-center gap-2 px-3 py-2 border border-red-500 text-red-600 rounded-lg text-sm font-semibold hover:bg-red-50 transition-colors"
               >
                 <FileDown className="w-4 h-4" />
                 Export PDF
@@ -743,7 +773,7 @@ export default function InventoryPage() {
                           className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           title="Delete"
                           type="button"
-                          onClick={() => deleteRow(row)}
+                          onClick={() => setDeleteItem(row)}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -800,7 +830,7 @@ export default function InventoryPage() {
                     onClick={() => setCurrentPage(pageNum)}
                     className={`px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
                       currentPage === pageNum
-                        ? "bg-orange-500 text-white shadow-md"
+                        ? "bg-gradient-to-r from-brand-primary to-brand-primaryDark text-white shadow-md"
                         : "border border-gray-300 hover:bg-white"
                     }`}
                     disabled={totalPages === 0}
