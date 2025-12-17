@@ -141,7 +141,7 @@ export default function ProfilePage({ user, onClose }: ProfilePageProps) {
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg">
           {error}
         </div>
       )}
@@ -169,7 +169,7 @@ export default function ProfilePage({ user, onClose }: ProfilePageProps) {
                   <span className="font-semibold text-gray-800 dark:text-gray-100">{employmentId}</span>
                 </p>
 
-                <div className="mt-3 inline-flex items-center px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold uppercase tracking-wide">
+                <div className="mt-3 inline-flex items-center px-3 py-1 rounded-full bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-xs font-semibold uppercase tracking-wide">
                   Active
                 </div>
               </div>
@@ -185,14 +185,14 @@ export default function ProfilePage({ user, onClose }: ProfilePageProps) {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
-                  <div className="p-4 bg-orange-50 border border-orange-100 rounded-xl">
-                    <p className="text-sm text-orange-600 font-semibold uppercase tracking-wide">
+                  <div className="p-4 bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-900/30 rounded-xl">
+                    <p className="text-sm text-orange-600 dark:text-orange-400 font-semibold uppercase tracking-wide">
                       Monthly Salary
                     </p>
                     <p className="text-2xl font-bold text-gray-800 dark:text-gray-100 mt-1">{salary}</p>
                   </div>
                   <div className="p-4 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 rounded-xl">
-                    <p className="text-sm text-gray-500 font-semibold uppercase tracking-wide">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wide">
                       Office Location
                     </p>
                     <p className="text-lg font-semibold text-gray-800 dark:text-gray-100 mt-1">{address}</p>
@@ -251,8 +251,8 @@ interface InfoFieldProps {
 
 const InfoField = ({ label, value }: InfoFieldProps) => (
   <div>
-    <label className="block text-sm font-medium text-gray-500 mb-2">{label}</label>
-    <p className="text-lg font-semibold text-gray-800">
+    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">{label}</label>
+    <p className="text-lg font-semibold text-gray-800 dark:text-gray-100">
       {value && value !== "" ? value : "Not specified"}
     </p>
   </div>
@@ -265,14 +265,14 @@ interface InfoRowProps {
 
 const InfoRow = ({ label, value }: InfoRowProps) => (
   <div className="flex justify-between gap-4 text-sm">
-    <span className="text-gray-500">{label}</span>
-    <span className="font-medium text-gray-800 text-right">
+    <span className="text-gray-500 dark:text-gray-400">{label}</span>
+    <span className="font-medium text-gray-800 dark:text-gray-100 text-right">
       {value && value !== "" ? value : "Not specified"}
     </span>
   </div>
 );
 
-const skeletonPulse = "animate-pulse bg-gray-100";
+const skeletonPulse = "animate-pulse bg-gray-100 dark:bg-gray-800";
 
 const ProfileSkeleton = () => (
   <div className="space-y-8">
@@ -304,7 +304,7 @@ const ProfileSkeleton = () => (
 );
 
 const CardSkeleton = () => (
-  <div className="bg-white rounded-2xl shadow p-6 border border-gray-100 space-y-4">
+  <div className="bg-white dark:bg-gray-900 rounded-2xl shadow p-6 border border-gray-100 dark:border-gray-800 space-y-4">
     <div className={`h-5 w-40 rounded-full ${skeletonPulse}`} />
     {Array.from({ length: 3 }).map((_, idx) => (
       <div key={`row-${idx}`} className={`h-4 w-full rounded-full ${skeletonPulse}`} />

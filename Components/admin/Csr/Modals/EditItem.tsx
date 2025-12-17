@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { Package, X } from "lucide-react";
+import { Edit, X } from "lucide-react";
 
 type InventoryCategory =
   | "Guest Amenities"
@@ -13,32 +13,42 @@ type InventoryCategory =
 
 type InventoryStatus = "In Stock" | "Low Stock" | "Out of Stock";
 
-export interface NewInventoryItem {
-  name: string;
-  category: InventoryCategory;
+export interface EditInventoryItemInput {
+  item_id: string;
+  item_name: string;
+  category: string;
   current_stock: number;
   minimum_stock: number;
   unit_type: string;
   status: InventoryStatus;
 }
 
-interface AddItemProps {
+interface EditItemProps {
+  item: EditInventoryItemInput;
   onClose: () => void;
-  onAdd?: (item: NewInventoryItem) => Promise<void>;
+  onSave?: (payload: {
+    item_id: string;
+    item_name: string;
+    category: string;
+    current_stock: number;
+    minimum_stock: number;
+    unit_type: string;
+    status: InventoryStatus;
+  }) => Promise<void>;
 }
 
-export default function AddItem({ onClose, onAdd }: AddItemProps) {
+export default function EditItem({ item, onClose, onSave }: EditItemProps) {
   const [isMounted, setIsMounted] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   const [form, setForm] = useState({
-    name: "",
-    category: "Guest Amenities" as InventoryCategory,
-    current_stock: 0,
-    minimum_stock: 0,
-    unit_type: "",
+    item_name: item.item_name,
+    category: item.category as InventoryCategory,
+    current_stock: item.current_stock,
+    minimum_stock: item.minimum_stock,
+    unit_type: item.unit_type,
   });
 
   useEffect(() => {
@@ -48,14 +58,14 @@ export default function AddItem({ onClose, onAdd }: AddItemProps) {
 
   const isValid = useMemo(() => {
     return (
-      form.name.trim().length > 0 &&
+      form.item_name.trim().length > 0 &&
       form.unit_type.trim().length > 0 &&
       Number.isFinite(form.current_stock) &&
       form.current_stock >= 0 &&
       Number.isFinite(form.minimum_stock) &&
       form.minimum_stock >= 0
     );
-  }, [form.current_stock, form.minimum_stock, form.name, form.unit_type]);
+  }, [form.current_stock, form.minimum_stock, form.item_name, form.unit_type]);
 
   const derivedStatus = useMemo<InventoryStatus>(() => {
     const current = Number(form.current_stock ?? 0);
@@ -65,39 +75,30 @@ export default function AddItem({ onClose, onAdd }: AddItemProps) {
   }, [form.current_stock]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    console.log("[AddItem] submit triggered", {
-      isValid,
-      isSaving,
-      form,
-    });
     e.preventDefault();
     if (!isValid || isSaving) {
-      console.log("[AddItem] blocked submit", { isValid, isSaving });
       return;
     }
     setError(null);
     setSuccess(null);
     setIsSaving(true);
     try {
-      console.log("[AddItem] calling onAdd...");
-      await onAdd?.({
-        name: form.name.trim(),
+      await onSave?.({
+        item_id: item.item_id,
+        item_name: form.item_name.trim(),
         category: form.category,
         current_stock: Math.max(0, Math.floor(form.current_stock)),
         minimum_stock: Math.max(0, Math.floor(form.minimum_stock)),
         unit_type: form.unit_type.trim(),
         status: derivedStatus,
       });
-      console.log("[AddItem] onAdd resolved");
-      setSuccess("Item added successfully.");
+      setSuccess("Item updated successfully.");
       window.setTimeout(() => {
         onClose();
       }, 800);
-    } catch (err: any) {
-      console.log("[AddItem] onAdd failed", err);
-      setError(err?.message || "Failed to add item");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to update item");
     } finally {
-      console.log("[AddItem] submit finished");
       setIsSaving(false);
     }
   };
@@ -118,17 +119,17 @@ export default function AddItem({ onClose, onAdd }: AddItemProps) {
           className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl dark:shadow-gray-900/50 w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-center justify-between px-8 py-6 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-gray-800 dark:to-gray-700">
+          <div className="flex items-center justify-between px-8 py-6 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-gray-800 dark:to-gray-700">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-white dark:bg-gray-700 rounded-2xl border border-gray-100 dark:border-gray-600 shadow-sm flex items-center justify-center">
-                <Package className="w-6 h-6 text-brand-primary" />
+                <Edit className="w-6 h-6 text-brand-primary" />
               </div>
               <div>
                 <p className="text-sm font-semibold text-orange-500 uppercase tracking-[0.2em]">
                   Inventory
                 </p>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">Add New Item</h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Create an inventory item and set initial stock.</p>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">Edit Item</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Update inventory item details and stock levels.</p>
               </div>
             </div>
             <button
@@ -140,7 +141,7 @@ export default function AddItem({ onClose, onAdd }: AddItemProps) {
             </button>
           </div>
 
-          <form id="add-item-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-8 py-6 space-y-6">
+          <form id="edit-item-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-8 py-6 space-y-6">
             {success && (
               <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 rounded-lg px-4 py-3 text-sm">
                 {success}
@@ -151,12 +152,22 @@ export default function AddItem({ onClose, onAdd }: AddItemProps) {
                 {error}
               </div>
             )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Item ID</label>
+                <input
+                  value={item.item_id}
+                  disabled
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 cursor-not-allowed rounded-xl"
+                />
+              </div>
+
               <div className="md:col-span-2">
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Item Name</label>
                 <input
-                  value={form.name}
-                  onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                  value={form.item_name}
+                  onChange={(e) => setForm((p) => ({ ...p, item_name: e.target.value }))}
                   disabled={isSaving}
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                   placeholder="e.g. Bath Towel"
@@ -219,7 +230,7 @@ export default function AddItem({ onClose, onAdd }: AddItemProps) {
                 <select
                   value={derivedStatus}
                   disabled
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 cursor-not-allowed rounded-xl"
                 >
                   <option value="In Stock">In Stock</option>
                   <option value="Low Stock">Low Stock</option>
@@ -240,18 +251,15 @@ export default function AddItem({ onClose, onAdd }: AddItemProps) {
             </button>
             <button
               type="submit"
-              form="add-item-form"
+              form="edit-item-form"
               disabled={!isValid || isSaving}
               className="px-6 py-2 bg-gradient-to-r from-brand-primary to-brand-primaryDark text-white rounded-lg hover:shadow-lg hover:scale-[1.02] transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={() => {
-                console.log("[AddItem] Add Item button clicked", { isValid, isSaving, form });
-              }}
             >
               <span className="inline-flex items-center gap-2">
                 {isSaving && (
                   <span className="inline-block w-4 h-4 rounded-full border-2 border-white/60 border-t-white animate-spin" />
                 )}
-                {isSaving ? "Saving..." : "Add Item"}
+                {isSaving ? "Saving..." : "Save Changes"}
               </span>
             </button>
           </div>

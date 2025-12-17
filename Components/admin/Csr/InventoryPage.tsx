@@ -16,12 +16,25 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronsRight,
+  FileDown,
+  FileSpreadsheet,
 } from "lucide-react";
+
 import { useEffect, useMemo, useState } from "react";
 import AddItem from "./Modals/AddItem";
+import EditItem, { EditInventoryItemInput } from "./Modals/EditItem";
 import ViewItem, { ViewInventoryItem } from "./Modals/ViewItem";
+import DeleteConfirmation from "./Modals/DeleteConfirmation";
 
 type InventoryStatus = "In Stock" | "Low Stock" | "Out of Stock";
+
+const CATEGORY_FILTER_OPTIONS = [
+  "Guest Amenities",
+  "Bathroom Supplies",
+  "Cleaning Supplies",
+  "Linens & Bedding",
+  "Kitchen Supplies",
+] as const;
 
 interface InventoryRow {
   item_id: string;
@@ -96,8 +109,15 @@ const formatDateTime = (value: unknown) => {
 export default function InventoryPage() {
   const [isAddItemOpen, setIsAddItemOpen] = useState(false);
   const [viewItem, setViewItem] = useState<ViewInventoryItem | null>(null);
+  const [editItem, setEditItem] = useState<EditInventoryItemInput | null>(null);
+  const [deleteItem, setDeleteItem] = useState<InventoryRow | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteSuccess, setDeleteSuccess] = useState<string | null>(null);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<"all" | InventoryStatus>("all");
+  const [filterCategory, setFilterCategory] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [entriesPerPage, setEntriesPerPage] = useState(5);
   const [sortField, setSortField] = useState<keyof InventoryRow | null>(null);
@@ -152,9 +172,9 @@ export default function InventoryPage() {
         setError(null);
 
         await loadInventory();
-      } catch (e: any) {
+      } catch (e: unknown) {
         if (!mounted) return;
-        setError(e?.message || "Failed to load inventory");
+        setError(e instanceof Error ? e.message : "Failed to load inventory");
       } finally {
         if (!mounted) return;
         setLoading(false);
@@ -183,10 +203,11 @@ export default function InventoryPage() {
         row.category.toLowerCase().includes(term) ||
         row.unit_type.toLowerCase().includes(term);
 
-      const matchesFilter = filterStatus === "all" || row.status === filterStatus;
-      return matchesSearch && matchesFilter;
+      const matchesStatus = filterStatus === "all" || row.status === filterStatus;
+      const matchesCategory = filterCategory === "all" || row.category === filterCategory;
+      return matchesSearch && matchesStatus && matchesCategory;
     });
-  }, [filterStatus, rows, searchTerm]);
+  }, [filterCategory, filterStatus, rows, searchTerm]);
 
   const sortedRows = useMemo(() => {
     const copy = [...filteredRows];
@@ -214,8 +235,33 @@ export default function InventoryPage() {
     }
   };
 
-  const deleteRow = (item_id: string) => {
-    setRows((prev) => prev.filter((r) => r.item_id !== item_id));
+  const confirmDelete = async () => {
+    if (!deleteItem) return;
+
+    setIsDeleting(true);
+    setDeleteError(null);
+    setDeleteSuccess(null);
+    try {
+      const res = await fetch("/api/inventory", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ item_id: deleteItem.item_id }),
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(payload?.error || payload?.message || "Failed to delete item");
+      }
+      setDeleteSuccess("Item deleted successfully.");
+      await loadInventory();
+      window.setTimeout(() => {
+        setDeleteItem(null);
+        setDeleteSuccess(null);
+      }, 1500);
+    } catch (err: unknown) {
+      setDeleteError(err instanceof Error ? err.message : "Failed to delete item");
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const totalCount = rows.length;
@@ -223,12 +269,165 @@ export default function InventoryPage() {
   const lowStockCount = rows.filter((r) => r.status === "Low Stock").length;
   const outOfStockCount = rows.filter((r) => r.status === "Out of Stock").length;
 
+  const categoryOptions = CATEGORY_FILTER_OPTIONS;
+
+  const getExportRows = () => sortedRows;
+
+  const downloadBlob = (content: string, filename: string, type: string) => {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportExcel = () => {
+    const rowsToExport = getExportRows();
+    const headers = ["Item ID", "Item Name", "Category", "Current Stock", "Minimum Stock", "Unit Type", "Status", "Last Restocked"];
+    const csvLines = [headers.join(",")];
+
+    rowsToExport.forEach((row) => {
+      const line = [
+        row.item_id,
+        row.item_name,
+        row.category,
+        row.current_stock,
+        row.minimum_stock,
+        row.unit_type,
+        row.status,
+        row.last_restocked ? formatDateTime(row.last_restocked) : "-",
+      ]
+        .map((value) => {
+          const safe = String(value ?? "").replace(/"/g, '""');
+          return `"${safe}"`;
+        })
+        .join(",");
+      csvLines.push(line);
+    });
+
+    const timestamp = new Intl.DateTimeFormat("en-CA", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    })
+      .format(new Date())
+      .replace(/[^\d]/g, "");
+
+    downloadBlob(csvLines.join("\n"), `inventory_${timestamp}.csv`, "text/csv;charset=utf-8;");
+  };
+
+  const escapeHtml = (value: string) =>
+    value
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+
+  const handleExportPdf = () => {
+    try {
+      const rowsToExport = getExportRows();
+
+      if (rowsToExport.length === 0) {
+        alert("No data to export");
+        return;
+      }
+
+      const printWindow = window.open("", "_blank", "noopener,noreferrer");
+
+      if (!printWindow) {
+        alert("Please allow pop-ups for this site to export PDF");
+        return;
+      }
+
+      const tableRows = rowsToExport
+        .map(
+          (row) => `
+            <tr>
+              <td>${escapeHtml(row.item_id)}</td>
+              <td>${escapeHtml(row.item_name)}</td>
+              <td>${escapeHtml(row.category)}</td>
+              <td>${row.current_stock}</td>
+              <td>${row.minimum_stock}</td>
+              <td>${escapeHtml(row.unit_type)}</td>
+              <td>${escapeHtml(row.status)}</td>
+              <td>${escapeHtml(row.last_restocked ? formatDateTime(row.last_restocked) : "-")}</td>
+            </tr>
+          `,
+        )
+        .join("");
+
+      const doc = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8" />
+            <title>Inventory Report</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 24px; }
+              h1 { text-align: center; margin-bottom: 16px; }
+              table { width: 100%; border-collapse: collapse; font-size: 12px; }
+              th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+              th { background: #f3f4f6; }
+            </style>
+          </head>
+          <body>
+            <h1>Inventory Report</h1>
+            <p>Generated: ${escapeHtml(new Date().toLocaleString("en-PH", { timeZone: "Asia/Manila" }))}</p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Item ID</th>
+                  <th>Item Name</th>
+                  <th>Category</th>
+                  <th>Current Stock</th>
+                  <th>Minimum Stock</th>
+                  <th>Unit Type</th>
+                  <th>Status</th>
+                  <th>Last Restocked</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${tableRows || "<tr><td colspan='8'>No data to display</td></tr>"}
+              </tbody>
+            </table>
+          </body>
+        </html>
+      `;
+
+      printWindow.document.write(doc);
+      printWindow.document.close();
+
+      // Wait for content to load before printing
+      printWindow.onload = () => {
+        printWindow.focus();
+        printWindow.print();
+      };
+
+      // Fallback if onload doesn't fire
+      setTimeout(() => {
+        printWindow.focus();
+        printWindow.print();
+      }, 250);
+    } catch (error) {
+      console.error("Error exporting PDF:", error);
+      alert("Failed to export PDF. Please check the console for errors.");
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Inventory Management</h1>
-          <p className="text-sm text-gray-500 mt-1">Manage items, stock levels, and usage tracking</p>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Inventory Management</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage items, stock levels, and usage tracking</p>
         </div>
         <button
           type="button"
@@ -281,6 +480,39 @@ export default function InventoryPage() {
       )}
 
       {viewItem && <ViewItem item={viewItem} onClose={() => setViewItem(null)} />}
+      {editItem && (
+        <EditItem
+          item={editItem}
+          onClose={() => setEditItem(null)}
+          onSave={async (payload) => {
+            const res = await fetch("/api/inventory", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            });
+            const json = await res.json().catch(() => ({}));
+            if (!res.ok) {
+              throw new Error(json?.error || json?.message || "Failed to update item");
+            }
+            await loadInventory();
+          }}
+        />
+      )}
+      {deleteItem && (
+        <DeleteConfirmation
+          itemName={deleteItem.item_name}
+          itemId={deleteItem.item_id}
+          onConfirm={confirmDelete}
+          onCancel={() => {
+            setDeleteItem(null);
+            setDeleteError(null);
+            setDeleteSuccess(null);
+          }}
+          isDeleting={isDeleting}
+          error={deleteError}
+          success={deleteSuccess}
+        />
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
@@ -307,7 +539,7 @@ export default function InventoryPage() {
         })}
       </div>
 
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 p-4">
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
           <div className="flex flex-col sm:flex-row gap-4 flex-1 w-full">
             <div className="flex items-center gap-2">
@@ -318,7 +550,7 @@ export default function InventoryPage() {
                   setEntriesPerPage(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-sm"
               >
                 <option value="5">5</option>
                 <option value="10">10</option>
@@ -335,44 +567,84 @@ export default function InventoryPage() {
                 placeholder="Search by item ID, item name, category, or unit type..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary"
               />
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-gray-600" />
-            <select
-              value={filterStatus}
-              onChange={(e) => {
-                setFilterStatus(e.target.value as any);
-                setCurrentPage(1);
-              }}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-            >
-              <option value="all">All Status</option>
-              <option value="In Stock">In Stock</option>
-              <option value="Low Stock">Low Stock</option>
-              <option value="Out of Stock">Out of Stock</option>
-            </select>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Filter className="w-5 h-5 text-gray-600" />
+              <select
+                value={filterStatus}
+                onChange={(e) => {
+                  setFilterStatus(e.target.value as "all" | InventoryStatus);
+                  setCurrentPage(1);
+                }}
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary"
+              >
+                <option value="all">All Status</option>
+                <option value="In Stock">In Stock</option>
+                <option value="Low Stock">Low Stock</option>
+                <option value="Out of Stock">Out of Stock</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600 whitespace-nowrap">Category</span>
+              <select
+                value={filterCategory}
+                onChange={(e) => {
+                  setFilterCategory(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary"
+              >
+                <option value="all">All Categories</option>
+                {categoryOptions.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleExportPdf}
+                className="inline-flex items-center gap-2 px-3 py-2 border border-red-500 text-red-600 rounded-lg text-sm font-semibold hover:bg-red-50 transition-colors"
+              >
+                <FileDown className="w-4 h-4" />
+                Export PDF
+              </button>
+              <button
+                type="button"
+                onClick={handleExportExcel}
+                className="inline-flex items-center gap-2 px-3 py-2 border border-green-500 text-green-600 rounded-lg text-sm font-semibold hover:bg-green-50 transition-colors"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                Export Excel
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 rounded-lg px-4 py-3 text-sm">
           {error}
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1050px]">
-            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border-b-2 border-gray-200 dark:border-gray-600">
               <tr>
                 <th
                   onClick={() => handleSort("item_id")}
-                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors group whitespace-nowrap"
+                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
                 >
                   <div className="flex items-center gap-2">
                     Item ID
@@ -381,7 +653,7 @@ export default function InventoryPage() {
                 </th>
                 <th
                   onClick={() => handleSort("item_name")}
-                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors group whitespace-nowrap"
+                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
                 >
                   <div className="flex items-center gap-2">
                     Item Name
@@ -390,7 +662,7 @@ export default function InventoryPage() {
                 </th>
                 <th
                   onClick={() => handleSort("category")}
-                  className="text-center py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors whitespace-nowrap"
+                  className="text-center py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors whitespace-nowrap"
                 >
                   <div className="flex items-center justify-center gap-2">
                     Category
@@ -399,7 +671,7 @@ export default function InventoryPage() {
                 </th>
                 <th
                   onClick={() => handleSort("current_stock")}
-                  className="text-center py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors whitespace-nowrap"
+                  className="text-center py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors whitespace-nowrap"
                 >
                   <div className="flex items-center justify-center gap-2">
                     Stock
@@ -408,7 +680,7 @@ export default function InventoryPage() {
                 </th>
                 <th
                   onClick={() => handleSort("unit_type")}
-                  className="text-center py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors whitespace-nowrap"
+                  className="text-center py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors whitespace-nowrap"
                 >
                   <div className="flex items-center justify-center gap-2">
                     Unit
@@ -417,7 +689,7 @@ export default function InventoryPage() {
                 </th>
                 <th
                   onClick={() => handleSort("last_restocked")}
-                  className="text-center py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors whitespace-nowrap"
+                  className="text-center py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors whitespace-nowrap"
                 >
                   <div className="flex items-center justify-center gap-2">
                     Last Restocked
@@ -426,20 +698,20 @@ export default function InventoryPage() {
                 </th>
                 <th
                   onClick={() => handleSort("status")}
-                  className="text-center py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors whitespace-nowrap"
+                  className="text-center py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors whitespace-nowrap"
                 >
                   <div className="flex items-center justify-center gap-2">
                     Status
                     <ArrowUpDown className="w-4 h-4 text-gray-400" />
                   </div>
                 </th>
-                <th className="text-center py-4 px-4 text-sm font-bold text-gray-700 whitespace-nowrap">Actions</th>
+                <th className="text-center py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="py-10 px-4 text-center text-sm text-gray-500">
+                  <td colSpan={8} className="py-10 px-4 text-center text-sm text-gray-500 dark:text-gray-400">
                     <div className="flex items-center justify-center gap-3">
                       <span className="inline-block w-5 h-5 rounded-full border-2 border-gray-300 border-t-gray-600 animate-spin" />
                       Loading inventory...
@@ -448,32 +720,32 @@ export default function InventoryPage() {
                 </tr>
               ) : paginatedRows.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-10 px-4 text-center text-sm text-gray-500">
+                  <td colSpan={8} className="py-10 px-4 text-center text-sm text-gray-500 dark:text-gray-400">
                     No inventory items found.
                   </td>
                 </tr>
               ) : (
                 paginatedRows.map((row) => (
-                  <tr key={row.item_id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                  <tr key={row.item_id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                     <td className="py-4 px-4">
-                      <span className="font-semibold text-gray-800 text-sm">{row.item_id}</span>
+                      <span className="font-semibold text-gray-800 dark:text-gray-100 text-sm">{row.item_id}</span>
                     </td>
                     <td className="py-4 px-4">
-                      <span className="font-semibold text-gray-800 text-sm">{row.item_name}</span>
+                      <span className="font-semibold text-gray-800 dark:text-gray-100 text-sm">{row.item_name}</span>
                     </td>
                     <td className="py-4 px-4 text-center">
-                      <span className="text-sm font-semibold text-gray-700">{row.category}</span>
+                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">{row.category}</span>
                     </td>
                     <td className="py-4 px-4 text-center">
-                      <span className="text-sm font-semibold text-gray-700">
+                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
                         {row.current_stock}
                       </span>
                     </td>
                     <td className="py-4 px-4 text-center">
-                      <span className="text-sm font-semibold text-gray-700">{row.unit_type}</span>
+                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">{row.unit_type}</span>
                     </td>
                     <td className="py-4 px-4 text-center">
-                      <span className="text-sm font-semibold text-gray-700 whitespace-nowrap">
+                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">
                         {formatDateTime(row.last_restocked)}
                       </span>
                     </td>
@@ -504,14 +776,29 @@ export default function InventoryPage() {
                           <Eye className="w-4 h-4" />
                         </button>
 
-                        <button className="p-2 text-brand-primary hover:bg-brand-primaryLighter rounded-lg transition-colors" title="Edit" type="button">
+                        <button
+                          className="p-2 text-brand-primary hover:bg-brand-primaryLighter rounded-lg transition-colors"
+                          title="Edit"
+                          type="button"
+                          onClick={() =>
+                            setEditItem({
+                              item_id: row.item_id,
+                              item_name: row.item_name,
+                              category: row.category,
+                              current_stock: row.current_stock,
+                              minimum_stock: row.minimum_stock,
+                              unit_type: row.unit_type,
+                              status: row.status,
+                            })
+                          }
+                        >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
                           className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           title="Delete"
                           type="button"
-                          onClick={() => deleteRow(row.item_id)}
+                          onClick={() => setDeleteItem(row)}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -525,10 +812,10 @@ export default function InventoryPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-        <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-t border-gray-200">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900 overflow-hidden">
+        <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 px-6 py-4 border-t border-gray-200 dark:border-gray-600">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-300">
               Showing {sortedRows.length === 0 ? 0 : startIndex + 1} to {Math.min(endIndex, sortedRows.length)} of {sortedRows.length} entries
               {searchTerm || filterStatus !== "all" ? ` (filtered from ${rows.length} total entries)` : ""}
             </p>
@@ -536,7 +823,7 @@ export default function InventoryPage() {
               <button
                 onClick={() => setCurrentPage(1)}
                 disabled={currentPage === 1 || totalPages === 0}
-                className="p-2 border border-gray-300 rounded-lg hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="First Page"
                 type="button"
               >
@@ -545,7 +832,7 @@ export default function InventoryPage() {
               <button
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1 || totalPages === 0}
-                className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-white transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 type="button"
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -568,8 +855,8 @@ export default function InventoryPage() {
                     onClick={() => setCurrentPage(pageNum)}
                     className={`px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
                       currentPage === pageNum
-                        ? "bg-orange-500 text-white shadow-md"
-                        : "border border-gray-300 hover:bg-white"
+                        ? "bg-gradient-to-r from-brand-primary to-brand-primaryDark text-white shadow-md"
+                        : "border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-600"
                     }`}
                     disabled={totalPages === 0}
                     type="button"
@@ -581,7 +868,7 @@ export default function InventoryPage() {
               <button
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages || totalPages === 0}
-                className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-white transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 type="button"
               >
                 <ChevronRight className="w-4 h-4" />
@@ -589,7 +876,7 @@ export default function InventoryPage() {
               <button
                 onClick={() => setCurrentPage(totalPages)}
                 disabled={currentPage === totalPages || totalPages === 0}
-                className="p-2 border border-gray-300 rounded-lg hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Last Page"
                 type="button"
               >
@@ -600,36 +887,36 @@ export default function InventoryPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-lg p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900 p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-bold text-gray-800">Usage Tracking</h3>
-            <p className="text-sm text-gray-500">Monitor how frequently inventory items are used</p>
+            <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">Usage Tracking</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Monitor how frequently inventory items are used</p>
           </div>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full min-w-[750px]">
-            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border-b-2 border-gray-200 dark:border-gray-600">
               <tr>
-                <th className="text-left py-3 px-4 text-sm font-bold text-gray-700 whitespace-nowrap">Item</th>
-                <th className="text-center py-3 px-4 text-sm font-bold text-gray-700 whitespace-nowrap">Used Today</th>
-                <th className="text-center py-3 px-4 text-sm font-bold text-gray-700 whitespace-nowrap">Used This Week</th>
-                <th className="text-center py-3 px-4 text-sm font-bold text-gray-700 whitespace-nowrap">Trend</th>
+                <th className="text-left py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 whitespace-nowrap">Item</th>
+                <th className="text-center py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 whitespace-nowrap">Used Today</th>
+                <th className="text-center py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 whitespace-nowrap">Used This Week</th>
+                <th className="text-center py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 whitespace-nowrap">Trend</th>
               </tr>
             </thead>
             <tbody>
               {usageRows.map((u) => (
-                <tr key={u.item_id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                <tr key={u.item_id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                   <td className="py-3 px-4">
-                    <p className="text-sm font-semibold text-gray-800">{u.name}</p>
-                    <p className="text-xs text-gray-500">{u.item_id}</p>
+                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{u.name}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{u.item_id}</p>
                   </td>
                   <td className="py-3 px-4 text-center">
-                    <span className="text-sm font-semibold text-gray-700">{u.used_today}</span>
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">{u.used_today}</span>
                   </td>
                   <td className="py-3 px-4 text-center">
-                    <span className="text-sm font-semibold text-gray-700">{u.used_week}</span>
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">{u.used_week}</span>
                   </td>
                   <td className="py-3 px-4 text-center">
                     {u.trend === "up" ? (

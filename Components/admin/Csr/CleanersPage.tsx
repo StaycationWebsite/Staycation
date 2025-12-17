@@ -60,7 +60,7 @@ export default function CleanersPage() {
       check_out: "2024-03-22 11:00",
       assigned_to: "Unassigned",
       status: "Unassigned",
-      statusColor: "bg-gray-100 text-gray-700",
+      statusColor: "bg-gray-100 text-gray-700 dark:text-gray-200",
     },
     {
       cleaner_id: "CL-003",
@@ -160,8 +160,8 @@ export default function CleanersPage() {
     <div className="space-y-6 animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Cleaners Management</h1>
-          <p className="text-sm text-gray-500 mt-1">Assign and track post check-out cleaning tasks</p>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Cleaners Management</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Assign and track post check-out cleaning tasks</p>
         </div>
       </div>
 
@@ -176,7 +176,7 @@ export default function CleanersPage() {
           return (
             <div
               key={i}
-              className={`${stat.color} text-white rounded-lg p-6 shadow hover:shadow-lg transition-all`}
+              className={`${stat.color} text-white rounded-lg p-6 shadow dark:shadow-gray-900 hover:shadow-lg transition-all`}
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -190,48 +190,48 @@ export default function CleanersPage() {
         })}
       </div>
 
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 p-4">
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
           <div className="flex flex-col sm:flex-row gap-4 flex-1 w-full">
             <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-600 whitespace-nowrap">Show</label>
+              <label className="text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">Show</label>
               <select
                 value={entriesPerPage}
                 onChange={(e) => {
                   setEntriesPerPage(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-orange-500 text-sm"
               >
                 <option value="5">5</option>
                 <option value="10">10</option>
                 <option value="25">25</option>
                 <option value="50">50</option>
               </select>
-              <label className="text-sm text-gray-600 whitespace-nowrap">entries</label>
+              <label className="text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">entries</label>
             </div>
 
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
               <input
                 type="text"
                 placeholder="Search by cleaner ID, booking ID, guest, haven, or assignee..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-orange-500"
               />
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-gray-600" />
+            <Filter className="w-5 h-5 text-gray-600 dark:text-gray-300" />
             <select
               value={filterStatus}
               onChange={(e) => {
                 setFilterStatus(e.target.value as any);
                 setCurrentPage(1);
               }}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-orange-500"
             >
               <option value="all">All Status</option>
               <option value="Unassigned">Unassigned</option>
@@ -243,103 +243,103 @@ export default function CleanersPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1200px]">
-            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border-b-2 border-gray-200 dark:border-gray-600">
               <tr>
                 <th
                   onClick={() => handleSort("cleaner_id")}
-                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors group whitespace-nowrap"
+                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
                 >
                   <div className="flex items-center gap-2">
                     Cleaner ID
-                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:text-gray-300 dark:group-hover:text-gray-100" />
                   </div>
                 </th>
                 <th
                   onClick={() => handleSort("haven")}
-                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors group whitespace-nowrap"
+                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
                 >
                   <div className="flex items-center gap-2">
                     Haven Location
-                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:text-gray-300 dark:group-hover:text-gray-100" />
                   </div>
                 </th>
                 <th
                   onClick={() => handleSort("booking_id")}
-                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors group whitespace-nowrap"
+                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
                 >
                   <div className="flex items-center gap-2">
                     Booking ID
-                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:text-gray-300 dark:group-hover:text-gray-100" />
                   </div>
                 </th>
                 <th
                   onClick={() => handleSort("guest")}
-                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors group whitespace-nowrap"
+                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
                 >
                   <div className="flex items-center gap-2">
                     Guest
-                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:text-gray-300 dark:group-hover:text-gray-100" />
                   </div>
                 </th>
                 <th
                   onClick={() => handleSort("check_out")}
-                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors group whitespace-nowrap"
+                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
                 >
                   <div className="flex items-center gap-2">
                     Check-Out
-                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:text-gray-300 dark:group-hover:text-gray-100" />
                   </div>
                 </th>
                 <th
                   onClick={() => handleSort("assigned_to")}
-                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors group whitespace-nowrap"
+                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
                 >
                   <div className="flex items-center gap-2">
                     Assigned To
-                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:text-gray-300 dark:group-hover:text-gray-100" />
                   </div>
                 </th>
                 <th
                   onClick={() => handleSort("status")}
-                  className="text-center py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors whitespace-nowrap"
+                  className="text-center py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors whitespace-nowrap"
                 >
                   <div className="flex items-center justify-center gap-2">
                     Status
-                    <ArrowUpDown className="w-4 h-4 text-gray-400" />
+                    <ArrowUpDown className="w-4 h-4 text-gray-400 dark:text-gray-300" />
                   </div>
                 </th>
-                <th className="text-center py-4 px-4 text-sm font-bold text-gray-700 whitespace-nowrap">Actions</th>
+                <th className="text-center py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody>
               {paginatedRows.map((row) => (
-                <tr key={row.cleaner_id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                <tr key={row.cleaner_id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                   <td className="py-4 px-4">
-                    <span className="font-semibold text-gray-800 text-sm">{row.cleaner_id}</span>
+                    <span className="font-semibold text-gray-800 dark:text-gray-100 text-sm">{row.cleaner_id}</span>
                   </td>
                   <td className="py-4 px-4">
                     <div className="flex items-center gap-2">
                       <MapPin className="w-4 h-4 text-orange-500 flex-shrink-0" />
-                      <span className="text-sm font-medium text-gray-700 whitespace-nowrap">{row.haven}</span>
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-200 whitespace-nowrap">{row.haven}</span>
                     </div>
                   </td>
                   <td className="py-4 px-4">
-                    <span className="font-semibold text-gray-800 text-sm whitespace-nowrap">{row.booking_id}</span>
+                    <span className="font-semibold text-gray-800 dark:text-gray-100 text-sm whitespace-nowrap">{row.booking_id}</span>
                   </td>
                   <td className="py-4 px-4">
                     <div className="flex items-center gap-2 min-w-[180px]">
                       <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                      <span className="font-semibold text-gray-800 text-sm">{row.guest}</span>
+                      <span className="font-semibold text-gray-800 dark:text-gray-100 text-sm">{row.guest}</span>
                     </div>
                   </td>
                   <td className="py-4 px-4">
-                    <span className="text-sm text-gray-600 whitespace-nowrap">{row.check_out}</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.check_out}</span>
                   </td>
                   <td className="py-4 px-4">
-                    <span className="text-sm text-gray-700 whitespace-nowrap">{row.assigned_to}</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">{row.assigned_to}</span>
                   </td>
                   <td className="py-4 px-4 text-center">
                     <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${row.statusColor}`}>
@@ -349,14 +349,14 @@ export default function CleanersPage() {
                   <td className="py-4 px-4">
                     <div className="flex items-center justify-center gap-1">
                       <button
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
                         title="View"
                         type="button"
                       >
                         <Eye className="w-4 h-4" />
                       </button>
                       <button
-                        className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                        className="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
                         title="Mark for Cleaning"
                         type="button"
                         onClick={() => setRowStatus(row.cleaner_id, "Assigned", "bg-indigo-100 text-indigo-700")}
@@ -364,7 +364,7 @@ export default function CleanersPage() {
                         <ClipboardList className="w-4 h-4" />
                       </button>
                       <button
-                        className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors"
+                        className="p-2 text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 rounded-lg transition-colors"
                         title="In Progress"
                         type="button"
                         onClick={() => setRowStatus(row.cleaner_id, "In Progress", "bg-yellow-100 text-yellow-700")}
@@ -372,7 +372,7 @@ export default function CleanersPage() {
                         <Loader2 className="w-4 h-4" />
                       </button>
                       <button
-                        className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                        className="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-colors"
                         title="Completed"
                         type="button"
                         onClick={() => setRowStatus(row.cleaner_id, "Completed", "bg-green-100 text-green-700")}
@@ -388,10 +388,10 @@ export default function CleanersPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-        <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-t border-gray-200">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900 overflow-hidden">
+        <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 px-6 py-4 border-t border-gray-200 dark:border-gray-600">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-300">
               Showing {sortedRows.length === 0 ? 0 : startIndex + 1} to {Math.min(endIndex, sortedRows.length)} of {sortedRows.length} entries
               {searchTerm || filterStatus !== "all" ? ` (filtered from ${rows.length} total entries)` : ""}
             </p>
@@ -399,7 +399,7 @@ export default function CleanersPage() {
               <button
                 onClick={() => setCurrentPage(1)}
                 disabled={currentPage === 1 || totalPages === 0}
-                className="p-2 border border-gray-300 rounded-lg hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="First Page"
                 type="button"
               >
@@ -408,7 +408,7 @@ export default function CleanersPage() {
               <button
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1 || totalPages === 0}
-                className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-white transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 type="button"
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -431,8 +431,8 @@ export default function CleanersPage() {
                     onClick={() => setCurrentPage(pageNum)}
                     className={`px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
                       currentPage === pageNum
-                        ? "bg-orange-500 text-white shadow-md"
-                        : "border border-gray-300 hover:bg-white"
+                        ? "bg-gradient-to-r from-brand-primary to-brand-primaryDark text-white shadow-md"
+                        : "border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-600"
                     }`}
                     disabled={totalPages === 0}
                     type="button"
@@ -444,7 +444,7 @@ export default function CleanersPage() {
               <button
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages || totalPages === 0}
-                className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-white transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 type="button"
               >
                 <ChevronRight className="w-4 h-4" />
@@ -452,7 +452,7 @@ export default function CleanersPage() {
               <button
                 onClick={() => setCurrentPage(totalPages)}
                 disabled={currentPage === totalPages || totalPages === 0}
-                className="p-2 border border-gray-300 rounded-lg hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Last Page"
                 type="button"
               >
@@ -464,11 +464,11 @@ export default function CleanersPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h4 className="text-lg font-bold text-gray-800 mb-4">Completed</h4>
-          <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-            <span className="text-sm font-medium text-gray-700">Completed Tasks</span>
-            <span className="text-xl font-bold text-green-600">{completedCount}</span>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 p-6">
+          <h4 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Completed</h4>
+          <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Completed Tasks</span>
+            <span className="text-xl font-bold text-green-600 dark:text-green-400">{completedCount}</span>
           </div>
         </div>
       </div>
