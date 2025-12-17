@@ -56,7 +56,7 @@ export default function CsrDashboard() {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [messageBadge, setMessageBadge] = useState(true);
-  const [now, setNow] = useState(() => new Date());
+  const [now, setNow] = useState<Date | null>(null);
   const [employee, setEmployee] = useState<EmployeeProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -117,6 +117,7 @@ export default function CsrDashboard() {
   }, []);
 
   useEffect(() => {
+    setNow(new Date());
     const id = window.setInterval(() => {
       setNow(new Date());
     }, 1000);
@@ -372,19 +373,23 @@ export default function CsrDashboard() {
             </button>
             <div className="flex flex-col">
               <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
-                {now.toLocaleString("en-US", {
-                  weekday: "long",
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
+                {now
+                  ? now.toLocaleString("en-US", {
+                      weekday: "long",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })
+                  : ""}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                {now.toLocaleString("en-US", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  second: "2-digit",
-                })}
+                {now
+                  ? now.toLocaleString("en-US", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                    })
+                  : ""}
               </p>
             </div>
           </div>
