@@ -4,27 +4,41 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Package, X } from "lucide-react";
 
+type InventoryCategory =
+  | "Guest Amenities"
+  | "Bathroom Supplies"
+  | "Cleaning Supplies"
+  | "Linens & Bedding"
+  | "Kitchen Supplies";
+
 type InventoryStatus = "In Stock" | "Low Stock" | "Out of Stock";
 
 export interface NewInventoryItem {
   name: string;
-  stock: number;
-  price: number;
+  category: InventoryCategory;
+  current_stock: number;
+  minimum_stock: number;
+  unit_type: string;
   status: InventoryStatus;
 }
 
 interface AddItemProps {
   onClose: () => void;
-  onAdd?: (item: NewInventoryItem) => void;
+  onAdd?: (item: NewInventoryItem) => Promise<void>;
 }
 
 export default function AddItem({ onClose, onAdd }: AddItemProps) {
   const [isMounted, setIsMounted] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
   const [form, setForm] = useState({
     name: "",
-    stock: 0,
-    price: 0,
-    status: "In Stock" as InventoryStatus,
+    category: "Guest Amenities" as InventoryCategory,
+    current_stock: 0,
+    minimum_stock: 0,
+    unit_type: "",
   });
 
   useEffect(() => {
@@ -33,26 +47,72 @@ export default function AddItem({ onClose, onAdd }: AddItemProps) {
   }, []);
 
   const isValid = useMemo(() => {
-    return form.name.trim().length > 0 && Number.isFinite(form.stock) && Number.isFinite(form.price);
-  }, [form.name, form.price, form.stock]);
+    return (
+      form.name.trim().length > 0 &&
+      form.unit_type.trim().length > 0 &&
+      Number.isFinite(form.current_stock) &&
+      form.current_stock >= 0 &&
+      Number.isFinite(form.minimum_stock) &&
+      form.minimum_stock >= 0
+    );
+  }, [form.current_stock, form.minimum_stock, form.name, form.unit_type]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!isValid) return;
-    onAdd?.({
-      name: form.name.trim(),
-      stock: Math.max(0, Math.floor(form.stock)),
-      price: Math.max(0, Number(form.price)),
-      status: form.status,
+  const derivedStatus = useMemo<InventoryStatus>(() => {
+    const current = Number(form.current_stock ?? 0);
+    if (!Number.isFinite(current) || current <= 0) return "Out of Stock";
+    if (current <= 10) return "Low Stock";
+    return "In Stock";
+  }, [form.current_stock]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    console.log("[AddItem] submit triggered", {
+      isValid,
+      isSaving,
+      form,
     });
-    onClose();
+    e.preventDefault();
+    if (!isValid || isSaving) {
+      console.log("[AddItem] blocked submit", { isValid, isSaving });
+      return;
+    }
+    setError(null);
+    setSuccess(null);
+    setIsSaving(true);
+    try {
+      console.log("[AddItem] calling onAdd...");
+      await onAdd?.({
+        name: form.name.trim(),
+        category: form.category,
+        current_stock: Math.max(0, Math.floor(form.current_stock)),
+        minimum_stock: Math.max(0, Math.floor(form.minimum_stock)),
+        unit_type: form.unit_type.trim(),
+        status: derivedStatus,
+      });
+      console.log("[AddItem] onAdd resolved");
+      setSuccess("Item added successfully.");
+      window.setTimeout(() => {
+        onClose();
+      }, 800);
+    } catch (err: any) {
+      console.log("[AddItem] onAdd failed", err);
+      setError(err?.message || "Failed to add item");
+    } finally {
+      console.log("[AddItem] submit finished");
+      setIsSaving(false);
+    }
   };
 
   if (!isMounted) return null;
 
   return createPortal(
     <>
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998]" onClick={onClose} />
+      <div
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998]"
+        onClick={() => {
+          if (isSaving) return;
+          onClose();
+        }}
+      />
       <div className="fixed inset-0 flex items-center justify-center px-4 py-8 z-[9999]">
         <div
           className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden"
@@ -71,51 +131,94 @@ export default function AddItem({ onClose, onAdd }: AddItemProps) {
                 <p className="text-sm text-gray-500 mt-1">Create an inventory item and set initial stock.</p>
               </div>
             </div>
-            <button onClick={onClose} className="p-2 rounded-full hover:bg-white/70 transition-colors">
+            <button
+              onClick={onClose}
+              disabled={isSaving}
+              className="p-2 rounded-full hover:bg-white/70 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <X className="w-6 h-6 text-gray-600" />
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-8 py-6 space-y-6">
+          <form id="add-item-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-8 py-6 space-y-6">
+            {success && (
+              <div className="bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 text-sm">
+                {success}
+              </div>
+            )}
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
+                {error}
+              </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Item Name</label>
                 <input
                   value={form.name}
                   onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                  disabled={isSaving}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                   placeholder="e.g. Bath Towel"
                 />
               </div>
 
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+                <select
+                  value={form.category}
+                  onChange={(e) => setForm((p) => ({ ...p, category: e.target.value as InventoryCategory }))}
+                  disabled={isSaving}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                >
+                  <option value="Guest Amenities">Guest Amenities</option>
+                  <option value="Bathroom Supplies">Bathroom Supplies</option>
+                  <option value="Cleaning Supplies">Cleaning Supplies</option>
+                  <option value="Linens & Bedding">Linens &amp; Bedding</option>
+                  <option value="Kitchen Supplies">Kitchen Supplies</option>
+                </select>
+              </div>
+
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Stock</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Current Stock</label>
                 <input
                   type="number"
                   min={0}
-                  value={form.stock}
-                  onChange={(e) => setForm((p) => ({ ...p, stock: Number(e.target.value) }))}
+                  value={form.current_stock}
+                  onChange={(e) => setForm((p) => ({ ...p, current_stock: Number(e.target.value) }))}
+                  disabled={isSaving}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Price (PHP)</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Minimum Stock</label>
                 <input
                   type="number"
                   min={0}
-                  step="0.01"
-                  value={form.price}
-                  onChange={(e) => setForm((p) => ({ ...p, price: Number(e.target.value) }))}
+                  value={form.minimum_stock}
+                  onChange={(e) => setForm((p) => ({ ...p, minimum_stock: Number(e.target.value) }))}
+                  disabled={isSaving}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Unit Type</label>
+                <input
+                  value={form.unit_type}
+                  onChange={(e) => setForm((p) => ({ ...p, unit_type: e.target.value }))}
+                  disabled={isSaving}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  placeholder="e.g. pcs, bottles, sets"
                 />
               </div>
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Status</label>
                 <select
-                  value={form.status}
-                  onChange={(e) => setForm((p) => ({ ...p, status: e.target.value as InventoryStatus }))}
+                  value={derivedStatus}
+                  disabled
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 >
                   <option value="In Stock">In Stock</option>
@@ -130,23 +233,31 @@ export default function AddItem({ onClose, onAdd }: AddItemProps) {
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium"
+              disabled={isSaving}
+              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={!isValid}
-              onClick={handleSubmit}
+              form="add-item-form"
+              disabled={!isValid || isSaving}
               className="px-6 py-2 bg-gradient-to-r from-brand-primary to-brand-primaryDark text-white rounded-lg hover:shadow-lg hover:scale-[1.02] transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => {
+                console.log("[AddItem] Add Item button clicked", { isValid, isSaving, form });
+              }}
             >
-              Add Item
+              <span className="inline-flex items-center gap-2">
+                {isSaving && (
+                  <span className="inline-block w-4 h-4 rounded-full border-2 border-white/60 border-t-white animate-spin" />
+                )}
+                {isSaving ? "Saving..." : "Add Item"}
+              </span>
             </button>
           </div>
         </div>
       </div>
-    </>
-    ,
+    </>,
     document.body
   );
 }
