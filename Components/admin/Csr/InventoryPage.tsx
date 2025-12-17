@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import AddItem from "./Modals/AddItem";
+import ViewItem, { ViewInventoryItem } from "./Modals/ViewItem";
 
 type InventoryStatus = "In Stock" | "Low Stock" | "Out of Stock";
 
@@ -83,6 +84,7 @@ const formatDateTime = (value: unknown) => {
   const d = asDate ?? (Number.isFinite(asNumber) ? new Date(asNumber) : new Date(normalizedString));
   if (!Number.isFinite(d.getTime())) return "-";
   return new Intl.DateTimeFormat("en-PH", {
+    timeZone: "Asia/Manila",
     year: "numeric",
     month: "short",
     day: "2-digit",
@@ -93,6 +95,7 @@ const formatDateTime = (value: unknown) => {
 
 export default function InventoryPage() {
   const [isAddItemOpen, setIsAddItemOpen] = useState(false);
+  const [viewItem, setViewItem] = useState<ViewInventoryItem | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<"all" | InventoryStatus>("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -276,6 +279,8 @@ export default function InventoryPage() {
           }}
         />
       )}
+
+      {viewItem && <ViewItem item={viewItem} onClose={() => setViewItem(null)} />}
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
@@ -461,7 +466,7 @@ export default function InventoryPage() {
                     </td>
                     <td className="py-4 px-4 text-center">
                       <span className="text-sm font-semibold text-gray-700">
-                        {row.current_stock} / {row.minimum_stock}
+                        {row.current_stock}
                       </span>
                     </td>
                     <td className="py-4 px-4 text-center">
@@ -479,9 +484,26 @@ export default function InventoryPage() {
                     </td>
                     <td className="py-4 px-4">
                       <div className="flex items-center justify-center gap-1">
-                        <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="View" type="button">
+                        <button
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="View"
+                          type="button"
+                          onClick={() => {
+                            setViewItem({
+                              item_id: row.item_id,
+                              item_name: row.item_name,
+                              category: row.category,
+                              current_stock: row.current_stock,
+                              minimum_stock: row.minimum_stock,
+                              unit_type: row.unit_type,
+                              last_restocked: row.last_restocked,
+                              status: row.status,
+                            });
+                          }}
+                        >
                           <Eye className="w-4 h-4" />
                         </button>
+
                         <button className="p-2 text-brand-primary hover:bg-brand-primaryLighter rounded-lg transition-colors" title="Edit" type="button">
                           <Edit className="w-4 h-4" />
                         </button>
