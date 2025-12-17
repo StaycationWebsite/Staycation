@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import pool from "../config/db";
 
 export const getAllInventory = async (req: NextRequest): Promise<NextResponse> => {
@@ -43,7 +44,7 @@ export const createInventoryItem = async (req: NextRequest): Promise<NextRespons
     const stock_quantity = Number(body?.stock_quantity ?? body?.stock ?? 0);
     const priceRaw = body?.price;
     const price = priceRaw === null || priceRaw === undefined || priceRaw === "" ? null : Number(priceRaw);
-    const status = String(body?.status ?? "Available");
+    const status = String(body?.status ?? "In Stock");
 
     if (!item_name) {
       return NextResponse.json({ success: false, error: "Item name is required" }, { status: 400 });
@@ -57,10 +58,23 @@ export const createInventoryItem = async (req: NextRequest): Promise<NextRespons
       return NextResponse.json({ success: false, error: "Price must be a non-negative number" }, { status: 400 });
     }
 
-    const dbStatus = status === "Out of Stock" || stock_quantity === 0 ? "Out of Stock" : "Available";
+    const allowedStatuses = new Set(["In Stock", "Low Stock", "Out of Stock"]);
+    const normalizedStatus = allowedStatuses.has(status) ? status : "In Stock";
+
+    const dbStatus =
+      stock_quantity === 0
+        ? "Out of Stock"
+        : stock_quantity <= 10
+          ? "Low Stock"
+          : normalizedStatus === "Out of Stock"
+            ? "In Stock"
+            : normalizedStatus;
+
+    const inventory_id = randomUUID();
 
     const query = `
       INSERT INTO inventory (
+        inventory_id,
         item_name,
         stock_quantity,
         price,
@@ -68,7 +82,7 @@ export const createInventoryItem = async (req: NextRequest): Promise<NextRespons
         created_at,
         updated_at
       )
-      VALUES ($1, $2, $3, $4, NOW(), NOW())
+      VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
       RETURNING
         inventory_id,
         item_name,
@@ -79,7 +93,7 @@ export const createInventoryItem = async (req: NextRequest): Promise<NextRespons
         updated_at
     `;
 
-    const result = await pool.query(query, [item_name, stock_quantity, price, dbStatus]);
+    const result = await pool.query(query, [inventory_id, item_name, stock_quantity, price, dbStatus]);
 
     return NextResponse.json({
       success: true,
