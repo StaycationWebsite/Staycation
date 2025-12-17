@@ -209,22 +209,22 @@ export default function SettingsPage() {
 
       {/* Communication channels & security */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <section className="rounded-2xl border border-gray-100 bg-white shadow-sm">
-          <div className="flex flex-col gap-2 border-b border-gray-100 px-6 py-5">
+        <section className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
+          <div className="flex flex-col gap-2 border-b border-gray-100 dark:border-gray-800 px-6 py-5">
             <div className="flex items-center gap-2 text-brand-primary">
               <Mail className="w-4 h-4" />
               <p className="text-xs font-semibold uppercase tracking-[0.3em]">
                 Communication channels
               </p>
             </div>
-            <h2 className="text-xl font-semibold text-gray-900">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
               Delivery methods
             </h2>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               Decide how alerts reach the CSR team for urgent updates.
             </p>
           </div>
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-gray-100 dark:divide-gray-800">
             {[
               {
                 id: "email" as const,
@@ -254,10 +254,10 @@ export default function SettingsPage() {
                     {channel.icon}
                   </div>
                   <div>
-                    <p className="text-base font-semibold text-gray-900">
+                    <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
                       {channel.title}
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
                       {channel.description}
                     </p>
                   </div>
@@ -284,23 +284,23 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-gray-100 bg-white shadow-sm">
-          <div className="flex flex-col gap-2 border-b border-gray-100 px-6 py-5">
+        <section className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
+          <div className="flex flex-col gap-2 border-b border-gray-100 dark:border-gray-800 px-6 py-5">
             <div className="flex items-center gap-2 text-emerald-600">
               <ShieldCheck className="w-4 h-4" />
               <p className="text-xs font-semibold uppercase tracking-[0.3em]">
                 Security
               </p>
             </div>
-            <h2 className="text-xl font-semibold text-gray-900">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
               Access & approvals
             </h2>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               Keep the CSR environment compliant by reviewing login activity and
               recovery options.
             </p>
           </div>
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-gray-100 dark:divide-gray-800">
             {[
               {
                 title: "Last verified login",
@@ -326,12 +326,12 @@ export default function SettingsPage() {
                 className="flex items-center justify-between gap-4 px-6 py-5"
               >
                 <div className="flex items-start gap-3">
-                  <div className="rounded-full bg-emerald-50 p-2">{item.icon}</div>
+                  <div className="rounded-full bg-emerald-50 dark:bg-emerald-900/20 p-2">{item.icon}</div>
                   <div>
-                    <p className="text-base font-semibold text-gray-900">
+                    <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
                       {item.title}
                     </p>
-                    <p className="text-sm text-gray-500">{item.meta}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{item.meta}</p>
                   </div>
                 </div>
                 <button className="text-sm font-semibold text-emerald-600 hover:text-emerald-700">
@@ -395,7 +395,7 @@ export default function SettingsPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-gray-700">
+            <label className="text-sm font-semibold text-gray-700 dark:text-gray-200">
               Language
             </label>
             <select
@@ -403,7 +403,7 @@ export default function SettingsPage() {
               onChange={(e) =>
                 handleAppearanceChange("language", e.target.value)
               }
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
+              className="w-full rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 py-3 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
             >
               <option value="en">English (Philippines)</option>
               <option value="fil">Filipino</option>
@@ -412,7 +412,7 @@ export default function SettingsPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-gray-700">
+            <label className="text-sm font-semibold text-gray-700 dark:text-gray-200">
               Time zone
             </label>
             <select
@@ -420,7 +420,7 @@ export default function SettingsPage() {
               onChange={(e) =>
                 handleAppearanceChange("timezone", e.target.value)
               }
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
+              className="w-full rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 py-3 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
             >
               <option value="GMT+08">
                 GMT+08 — Manila, Hong Kong, Singapore
@@ -433,26 +433,26 @@ export default function SettingsPage() {
       </section>
 
       {/* Danger zone */}
-      <section className="rounded-2xl border border-red-100 bg-white shadow-sm">
-        <div className="flex flex-col gap-2 border-b border-red-100 px-6 py-5">
-          <div className="flex items-center gap-2 text-red-600">
+      <section className="rounded-2xl border border-red-100 dark:border-red-900/30 bg-white dark:bg-gray-900 shadow-sm">
+        <div className="flex flex-col gap-2 border-b border-red-100 dark:border-red-900/30 px-6 py-5">
+          <div className="flex items-center gap-2 text-red-600 dark:text-red-500">
             <AlertTriangle className="w-4 h-4" />
             <p className="text-xs font-semibold uppercase tracking-[0.3em]">
               Advanced controls
             </p>
           </div>
-          <h2 className="text-xl font-semibold text-gray-900">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
             Session management
           </h2>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             Log out idle devices or regenerate API keys if an integration was
             compromised.
           </p>
         </div>
 
         <div className="flex flex-col gap-4 px-6 py-6">
-          <div className="rounded-2xl border border-red-100 bg-red-50 p-4">
-            <div className="flex flex-col gap-1 text-sm text-red-900">
+          <div className="rounded-2xl border border-red-100 dark:border-red-900/30 bg-red-50 dark:bg-red-900/10 p-4">
+            <div className="flex flex-col gap-1 text-sm text-red-900 dark:text-red-400">
               <p className="font-semibold">Idle device timeout</p>
               <p>Sessions inactive for 45 minutes will be auto-signed out.</p>
             </div>
@@ -460,14 +460,14 @@ export default function SettingsPage() {
 
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <p className="text-base font-semibold text-gray-900">
+              <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
                 Force sign-out on all devices
               </p>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 Useful if an agent misplaced a laptop or phone.
               </p>
             </div>
-            <button className="rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50">
+            <button className="rounded-xl border border-red-200 dark:border-red-900/30 px-4 py-2 text-sm font-semibold text-red-600 dark:text-red-500 transition hover:bg-red-50 dark:hover:bg-red-900/10">
               Sign out sessions
             </button>
           </div>

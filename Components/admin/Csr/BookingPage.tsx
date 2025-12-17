@@ -137,8 +137,8 @@ export default function BookingsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Bookings Management</h1>
-          <p className="text-sm text-gray-500 mt-1">Manage all customer bookings and reservations</p>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Bookings Management</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage all customer bookings and reservations</p>
         </div>
         <button
           onClick={() => setIsNewBookingModalOpen(true)}
@@ -177,26 +177,26 @@ export default function BookingsPage() {
       </div>
 
       {/* Search and Filter Bar */}
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 p-4">
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
           <div className="flex flex-col sm:flex-row gap-4 flex-1 w-full">
             {/* Entries Per Page */}
             <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-600 whitespace-nowrap">Show</label>
+              <label className="text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">Show</label>
               <select
                 value={entriesPerPage}
                 onChange={(e) => {
                   setEntriesPerPage(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-sm"
               >
                 <option value="5">5</option>
                 <option value="10">10</option>
                 <option value="25">25</option>
                 <option value="50">50</option>
               </select>
-              <label className="text-sm text-gray-600 whitespace-nowrap">entries</label>
+              <label className="text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">entries</label>
             </div>
 
             {/* Search */}
@@ -207,18 +207,18 @@ export default function BookingsPage() {
                 placeholder="Search by booking ID, guest name, or haven..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary"
               />
             </div>
           </div>
 
           {/* Filter */}
           <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-gray-600" />
+            <Filter className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary"
             >
               <option value="all">All Status</option>
               <option value="Confirmed">Confirmed</option>
@@ -231,14 +231,14 @@ export default function BookingsPage() {
       </div>
 
       {/* Bookings Table - Desktop View */}
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden hidden lg:block">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900 overflow-hidden hidden lg:block">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border-b-2 border-gray-200 dark:border-gray-600">
               <tr>
                 <th
                   onClick={() => handleSort("id")}
-                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors group whitespace-nowrap"
+                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
                 >
                   <div className="flex items-center gap-2">
                     Booking ID
@@ -247,7 +247,7 @@ export default function BookingsPage() {
                 </th>
                 <th
                   onClick={() => handleSort("guestName")}
-                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors group whitespace-nowrap"
+                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
                 >
                   <div className="flex items-center gap-2">
                     Guest Details
@@ -256,7 +256,7 @@ export default function BookingsPage() {
                 </th>
                 <th
                   onClick={() => handleSort("haven")}
-                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors group whitespace-nowrap"
+                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
                 >
                   <div className="flex items-center gap-2">
                     Haven
@@ -265,7 +265,7 @@ export default function BookingsPage() {
                 </th>
                 <th
                   onClick={() => handleSort("checkIn")}
-                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors group whitespace-nowrap"
+                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
                 >
                   <div className="flex items-center gap-2">
                     Check-In
@@ -274,47 +274,47 @@ export default function BookingsPage() {
                 </th>
                 <th
                   onClick={() => handleSort("checkOut")}
-                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors group whitespace-nowrap"
+                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
                 >
                   <div className="flex items-center gap-2">
                     Check-Out
                     <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
                   </div>
                 </th>
-                <th className="text-center py-4 px-4 text-sm font-bold text-gray-700 whitespace-nowrap">Guests</th>
+                <th className="text-center py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 whitespace-nowrap">Guests</th>
                 <th
                   onClick={() => handleSort("status")}
-                  className="text-center py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors whitespace-nowrap"
+                  className="text-center py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors whitespace-nowrap"
                 >
                   <div className="flex items-center justify-center gap-2">
                     Status
                     <ArrowUpDown className="w-4 h-4 text-gray-400" />
                   </div>
                 </th>
-                <th className="text-right py-4 px-4 text-sm font-bold text-gray-700 whitespace-nowrap">Total</th>
-                <th className="text-center py-4 px-4 text-sm font-bold text-gray-700 whitespace-nowrap">Actions</th>
+                <th className="text-right py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 whitespace-nowrap">Total</th>
+                <th className="text-center py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody>
               {paginatedBookings.map((booking) => (
                 <tr
                   key={booking.id}
-                  className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                  className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
                   <td className="py-4 px-4">
-                    <span className="font-semibold text-gray-800 text-sm">{booking.id}</span>
+                    <span className="font-semibold text-gray-800 dark:text-gray-100 text-sm">{booking.id}</span>
                   </td>
                   <td className="py-4 px-4">
                     <div className="space-y-1 min-w-[200px]">
                       <div className="flex items-center gap-2">
                         <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                        <span className="font-semibold text-gray-800 text-sm">{booking.guestName}</span>
+                        <span className="font-semibold text-gray-800 dark:text-gray-100 text-sm">{booking.guestName}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                         <Mail className="w-3 h-3 flex-shrink-0" />
                         <span className="truncate">{booking.email}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                         <Phone className="w-3 h-3 flex-shrink-0" />
                         {booking.phone}
                       </div>
@@ -323,17 +323,17 @@ export default function BookingsPage() {
                   <td className="py-4 px-4">
                     <div className="flex items-center gap-2">
                       <MapPin className="w-4 h-4 text-orange-500 flex-shrink-0" />
-                      <span className="font-medium text-gray-700 text-sm whitespace-nowrap">{booking.haven}</span>
+                      <span className="font-medium text-gray-700 dark:text-gray-200 text-sm whitespace-nowrap">{booking.haven}</span>
                     </div>
                   </td>
                   <td className="py-4 px-4">
-                    <span className="text-sm text-gray-600 whitespace-nowrap">{booking.checkIn}</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">{booking.checkIn}</span>
                   </td>
                   <td className="py-4 px-4">
-                    <span className="text-sm text-gray-600 whitespace-nowrap">{booking.checkOut}</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">{booking.checkOut}</span>
                   </td>
                   <td className="py-4 px-4 text-center">
-                    <span className="text-sm font-semibold text-gray-700">{booking.guests}</span>
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">{booking.guests}</span>
                   </td>
                   <td className="py-4 px-4 text-center">
                     <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${booking.statusColor}`}>
@@ -341,7 +341,7 @@ export default function BookingsPage() {
                     </span>
                   </td>
                   <td className="py-4 px-4 text-right">
-                    <span className="font-bold text-gray-800 text-sm whitespace-nowrap">{booking.total}</span>
+                    <span className="font-bold text-gray-800 dark:text-gray-100 text-sm whitespace-nowrap">{booking.total}</span>
                   </td>
                   <td className="py-4 px-4">
                     <div className="flex items-center justify-center gap-1">
@@ -368,17 +368,17 @@ export default function BookingsPage() {
       </div>
 
       {/* Mobile/Tablet Card View */}
-      <div className="lg:hidden space-y-4 bg-white rounded-lg shadow-lg overflow-hidden">
+      <div className="lg:hidden space-y-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900 overflow-hidden">
         {paginatedBookings.map((booking) => (
           <div
             key={booking.id}
-            className="bg-white rounded-lg shadow-lg p-4 border border-gray-200 hover:shadow-xl transition-all"
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900 p-4 border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all"
           >
             {/* Header */}
-            <div className="flex items-start justify-between mb-3 pb-3 border-b border-gray-200">
+            <div className="flex items-start justify-between mb-3 pb-3 border-b border-gray-200 dark:border-gray-700">
               <div>
-                <p className="text-xs text-gray-500 mb-1">Booking ID</p>
-                <p className="font-bold text-gray-800">{booking.id}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Booking ID</p>
+                <p className="font-bold text-gray-800 dark:text-gray-100">{booking.id}</p>
               </div>
               <span className={`px-3 py-1 rounded-full text-xs font-bold ${booking.statusColor}`}>
                 {booking.status}
@@ -386,56 +386,56 @@ export default function BookingsPage() {
             </div>
 
             {/* Guest Info */}
-            <div className="mb-3 pb-3 border-b border-gray-200">
-              <p className="text-xs text-gray-500 mb-2">Guest Details</p>
+            <div className="mb-3 pb-3 border-b border-gray-200 dark:border-gray-700">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Guest Details</p>
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                  <span className="font-semibold text-gray-800 text-sm">{booking.guestName}</span>
+                  <span className="font-semibold text-gray-800 dark:text-gray-100 text-sm">{booking.guestName}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                  <span className="text-xs text-gray-600 break-all">{booking.email}</span>
+                  <span className="text-xs text-gray-600 dark:text-gray-300 break-all">{booking.email}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                  <span className="text-xs text-gray-600">{booking.phone}</span>
+                  <span className="text-xs text-gray-600 dark:text-gray-300">{booking.phone}</span>
                 </div>
               </div>
             </div>
 
             {/* Booking Details */}
-            <div className="grid grid-cols-2 gap-3 mb-3 pb-3 border-b border-gray-200">
+            <div className="grid grid-cols-2 gap-3 mb-3 pb-3 border-b border-gray-200 dark:border-gray-700">
               <div>
-                <p className="text-xs text-gray-500 mb-1">Haven</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Haven</p>
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-orange-500 flex-shrink-0" />
-                  <span className="font-medium text-gray-700 text-sm">{booking.haven}</span>
+                  <span className="font-medium text-gray-700 dark:text-gray-200 text-sm">{booking.haven}</span>
                 </div>
               </div>
               <div>
-                <p className="text-xs text-gray-500 mb-1">Guests</p>
-                <p className="font-semibold text-gray-800">{booking.guests}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Guests</p>
+                <p className="font-semibold text-gray-800 dark:text-gray-100">{booking.guests}</p>
               </div>
             </div>
 
             {/* Dates */}
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div>
-                <p className="text-xs text-gray-500 mb-1">Check-In</p>
-                <p className="text-sm font-medium text-gray-700">{booking.checkIn}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Check-In</p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-200">{booking.checkIn}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 mb-1">Check-Out</p>
-                <p className="text-sm font-medium text-gray-700">{booking.checkOut}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Check-Out</p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-200">{booking.checkOut}</p>
               </div>
             </div>
 
             {/* Total and Actions */}
-            <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+            <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
               <div>
-                <p className="text-xs text-gray-500 mb-1">Total Amount</p>
-                <p className="font-bold text-gray-800 text-lg">{booking.total}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Amount</p>
+                <p className="font-bold text-gray-800 dark:text-gray-100 text-lg">{booking.total}</p>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -458,10 +458,10 @@ export default function BookingsPage() {
       </div>
 
       {/* Pagination */}
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-        <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-t border-gray-200">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900 overflow-hidden">
+        <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 px-6 py-4 border-t border-gray-200 dark:border-gray-600">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-300">
               Showing {startIndex + 1} to {Math.min(endIndex, sortedBookings.length)} of {sortedBookings.length} entries
               {searchTerm || filterStatus !== "all" ? ` (filtered from ${bookings.length} total entries)` : ""}
             </p>
@@ -470,7 +470,7 @@ export default function BookingsPage() {
               <button
                 onClick={() => setCurrentPage(1)}
                 disabled={currentPage === 1}
-                className="p-2 border border-gray-300 rounded-lg hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="First Page"
               >
                 <ChevronsLeft className="w-4 h-4" />
@@ -480,7 +480,7 @@ export default function BookingsPage() {
               <button
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-white transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -504,8 +504,8 @@ export default function BookingsPage() {
                     onClick={() => setCurrentPage(pageNum)}
                     className={`px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
                       currentPage === pageNum
-                        ? "bg-orange-500 text-white shadow-md"
-                        : "border border-gray-300 hover:bg-white"
+                        ? "bg-gradient-to-r from-brand-primary to-brand-primaryDark text-white shadow-md"
+                        : "border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-600"
                     }`}
                   >
                     {pageNum}
@@ -517,7 +517,7 @@ export default function BookingsPage() {
               <button
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
-                className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-white transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -526,7 +526,7 @@ export default function BookingsPage() {
               <button
                 onClick={() => setCurrentPage(totalPages)}
                 disabled={currentPage === totalPages}
-                className="p-2 border border-gray-300 rounded-lg hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Last Page"
               >
                 <ChevronsRight className="w-4 h-4" />

@@ -202,7 +202,7 @@ export default function DeliverablesPage() {
     <div className="space-y-6 animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Deliverables Management</h1>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Deliverables Management</h1>
           <p className="text-sm text-gray-500 mt-1">Prepare and track guest deliverables per booking</p>
         </div>
       </div>
@@ -232,7 +232,7 @@ export default function DeliverablesPage() {
         })}
       </div>
 
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
           <div className="flex flex-col sm:flex-row gap-4 flex-1 w-full">
             <div className="flex items-center gap-2">
@@ -243,7 +243,7 @@ export default function DeliverablesPage() {
                   setEntriesPerPage(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-orange-500 text-sm"
               >
                 <option value="5">5</option>
                 <option value="10">10</option>
@@ -260,20 +260,20 @@ export default function DeliverablesPage() {
                 placeholder="Search by deliverables ID or guest name..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-orange-500"
               />
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-gray-600" />
+            <Filter className="w-5 h-5 text-gray-600 dark:text-gray-300" />
             <select
               value={filterStatus}
               onChange={(e) => {
                 setFilterStatus(e.target.value as any);
                 setCurrentPage(1);
               }}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-orange-500"
             >
               <option value="all">All Status</option>
               <option value="Pending">Pending</option>
@@ -285,60 +285,60 @@ export default function DeliverablesPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1250px]">
-            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200 dark:border-gray-600">
               <tr>
                 <th
                   onClick={() => handleSort("deliverables_id")}
-                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors group whitespace-nowrap"
+                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
                 >
                   <div className="flex items-center gap-2">
                     Deliverables ID
-                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:text-gray-300" />
                   </div>
                 </th>
                 <th
                   onClick={() => handleSort("guest")}
-                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors group whitespace-nowrap"
+                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
                 >
                   <div className="flex items-center gap-2">
                     Guest
-                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:text-gray-300" />
                   </div>
                 </th>
                 <th
                   onClick={() => handleSort("haven")}
-                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors group whitespace-nowrap"
+                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
                 >
                   <div className="flex items-center gap-2">
                     Haven
-                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:text-gray-300" />
                   </div>
                 </th>
                 <th
                   onClick={() => handleSort("checkin")}
-                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors group whitespace-nowrap"
+                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
                 >
                   <div className="flex items-center gap-2">
                     Check-In
-                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:text-gray-300" />
                   </div>
                 </th>
                 <th
                   onClick={() => handleSort("checkout")}
-                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors group whitespace-nowrap"
+                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
                 >
                   <div className="flex items-center gap-2">
                     Check-Out
-                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:text-gray-300" />
                   </div>
                 </th>
                 <th className="text-left py-4 px-4 text-sm font-bold text-gray-700 whitespace-nowrap">Deliverables</th>
                 <th
                   onClick={() => handleSort("status")}
-                  className="text-center py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors whitespace-nowrap"
+                  className="text-center py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors whitespace-nowrap"
                 >
                   <div className="flex items-center justify-center gap-2">
                     Status
@@ -350,7 +350,7 @@ export default function DeliverablesPage() {
             </thead>
             <tbody>
               {paginatedRows.map((row) => (
-                <tr key={row.deliverables_id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                <tr key={row.deliverables_id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                   <td className="py-4 px-4">
                     <span className="font-semibold text-gray-800 text-sm">{row.deliverables_id}</span>
                   </td>
@@ -389,7 +389,7 @@ export default function DeliverablesPage() {
                             .map((r) => (
                               <div key={r.item} className="grid grid-cols-12 gap-2 items-center">
                                 <div className="col-span-5">
-                                  <span className="text-sm font-medium text-gray-800">{r.item}</span>
+                                  <span className="text-sm font-medium text-gray-800 dark:text-gray-100">{r.item}</span>
                                 </div>
                                 <div className="col-span-3 flex justify-center">
                                   <input
@@ -397,7 +397,7 @@ export default function DeliverablesPage() {
                                     min={0}
                                     value={r.qty}
                                     onChange={(e) => updateRequestedQty(row.deliverables_id, r.item, Number(e.target.value))}
-                                    className="w-20 px-2 py-1 border border-gray-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                                    className="w-20 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-center focus:ring-2 focus:ring-brand-primary focus:border-orange-500"
                                   />
                                 </div>
                                 <div className="col-span-2 text-right">
@@ -466,10 +466,10 @@ export default function DeliverablesPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-        <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-t border-gray-200">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900 overflow-hidden">
+        <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-t border-gray-200 dark:border-gray-600">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-300">
               Showing {sortedRows.length === 0 ? 0 : startIndex + 1} to {Math.min(endIndex, sortedRows.length)} of {sortedRows.length} entries
               {searchTerm || filterStatus !== "all" ? ` (filtered from ${rows.length} total entries)` : ""}
             </p>
@@ -477,7 +477,7 @@ export default function DeliverablesPage() {
               <button
                 onClick={() => setCurrentPage(1)}
                 disabled={currentPage === 1 || totalPages === 0}
-                className="p-2 border border-gray-300 rounded-lg hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="First Page"
                 type="button"
               >
@@ -487,7 +487,7 @@ export default function DeliverablesPage() {
               <button
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1 || totalPages === 0}
-                className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-white transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-white transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 type="button"
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -525,7 +525,7 @@ export default function DeliverablesPage() {
               <button
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages || totalPages === 0}
-                className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-white transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-white transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 type="button"
               >
                 <ChevronRight className="w-4 h-4" />
@@ -534,7 +534,7 @@ export default function DeliverablesPage() {
               <button
                 onClick={() => setCurrentPage(totalPages)}
                 disabled={currentPage === totalPages || totalPages === 0}
-                className="p-2 border border-gray-300 rounded-lg hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Last Page"
                 type="button"
               >

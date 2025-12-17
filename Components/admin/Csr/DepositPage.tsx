@@ -163,7 +163,7 @@ export default function DepositPage() {
     <div className="space-y-6 animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Deposits Management</h1>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Deposits Management</h1>
           <p className="text-sm text-gray-500 mt-1">Track deposits and manage refunds after checkout</p>
         </div>
       </div>
@@ -193,7 +193,7 @@ export default function DepositPage() {
         })}
       </div>
 
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
           <div className="flex flex-col sm:flex-row gap-4 flex-1 w-full">
             <div className="flex items-center gap-2">
@@ -204,7 +204,7 @@ export default function DepositPage() {
                   setEntriesPerPage(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-orange-500 text-sm"
               >
                 <option value="5">5</option>
                 <option value="10">10</option>
@@ -221,20 +221,20 @@ export default function DepositPage() {
                 placeholder="Search by deposit ID, booking ID, guest, or haven..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-orange-500"
               />
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-gray-600" />
+            <Filter className="w-5 h-5 text-gray-600 dark:text-gray-300" />
             <select
               value={filterStatus}
               onChange={(e) => {
                 setFilterStatus(e.target.value as any);
                 setCurrentPage(1);
               }}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-orange-500"
             >
               <option value="all">All Status</option>
               <option value="Pending">Pending</option>
@@ -246,59 +246,59 @@ export default function DepositPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1200px]">
-            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200 dark:border-gray-600">
               <tr>
                 <th
                   onClick={() => handleSort("deposit_id")}
-                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors group whitespace-nowrap"
+                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
                 >
                   <div className="flex items-center gap-2">
                     Deposit ID
-                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:text-gray-300" />
                   </div>
                 </th>
                 <th
                   onClick={() => handleSort("booking_id")}
-                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors group whitespace-nowrap"
+                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
                 >
                   <div className="flex items-center gap-2">
                     Booking ID
-                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:text-gray-300" />
                   </div>
                 </th>
                 <th
                   onClick={() => handleSort("guest")}
-                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors group whitespace-nowrap"
+                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
                 >
                   <div className="flex items-center gap-2">
                     Guest
-                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:text-gray-300" />
                   </div>
                 </th>
                 <th
                   onClick={() => handleSort("haven")}
-                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors group whitespace-nowrap"
+                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
                 >
                   <div className="flex items-center gap-2">
                     Haven
-                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:text-gray-300" />
                   </div>
                 </th>
                 <th
                   onClick={() => handleSort("deposit_amount")}
-                  className="text-right py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors group whitespace-nowrap"
+                  className="text-right py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
                 >
                   <div className="flex items-center justify-end gap-2">
                     Deposit Amount
-                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:text-gray-300" />
                   </div>
                 </th>
                 <th
                   onClick={() => handleSort("status")}
-                  className="text-center py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors whitespace-nowrap"
+                  className="text-center py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors whitespace-nowrap"
                 >
                   <div className="flex items-center justify-center gap-2">
                     Status
@@ -307,11 +307,11 @@ export default function DepositPage() {
                 </th>
                 <th
                   onClick={() => handleSort("checkout_date")}
-                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors group whitespace-nowrap"
+                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
                 >
                   <div className="flex items-center gap-2">
                     Checkout Date
-                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:text-gray-300" />
                   </div>
                 </th>
                 <th className="text-center py-4 px-4 text-sm font-bold text-gray-700 whitespace-nowrap">Actions</th>
@@ -319,7 +319,7 @@ export default function DepositPage() {
             </thead>
             <tbody>
               {paginatedRows.map((row) => (
-                <tr key={row.deposit_id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                <tr key={row.deposit_id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                   <td className="py-4 px-4">
                     <span className="font-semibold text-gray-800 text-sm">{row.deposit_id}</span>
                   </td>
@@ -391,10 +391,10 @@ export default function DepositPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-        <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-t border-gray-200">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900 overflow-hidden">
+        <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-t border-gray-200 dark:border-gray-600">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-300">
               Showing {sortedRows.length === 0 ? 0 : startIndex + 1} to {Math.min(endIndex, sortedRows.length)} of {sortedRows.length} entries
               {searchTerm || filterStatus !== "all" ? ` (filtered from ${rows.length} total entries)` : ""}
             </p>
@@ -402,7 +402,7 @@ export default function DepositPage() {
               <button
                 onClick={() => setCurrentPage(1)}
                 disabled={currentPage === 1 || totalPages === 0}
-                className="p-2 border border-gray-300 rounded-lg hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="First Page"
                 type="button"
               >
@@ -412,7 +412,7 @@ export default function DepositPage() {
               <button
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1 || totalPages === 0}
-                className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-white transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-white transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 type="button"
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -450,7 +450,7 @@ export default function DepositPage() {
               <button
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages || totalPages === 0}
-                className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-white transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-white transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 type="button"
               >
                 <ChevronRight className="w-4 h-4" />
@@ -459,7 +459,7 @@ export default function DepositPage() {
               <button
                 onClick={() => setCurrentPage(totalPages)}
                 disabled={currentPage === totalPages || totalPages === 0}
-                className="p-2 border border-gray-300 rounded-lg hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Last Page"
                 type="button"
               >
@@ -471,19 +471,19 @@ export default function DepositPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <h4 className="text-lg font-bold text-gray-800 mb-4">Summary</h4>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-              <span className="text-sm font-medium text-gray-700">Pending</span>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Pending</span>
               <span className="text-xl font-bold text-yellow-600">{pendingCount}</span>
             </div>
             <div className="flex items-center justify-between p-3 bg-indigo-50 rounded-lg">
-              <span className="text-sm font-medium text-gray-700">Processing</span>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Processing</span>
               <span className="text-xl font-bold text-indigo-600">{processingCount}</span>
             </div>
             <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-              <span className="text-sm font-medium text-gray-700">Returned</span>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Returned</span>
               <span className="text-xl font-bold text-green-600">{returnedCount}</span>
             </div>
           </div>

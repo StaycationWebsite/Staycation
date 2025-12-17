@@ -157,7 +157,7 @@ export default function PaymentPage() {
     <div className="space-y-6 animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Payments Management</h1>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Payments Management</h1>
           <p className="text-sm text-gray-500 mt-1">Review and manage payment submissions</p>
         </div>
       </div>
@@ -187,7 +187,7 @@ export default function PaymentPage() {
         })}
       </div>
 
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
           <div className="flex flex-col sm:flex-row gap-4 flex-1 w-full">
             <div className="flex items-center gap-2">
@@ -198,7 +198,7 @@ export default function PaymentPage() {
                   setEntriesPerPage(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-orange-500 text-sm"
               >
                 <option value="5">5</option>
                 <option value="10">10</option>
@@ -215,20 +215,20 @@ export default function PaymentPage() {
                 placeholder="Search by booking ID or guest name..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-orange-500"
               />
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-gray-600" />
+            <Filter className="w-5 h-5 text-gray-600 dark:text-gray-300" />
             <select
               value={filterStatus}
               onChange={(e) => {
                 setFilterStatus(e.target.value as any);
                 setCurrentPage(1);
               }}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-orange-500"
             >
               <option value="all">All Status</option>
               <option value="Paid">Paid</option>
@@ -239,42 +239,42 @@ export default function PaymentPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden hidden lg:block">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900 overflow-hidden hidden lg:block">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200 dark:border-gray-600">
               <tr>
                 <th
                   onClick={() => handleSort("booking_id")}
-                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors group whitespace-nowrap"
+                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
                 >
                   <div className="flex items-center gap-2">
                     Booking ID
-                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:text-gray-300" />
                   </div>
                 </th>
                 <th
                   onClick={() => handleSort("guest")}
-                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors group whitespace-nowrap"
+                  className="text-left py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
                 >
                   <div className="flex items-center gap-2">
                     Guest
-                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:text-gray-300" />
                   </div>
                 </th>
                 <th
                   onClick={() => handleSort("amount")}
-                  className="text-right py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors group whitespace-nowrap"
+                  className="text-right py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
                 >
                   <div className="flex items-center justify-end gap-2">
                     Amount
-                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:text-gray-300" />
                   </div>
                 </th>
                 <th className="text-center py-4 px-4 text-sm font-bold text-gray-700 whitespace-nowrap">Payment Proof</th>
                 <th
                   onClick={() => handleSort("status")}
-                  className="text-center py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors whitespace-nowrap"
+                  className="text-center py-4 px-4 text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors whitespace-nowrap"
                 >
                   <div className="flex items-center justify-center gap-2">
                     Status
@@ -288,7 +288,7 @@ export default function PaymentPage() {
               {paginatedPayments.map((payment) => (
                 <tr
                   key={payment.booking_id}
-                  className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                  className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
                   <td className="py-4 px-4">
                     <span className="font-semibold text-gray-800 text-sm">{payment.booking_id}</span>
@@ -356,23 +356,23 @@ export default function PaymentPage() {
         </div>
       </div>
 
-      <div className="lg:hidden space-y-4 bg-white rounded-lg shadow-lg overflow-hidden">
+      <div className="lg:hidden space-y-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900 overflow-hidden">
         {paginatedPayments.map((payment) => (
           <div
             key={payment.booking_id}
-            className="bg-white rounded-lg shadow-lg p-4 border border-gray-200 hover:shadow-xl transition-all"
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 border border-gray-200 hover:shadow-xl transition-all"
           >
-            <div className="flex items-start justify-between mb-3 pb-3 border-b border-gray-200">
+            <div className="flex items-start justify-between mb-3 pb-3 border-b border-gray-200 dark:border-gray-600">
               <div>
                 <p className="text-xs text-gray-500 mb-1">Booking ID</p>
-                <p className="font-bold text-gray-800">{payment.booking_id}</p>
+                <p className="font-bold text-gray-800 dark:text-gray-100">{payment.booking_id}</p>
               </div>
               <span className={`px-3 py-1 rounded-full text-xs font-bold ${payment.statusColor}`}>
                 {payment.status}
               </span>
             </div>
 
-            <div className="mb-3 pb-3 border-b border-gray-200">
+            <div className="mb-3 pb-3 border-b border-gray-200 dark:border-gray-600">
               <p className="text-xs text-gray-500 mb-2">Guest</p>
               <div className="flex items-center gap-2">
                 <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
@@ -380,10 +380,10 @@ export default function PaymentPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 mb-3 pb-3 border-b border-gray-200">
+            <div className="grid grid-cols-2 gap-3 mb-3 pb-3 border-b border-gray-200 dark:border-gray-600">
               <div>
                 <p className="text-xs text-gray-500 mb-1">Amount</p>
-                <p className="font-bold text-gray-800">{payment.amount}</p>
+                <p className="font-bold text-gray-800 dark:text-gray-100">{payment.amount}</p>
               </div>
               <div>
                 <p className="text-xs text-gray-500 mb-1">Payment Proof</p>
@@ -403,7 +403,7 @@ export default function PaymentPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-200">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-200 dark:border-gray-600">
               <button
                 className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                 title="View"
@@ -430,10 +430,10 @@ export default function PaymentPage() {
         ))}
       </div>
 
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-        <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-t border-gray-200">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900 overflow-hidden">
+        <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-t border-gray-200 dark:border-gray-600">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-300">
               Showing {sortedPayments.length === 0 ? 0 : startIndex + 1} to {Math.min(endIndex, sortedPayments.length)} of {sortedPayments.length} entries
               {searchTerm || filterStatus !== "all" ? ` (filtered from ${payments.length} total entries)` : ""}
             </p>
@@ -441,7 +441,7 @@ export default function PaymentPage() {
               <button
                 onClick={() => setCurrentPage(1)}
                 disabled={currentPage === 1 || totalPages === 0}
-                className="p-2 border border-gray-300 rounded-lg hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="First Page"
                 type="button"
               >
@@ -451,7 +451,7 @@ export default function PaymentPage() {
               <button
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1 || totalPages === 0}
-                className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-white transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-white transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 type="button"
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -489,7 +489,7 @@ export default function PaymentPage() {
               <button
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages || totalPages === 0}
-                className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-white transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-white transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 type="button"
               >
                 <ChevronRight className="w-4 h-4" />
@@ -498,7 +498,7 @@ export default function PaymentPage() {
               <button
                 onClick={() => setCurrentPage(totalPages)}
                 disabled={currentPage === totalPages || totalPages === 0}
-                className="p-2 border border-gray-300 rounded-lg hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Last Page"
                 type="button"
               >
