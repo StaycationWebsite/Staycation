@@ -22,6 +22,7 @@ export default function AddItem({ onClose, onAdd }: AddItemProps) {
   const [isMounted, setIsMounted] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: "",
     stock: 0,
@@ -39,21 +40,37 @@ export default function AddItem({ onClose, onAdd }: AddItemProps) {
   }, [form.name, form.price, form.stock]);
 
   const handleSubmit = async (e: React.FormEvent) => {
+    console.log("[AddItem] submit triggered", {
+      isValid,
+      isSaving,
+      form,
+    });
     e.preventDefault();
-    if (!isValid || isSaving) return;
+    if (!isValid || isSaving) {
+      console.log("[AddItem] blocked submit", { isValid, isSaving });
+      return;
+    }
     setError(null);
+    setSuccess(null);
     setIsSaving(true);
     try {
+      console.log("[AddItem] calling onAdd...");
       await onAdd?.({
         name: form.name.trim(),
         stock: Math.max(0, Math.floor(form.stock)),
         price: Math.max(0, Number(form.price)),
         status: form.status,
       });
-      onClose();
+      console.log("[AddItem] onAdd resolved");
+      setSuccess("Item added successfully.");
+      window.setTimeout(() => {
+        onClose();
+      }, 800);
     } catch (err: any) {
+      console.log("[AddItem] onAdd failed", err);
       setError(err?.message || "Failed to add item");
     } finally {
+      console.log("[AddItem] submit finished");
       setIsSaving(false);
     }
   };
@@ -62,7 +79,13 @@ export default function AddItem({ onClose, onAdd }: AddItemProps) {
 
   return createPortal(
     <>
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998]" onClick={onClose} />
+      <div
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998]"
+        onClick={() => {
+          if (isSaving) return;
+          onClose();
+        }}
+      />
       <div className="fixed inset-0 flex items-center justify-center px-4 py-8 z-[9999]">
         <div
           className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden"
@@ -90,7 +113,12 @@ export default function AddItem({ onClose, onAdd }: AddItemProps) {
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-8 py-6 space-y-6">
+          <form id="add-item-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-8 py-6 space-y-6">
+            {success && (
+              <div className="bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 text-sm">
+                {success}
+              </div>
+            )}
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
                 {error}
@@ -160,10 +188,19 @@ export default function AddItem({ onClose, onAdd }: AddItemProps) {
             </button>
             <button
               type="submit"
+              form="add-item-form"
               disabled={!isValid || isSaving}
               className="px-6 py-2 bg-gradient-to-r from-brand-primary to-brand-primaryDark text-white rounded-lg hover:shadow-lg hover:scale-[1.02] transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => {
+                console.log("[AddItem] Add Item button clicked", { isValid, isSaving, form });
+              }}
             >
-              {isSaving ? "Saving..." : "Add Item"}
+              <span className="inline-flex items-center gap-2">
+                {isSaving && (
+                  <span className="inline-block w-4 h-4 rounded-full border-2 border-white/60 border-t-white animate-spin" />
+                )}
+                {isSaving ? "Saving..." : "Add Item"}
+              </span>
             </button>
           </div>
         </div>
