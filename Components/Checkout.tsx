@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { DatePicker } from "@nextui-org/date-picker";
 import { TimeInput } from "@nextui-org/date-input";
-import { parseDate, parseTime } from "@internationalized/date";
+import { parseDate, parseTime, today, getLocalTimeZone } from "@internationalized/date";
 import type { DateValue } from "@react-types/calendar";
 import type { TimeValue } from "@react-types/datepicker";
 import axios from "axios";
@@ -80,6 +80,7 @@ const Checkout = () => {
     adults: 1,
     children: 0,
     infants: 0,
+    stayType: "",
     checkInTime: "",
     checkOutTime: "",
     paymentProof: null as File | null,
@@ -206,6 +207,52 @@ const Checkout = () => {
     setAdditionalGuests(updatedGuests);
   };
 
+  const handleStayTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedStayType = e.target.value;
+
+    // Set default times based on stay type
+    let defaultCheckInTime = "";
+    let defaultCheckOutTime = "";
+
+    if (selectedStayType === "10 Hours - ₱1,599") {
+      defaultCheckInTime = "14:00"; // 2:00 PM
+      defaultCheckOutTime = "00:00"; // 12:00 AM (midnight)
+    } else if (selectedStayType.includes("21 Hours")) {
+      defaultCheckInTime = "14:00"; // 2:00 PM
+      defaultCheckOutTime = "11:00"; // 11:00 AM
+    } else if (selectedStayType === "Multi-Day Stay") {
+      defaultCheckInTime = "14:00"; // 2:00 PM
+      defaultCheckOutTime = "11:00"; // 11:00 AM
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      stayType: selectedStayType,
+      checkInTime: defaultCheckInTime,
+      checkOutTime: defaultCheckOutTime,
+    }));
+
+    // Auto-calculate check-out date if check-in date is already selected
+    if (bookingData.checkInDate && selectedStayType) {
+      const checkInDate = new Date(bookingData.checkInDate);
+      let checkOutDate = new Date(checkInDate);
+
+      if (selectedStayType === "10 Hours - ₱1,599") {
+        // 10 hours: check-in 2:00 PM, check-out 12:00 AM next day
+        checkOutDate.setDate(checkOutDate.getDate() + 1);
+      } else if (selectedStayType.includes("21 Hours")) {
+        // 21 hours: check-in 2:00 PM, check-out 11:00 AM next day
+        checkOutDate.setDate(checkOutDate.getDate() + 1);
+      } else if (selectedStayType === "Multi-Day Stay") {
+        // Multi-day: add 1 day by default
+        checkOutDate.setDate(checkOutDate.getDate() + 1);
+      }
+
+      const checkOutStr = `${checkOutDate.getFullYear()}-${String(checkOutDate.getMonth() + 1).padStart(2, '0')}-${String(checkOutDate.getDate()).padStart(2, '0')}`;
+      dispatch(setCheckOutDate(checkOutStr));
+    }
+  };
+
   const handleAddOnChange = (item: keyof AddOns, increment: boolean) => {
     setAddOns((prev) => ({
       ...prev,
@@ -260,6 +307,9 @@ const Checkout = () => {
       if (formData.adults + formData.children > 4) {
         newErrors.guestCount = "Maximum 4 guests allowed (adults + children)";
       }
+
+      // Validate stay type
+      if (!formData.stayType) newErrors.stayType = "Please select a stay type";
 
       // Validate check-in/out times
       if (!formData.checkInTime) newErrors.checkInTime = "Check-in time is required";
@@ -372,6 +422,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       valid_id: validIdBase64,
       additional_guests: additionalGuestsData,
       room_name: bookingData.selectedRoom?.name || bookingData.location?.name || 'Standard Room',
+      stay_type: formData.stayType,
       check_in_date: bookingData.checkInDate,
       check_out_date: bookingData.checkOutDate,
       check_in_time: formData.checkInTime,
@@ -999,14 +1050,22 @@ const handleSubmit = async (e: React.FormEvent) => {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Stay Type
+                        Stay Type *
                       </label>
-                      <div className="px-4 py-2 bg-gray-100 rounded-lg flex items-center gap-2">
-                        <Clock className="w-5 h-5 text-orange-500" />
-                        <span className="font-medium">
-                          {bookingData.selectedRoom?.pricePerNight || bookingData.stayType?.duration || "Not selected"}
-                        </span>
-                      </div>
+                      <select
+                        name="stayType"
+                        value={formData.stayType}
+                        onChange={handleStayTypeChange}
+                        required
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white"
+                      >
+                        <option value="">Select stay type</option>
+                        <option value="10 Hours - ₱1,599">10 Hours - ₱1,599</option>
+                        <option value="21 Hours - ₱1,799 (weekday) / ₱1,999 (Fri-Sat)">
+                          21 Hours - ₱1,799 (weekday) / ₱1,999 (Fri-Sat)
+                        </option>
+                        <option value="Multi-Day Stay">Multi-Day Stay</option>
+                      </select>
                     </div>
 
                     <div>
@@ -1017,8 +1076,29 @@ const handleSubmit = async (e: React.FormEvent) => {
                           if (date) {
                             const dateStr = `${date.year}-${String(date.month).padStart(2, '0')}-${String(date.day).padStart(2, '0')}`;
                             dispatch(setCheckInDate(dateStr));
+
+                            // Auto-calculate check-out date based on stay type
+                            if (formData.stayType) {
+                              let checkOutDate = new Date(date.year, date.month - 1, date.day);
+
+                              if (formData.stayType === "10 Hours - ₱1,599") {
+                                // 10 hours: same day if check-in is before 2 PM, next day otherwise
+                                // Since check-in is 2:00 PM and check-out is 12:00 AM (midnight), it's the next day
+                                checkOutDate.setDate(checkOutDate.getDate() + 1);
+                              } else if (formData.stayType.includes("21 Hours")) {
+                                // 21 hours: check-in 2:00 PM, check-out 11:00 AM next day
+                                checkOutDate.setDate(checkOutDate.getDate() + 1);
+                              } else if (formData.stayType === "Multi-Day Stay") {
+                                // Multi-day: add 1 day by default (user can change)
+                                checkOutDate.setDate(checkOutDate.getDate() + 1);
+                              }
+
+                              const checkOutStr = `${checkOutDate.getFullYear()}-${String(checkOutDate.getMonth() + 1).padStart(2, '0')}-${String(checkOutDate.getDate()).padStart(2, '0')}`;
+                              dispatch(setCheckOutDate(checkOutStr));
+                            }
                           }
                         }}
+                        minValue={today(getLocalTimeZone())}
                         isRequired
                         classNames={{
                           base: "w-full",
@@ -1037,6 +1117,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                             dispatch(setCheckOutDate(dateStr));
                           }
                         }}
+                        minValue={bookingData.checkInDate ? parseDate(bookingData.checkInDate) as any : today(getLocalTimeZone())}
                         isRequired
                         classNames={{
                           base: "w-full",
@@ -1046,24 +1127,56 @@ const handleSubmit = async (e: React.FormEvent) => {
                     </div>
 
                     <div ref={(el) => { errorRefs.current.checkInTime = el; }}>
-                      <TimeInput
-                        label="Check-in Time *"
-                        value={formData.checkInTime ? parseTime(formData.checkInTime) as any : undefined}
-                        onChange={(time: any) => {
-                          if (time) {
-                            const timeStr = `${String(time.hour).padStart(2, '0')}:${String(time.minute).padStart(2, '0')}`;
-                            setFormData({
-                              ...formData,
-                              checkInTime: timeStr,
-                            });
-                            setErrors(prev => ({...prev, checkInTime: ''}));
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Check-in Time *
+                      </label>
+                      <input
+                        type="time"
+                        value={formData.checkInTime}
+                        onChange={(e) => {
+                          const checkInTime = e.target.value;
+
+                          // Calculate check-out time based on stay type
+                          let checkOutTime = "";
+
+                          if (formData.stayType && checkInTime) {
+                            const [hours, minutes] = checkInTime.split(':').map(Number);
+
+                            if (formData.stayType === "10 Hours - ₱1,599") {
+                              // Add 10 hours
+                              let newHours = hours + 10;
+                              let newMinutes = minutes;
+
+                              if (newHours >= 24) {
+                                newHours -= 24;
+                              }
+
+                              checkOutTime = `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}`;
+                            } else if (formData.stayType.includes("21 Hours")) {
+                              // Add 21 hours
+                              let newHours = hours + 21;
+                              let newMinutes = minutes;
+
+                              if (newHours >= 24) {
+                                newHours -= 24;
+                              }
+
+                              checkOutTime = `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}`;
+                            } else if (formData.stayType === "Multi-Day Stay") {
+                              // For multi-day, use default 11:00 AM check-out
+                              checkOutTime = "11:00";
+                            }
                           }
+
+                          setFormData({
+                            ...formData,
+                            checkInTime: checkInTime,
+                            checkOutTime: checkOutTime || formData.checkOutTime,
+                          });
+                          setErrors(prev => ({...prev, checkInTime: ''}));
                         }}
-                        isRequired
-                        classNames={{
-                          base: "w-full",
-                          label: "text-sm font-medium text-gray-700",
-                        }}
+                        required
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                       />
                       {errors.checkInTime && (
                         <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
@@ -1074,24 +1187,21 @@ const handleSubmit = async (e: React.FormEvent) => {
                     </div>
 
                     <div ref={(el) => { errorRefs.current.checkOutTime = el; }}>
-                      <TimeInput
-                        label="Check-out Time *"
-                        value={formData.checkOutTime ? parseTime(formData.checkOutTime) as any : undefined}
-                        onChange={(time: any) => {
-                          if (time) {
-                            const timeStr = `${String(time.hour).padStart(2, '0')}:${String(time.minute).padStart(2, '0')}`;
-                            setFormData({
-                              ...formData,
-                              checkOutTime: timeStr,
-                            });
-                            setErrors(prev => ({...prev, checkOutTime: ''}));
-                          }
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Check-out Time *
+                      </label>
+                      <input
+                        type="time"
+                        value={formData.checkOutTime}
+                        onChange={(e) => {
+                          setFormData({
+                            ...formData,
+                            checkOutTime: e.target.value,
+                          });
+                          setErrors(prev => ({...prev, checkOutTime: ''}));
                         }}
-                        isRequired
-                        classNames={{
-                          base: "w-full",
-                          label: "text-sm font-medium text-gray-700",
-                        }}
+                        required
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                       />
                       {errors.checkOutTime && (
                         <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
