@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAppSelector, useAppDispatch } from "@/redux/hooks";
 import { setCheckInDate, setCheckOutDate } from "@/redux/slices/bookingSlice";
 import { useRouter } from "next/navigation";
@@ -55,22 +55,37 @@ const Checkout = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1); // 1 = Guest Info, 2 = Confirmation & Payment
 
+  interface GuestInfo {
+    firstName: string;
+    lastName: string;
+    age: string;
+    gender: string;
+    validId: File | null;
+    validIdPreview: string;
+  }
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
+    age: "",
+    gender: "",
     email: "",
     phone: "",
+    facebookLink: "",
+    validId: null as File | null,
+    validIdPreview: "",
     adults: 1,
     children: 0,
     infants: 0,
     checkInTime: "",
     checkOutTime: "",
-    facebookLink: "",
     paymentProof: null as File | null,
     paymentProofPreview: "",
     termsAccepted: false,
     paymentMethod: "gcash",
   });
+
+  const [additionalGuests, setAdditionalGuests] = useState<GuestInfo[]>([]);
 
   const [addOns, setAddOns] = useState<AddOns>({
     poolPass: 0,
@@ -82,6 +97,28 @@ const Checkout = () => {
   });
 
   const totalGuests = formData.adults + formData.children + formData.infants;
+
+  // Update additional guests array when adults/children count changes
+  useEffect(() => {
+    const totalAdditionalGuests = formData.adults + formData.children - 1; // -1 for main guest
+    const currentLength = additionalGuests.length;
+
+    if (totalAdditionalGuests > currentLength) {
+      // Add new guests
+      const newGuests = Array(totalAdditionalGuests - currentLength).fill(null).map(() => ({
+        firstName: "",
+        lastName: "",
+        age: "",
+        gender: "",
+        validId: null,
+        validIdPreview: "",
+      }));
+      setAdditionalGuests([...additionalGuests, ...newGuests]);
+    } else if (totalAdditionalGuests < currentLength) {
+      // Remove excess guests
+      setAdditionalGuests(additionalGuests.slice(0, totalAdditionalGuests));
+    }
+  }, [formData.adults, formData.children]);
 
   // Calculate room rate from selected room or booking data
   const roomRate = bookingData.selectedRoom?.price
@@ -105,6 +142,21 @@ const Checkout = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value, type } = e.target;
+
+    // Handle guest count validation (adults + children only, infants not counted)
+    if (name === "adults" || name === "children") {
+      const newValue = parseInt(value) || 0;
+      const currentAdults = name === "adults" ? newValue : formData.adults;
+      const currentChildren = name === "children" ? newValue : formData.children;
+      const newTotal = currentAdults + currentChildren;
+
+      // Prevent exceeding max 4 guests (excluding infants)
+      if (newTotal > 4) {
+        toast.error("Maximum 4 guests allowed (adults + children). Infants are not counted.");
+        return;
+      }
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]:
@@ -116,15 +168,39 @@ const Checkout = () => {
     }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'payment' | 'id', guestIndex?: number) => {
     const file = e.target.files?.[0];
     if (file) {
-      setFormData((prev) => ({
-        ...prev,
-        paymentProof: file,
-        paymentProofPreview: URL.createObjectURL(file),
-      }));
+      if (type === 'payment') {
+        setFormData((prev) => ({
+          ...prev,
+          paymentProof: file,
+          paymentProofPreview: URL.createObjectURL(file),
+        }));
+      } else if (guestIndex === undefined) {
+        // Main guest ID
+        setFormData((prev) => ({
+          ...prev,
+          validId: file,
+          validIdPreview: URL.createObjectURL(file),
+        }));
+      } else {
+        // Additional guest ID
+        const updatedGuests = [...additionalGuests];
+        updatedGuests[guestIndex].validId = file;
+        updatedGuests[guestIndex].validIdPreview = URL.createObjectURL(file);
+        setAdditionalGuests(updatedGuests);
+      }
     }
+  };
+
+  const handleAdditionalGuestChange = (index: number, field: keyof GuestInfo, value: string) => {
+    const updatedGuests = [...additionalGuests];
+    updatedGuests[index] = {
+      ...updatedGuests[index],
+      [field]: value,
+    };
+    setAdditionalGuests(updatedGuests);
   };
 
   const handleAddOnChange = (item: keyof AddOns, increment: boolean) => {
@@ -136,13 +212,37 @@ const Checkout = () => {
 
   const handleNext = () => {
     if (currentStep === 1) {
-      // Validate Step 1
-      if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
-        toast.error("Please fill in all required fields");
+      // Validate Step 1 - Main Guest
+      if (!formData.firstName || !formData.lastName || !formData.age || !formData.gender || !formData.email || !formData.phone) {
+        toast.error("Please fill in all required fields for the main guest");
         return;
       }
-      if (totalGuests > 4) {
-        toast.error("Maximum 4 guests allowed");
+      // Validate ID for main guest if 10+ years old
+      if (parseInt(formData.age) >= 10 && !formData.validId) {
+        toast.error("Valid ID is required for the main guest (10+ years old)");
+        return;
+      }
+
+      // Validate additional guests
+      for (let i = 0; i < additionalGuests.length; i++) {
+        const guest = additionalGuests[i];
+        const guestNumber = i + 2; // Start from 2 (Adult 2, Child 3, etc.)
+
+        if (!guest.firstName || !guest.lastName || !guest.age || !guest.gender) {
+          toast.error(`Please fill in all required fields for Guest ${guestNumber}`);
+          return;
+        }
+
+        // Validate ID for guests 10+ years old
+        if (parseInt(guest.age) >= 10 && !guest.validId) {
+          toast.error(`Valid ID is required for Guest ${guestNumber} (10+ years old)`);
+          return;
+        }
+      }
+
+      // Validate guest count (adults + children only, infants not counted)
+      if (formData.adults + formData.children > 4) {
+        toast.error("Maximum 4 guests allowed (adults + children). Infants are not counted.");
         return;
       }
       if (!formData.checkInTime || !formData.checkOutTime) {
@@ -194,14 +294,52 @@ const handleSubmit = async (e: React.FormEvent) => {
       });
     }
 
+    // Convert valid ID to base64 if it's a File
+    let validIdBase64 = '';
+    if (formData.validId) {
+      const reader = new FileReader();
+      validIdBase64 = await new Promise((resolve, reject) => {
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(formData.validId as File);
+      });
+    }
+
+    // Convert additional guests' IDs to base64
+    const additionalGuestsData = await Promise.all(
+      additionalGuests.map(async (guest) => {
+        let guestIdBase64 = '';
+        if (guest.validId) {
+          const reader = new FileReader();
+          guestIdBase64 = await new Promise((resolve, reject) => {
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(guest.validId as File);
+          });
+        }
+        return {
+          firstName: guest.firstName,
+          lastName: guest.lastName,
+          age: guest.age,
+          gender: guest.gender,
+          validId: guestIdBase64,
+        };
+      })
+    );
+
     // Prepare booking data for database
     const bookingRequestData = {
       booking_id: bookingId,
       user_id: (session?.user as any)?.id || null, // NULL for guest, UUID for logged-in users
       guest_first_name: formData.firstName,
       guest_last_name: formData.lastName,
+      guest_age: formData.age,
+      guest_gender: formData.gender,
       guest_email: formData.email,
       guest_phone: formData.phone,
+      facebook_link: formData.facebookLink,
+      valid_id: validIdBase64,
+      additional_guests: additionalGuestsData,
       room_name: bookingData.selectedRoom?.name || bookingData.location?.name || 'Standard Room',
       check_in_date: bookingData.checkInDate,
       check_out_date: bookingData.checkOutDate,
@@ -210,7 +348,6 @@ const handleSubmit = async (e: React.FormEvent) => {
       adults: formData.adults,
       children: formData.children,
       infants: formData.infants,
-      facebook_link: formData.facebookLink,
       payment_method: formData.paymentMethod,
       payment_proof: paymentProofBase64,
       room_rate: roomRate,
@@ -316,6 +453,12 @@ const handleSubmit = async (e: React.FormEvent) => {
                   Guest Information
                 </h2>
 
+                {/* Main Guest Header */}
+                <div className="flex items-center gap-2 mb-4 text-orange-600">
+                  <User className="w-5 h-5" />
+                  <h3 className="font-semibold">Adult 1 (Main Guest)</h3>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -328,7 +471,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                       onChange={handleInputChange}
                       required
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      placeholder="Enter firstname"
+                      placeholder="Enter first name"
                     />
                   </div>
 
@@ -343,47 +486,267 @@ const handleSubmit = async (e: React.FormEvent) => {
                       onChange={handleInputChange}
                       required
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      placeholder="Enter lastname"
+                      placeholder="Enter last name"
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Email Address *
+                      Age *
                     </label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                      <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                        placeholder="Enter email"
-                      />
-                    </div>
+                    <input
+                      type="number"
+                      name="age"
+                      value={formData.age}
+                      onChange={handleInputChange}
+                      required
+                      min="1"
+                      max="120"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      placeholder="Enter age"
+                    />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Gender *
+                    </label>
+                    <select
+                      name="gender"
+                      value={formData.gender}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white"
+                    >
+                      <option value="">Select Gender</option>
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-orange-500" />
+                      Email Address *
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      placeholder="Enter email"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-orange-500" />
                       Phone Number *
                     </label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                      <input
-                        type="tel"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                        placeholder="+63 912 345 6789"
-                      />
-                    </div>
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      placeholder="e.g., 182918212"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                      <User className="w-4 h-4 text-blue-500" />
+                      Facebook Name or Link
+                    </label>
+                    <input
+                      type="text"
+                      name="facebookLink"
+                      value={formData.facebookLink}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      placeholder="e.g., Juan Dela Cruz or facebook.com/juandelacruz"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Alternative contact in case email is incorrect
+                    </p>
+                  </div>
+                </div>
+
+                {/* Valid ID Upload Section */}
+                <div className="mt-6 p-4 bg-blue-50 border-2 border-dashed border-blue-300 rounded-lg">
+                  <div className="flex items-center gap-2 mb-3">
+                    <CreditCard className="w-5 h-5 text-blue-600" />
+                    <h3 className="font-semibold text-blue-800">
+                      Valid ID (Required for guests 10+ years old)
+                    </h3>
+                  </div>
+
+                  <p className="text-sm text-gray-600 mb-3">
+                    Accepted: Driver&apos;s License, Passport, National ID, School ID
+                  </p>
+
+                  <div className="text-center">
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/jpg"
+                      onChange={(e) => handleFileChange(e, 'id')}
+                      className="hidden"
+                      id="valid-id"
+                    />
+                    <label
+                      htmlFor="valid-id"
+                      className="cursor-pointer inline-flex flex-col items-center justify-center p-6 bg-white rounded-lg hover:bg-gray-50 transition-colors border-2 border-gray-200"
+                    >
+                      <Upload className="w-12 h-12 text-blue-500 mb-3" />
+                      <p className="text-blue-600 font-medium mb-1">
+                        Click to upload ID photo
+                      </p>
+                      <p className="text-xs text-gray-500">PNG, JPG, JPEG up to 5MB</p>
+                    </label>
+
+                    {formData.validIdPreview && (
+                      <div className="mt-4">
+                        <img
+                          src={formData.validIdPreview}
+                          alt="Valid ID preview"
+                          className="max-w-xs mx-auto rounded-lg shadow-md border-2 border-green-500"
+                        />
+                        <p className="text-sm text-green-600 mt-2 font-medium">✓ ID uploaded successfully</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
+
+              {/* Additional Guests */}
+              {additionalGuests.map((guest, index) => {
+                const guestNumber = index + 2;
+                const isAdult = index < formData.adults - 1;
+                const guestType = isAdult ? `Adult ${guestNumber}` : `Child ${guestNumber - (formData.adults - 1)}`;
+
+                return (
+                  <div key={index} className="bg-white rounded-xl shadow-lg p-6">
+                    <div className="flex items-center gap-2 mb-4 text-orange-600">
+                      <User className="w-5 h-5" />
+                      <h3 className="font-semibold">{guestType}</h3>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          First Name *
+                        </label>
+                        <input
+                          type="text"
+                          value={guest.firstName}
+                          onChange={(e) => handleAdditionalGuestChange(index, 'firstName', e.target.value)}
+                          required
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                          placeholder="Enter first name"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Last Name *
+                        </label>
+                        <input
+                          type="text"
+                          value={guest.lastName}
+                          onChange={(e) => handleAdditionalGuestChange(index, 'lastName', e.target.value)}
+                          required
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                          placeholder="Enter last name"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Age *
+                        </label>
+                        <input
+                          type="number"
+                          value={guest.age}
+                          onChange={(e) => handleAdditionalGuestChange(index, 'age', e.target.value)}
+                          required
+                          min="1"
+                          max="120"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                          placeholder="Enter age"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Gender *
+                        </label>
+                        <select
+                          value={guest.gender}
+                          onChange={(e) => handleAdditionalGuestChange(index, 'gender', e.target.value)}
+                          required
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white"
+                        >
+                          <option value="">Select Gender</option>
+                          <option value="male">Male</option>
+                          <option value="female">Female</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Valid ID Upload for Additional Guest if 10+ */}
+                    {parseInt(guest.age) >= 10 && (
+                      <div className="mt-6 p-4 bg-blue-50 border-2 border-dashed border-blue-300 rounded-lg">
+                        <div className="flex items-center gap-2 mb-3">
+                          <CreditCard className="w-5 h-5 text-blue-600" />
+                          <h3 className="font-semibold text-blue-800">
+                            Valid ID (Required for guests 10+ years old)
+                          </h3>
+                        </div>
+
+                        <p className="text-sm text-gray-600 mb-3">
+                          Accepted: Driver&apos;s License, Passport, National ID, School ID
+                        </p>
+
+                        <div className="text-center">
+                          <input
+                            type="file"
+                            accept="image/png,image/jpeg,image/jpg"
+                            onChange={(e) => handleFileChange(e, 'id', index)}
+                            className="hidden"
+                            id={`valid-id-${index}`}
+                          />
+                          <label
+                            htmlFor={`valid-id-${index}`}
+                            className="cursor-pointer inline-flex flex-col items-center justify-center p-6 bg-white rounded-lg hover:bg-gray-50 transition-colors border-2 border-gray-200"
+                          >
+                            <Upload className="w-12 h-12 text-blue-500 mb-3" />
+                            <p className="text-blue-600 font-medium mb-1">
+                              Click to upload ID photo
+                            </p>
+                            <p className="text-xs text-gray-500">PNG, JPG, JPEG up to 5MB</p>
+                          </label>
+
+                          {guest.validIdPreview && (
+                            <div className="mt-4">
+                              <img
+                                src={guest.validIdPreview}
+                                alt="Valid ID preview"
+                                className="max-w-xs mx-auto rounded-lg shadow-md border-2 border-green-500"
+                              />
+                              <p className="text-sm text-green-600 mt-2 font-medium">✓ ID uploaded successfully</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
 
               {/* Number of Guests */}
               <div className="bg-white rounded-xl shadow-lg p-6">
@@ -440,7 +803,8 @@ const handleSubmit = async (e: React.FormEvent) => {
                 </div>
 
                 <p className="text-sm text-gray-600 mt-2">
-                  Total Guests: {totalGuests} / 4
+                  Total Guests (Adults + Children): {formData.adults + formData.children} / 4
+                  {formData.infants > 0 && ` + ${formData.infants} infant${formData.infants > 1 ? 's' : ''}`}
                 </p>
               </div>
 
@@ -652,29 +1016,6 @@ const handleSubmit = async (e: React.FormEvent) => {
                 </div>
               </div>
 
-              {/* Upload Image & Facebook */}
-              <div className="bg-white rounded-xl shadow-lg p-6">
-                <h2 className="text-2xl font-bold text-gray-800 mb-6">
-                  Additional Information
-                </h2>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Facebook Name or Link *
-                    </label>
-                    <input
-                      type="text"
-                      name="facebookLink"
-                      value={formData.facebookLink}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      placeholder="facebook.com/yourname or Your Facebook Name"
-                    />
-                  </div>
-                </div>
-              </div>
 
               {/* Add-ons */}
               <div className="bg-white rounded-xl shadow-lg p-6">
@@ -962,7 +1303,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                     <input
                       type="file"
                       accept="image/png,image/jpeg,image/jpg"
-                      onChange={handleFileChange}
+                      onChange={(e) => handleFileChange(e, 'payment')}
                       className="hidden"
                       id="payment-proof"
                     />
