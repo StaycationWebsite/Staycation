@@ -1,8 +1,10 @@
 'use client';
 
+import PartnersDashboard from "@/Components/admin/Partners/PartnersDashboard";
+
 const PartnersPage = () => {
   return (
-    <div>page</div>
+    <div><PartnersDashboard /></div>
   )
 }
 

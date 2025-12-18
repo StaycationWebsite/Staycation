@@ -1,13 +1,15 @@
 'use client';
 
-import { Calendar, User, MapPin, Phone, Mail, Check, X, AlertCircle } from "lucide-react";
+import { Calendar, User, MapPin, Phone, Mail, Check, X, AlertCircle, Eye, XCircle, CreditCard, Package } from "lucide-react";
 import { useState } from "react";
 import { useGetBookingsQuery, useUpdateBookingStatusMutation } from "@/redux/api/bookingsApi";
+import Image from "next/image";
 
 const ReservationsPage = () => {
   const [filter, setFilter] = useState("all");
   const { data, isLoading, refetch } = useGetBookingsQuery({});
   const [updateBookingStatus] = useUpdateBookingStatusMutation();
+  const [selectedBooking, setSelectedBooking] = useState<any>(null);
 
   const reservations = data?.data || [];
 
@@ -92,8 +94,273 @@ const ReservationsPage = () => {
     ? reservations
     : reservations.filter((r: any) => r.status === filter);
 
+  const handleViewDetails = (booking: any) => {
+    setSelectedBooking(booking);
+  };
+
+  const closeModal = () => {
+    setSelectedBooking(null);
+  };
+
   return (
-    <div className="space-y-6 animate-in fade-in duration-700">
+    <>
+      {/* Details Modal */}
+      {selectedBooking && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-gradient-to-r from-orange-500 to-yellow-500 text-white p-6 rounded-t-2xl flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold">Booking Details</h2>
+                <p className="text-sm opacity-90">ID: {selectedBooking.booking_id}</p>
+              </div>
+              <button
+                onClick={closeModal}
+                className="p-2 hover:bg-white/20 rounded-full transition-colors"
+              >
+                <XCircle className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 space-y-6">
+              {/* Status Badge */}
+              <div className="flex justify-center">
+                <span className={`px-6 py-2 rounded-full text-sm font-semibold ${getStatusColor(selectedBooking.status)}`}>
+                  {selectedBooking.status.toUpperCase().replace("-", " ")}
+                </span>
+              </div>
+
+              {/* Guest Information */}
+              <div className="bg-gray-50 rounded-lg p-6">
+                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  <User className="w-5 h-5 text-orange-500" />
+                  Guest Information
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-500">Full Name</p>
+                    <p className="font-semibold text-gray-800">{selectedBooking.guest_first_name} {selectedBooking.guest_last_name}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Email</p>
+                    <p className="font-semibold text-gray-800">{selectedBooking.guest_email}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Phone</p>
+                    <p className="font-semibold text-gray-800">{selectedBooking.guest_phone}</p>
+                  </div>
+                  {selectedBooking.facebook_link && (
+                    <div>
+                      <p className="text-sm text-gray-500">Facebook</p>
+                      <a href={selectedBooking.facebook_link} target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-600 hover:underline">
+                        View Profile
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Booking Details */}
+              <div className="bg-gray-50 rounded-lg p-6">
+                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-orange-500" />
+                  Booking Details
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-500">Room</p>
+                    <p className="font-semibold text-gray-800">{selectedBooking.room_name || 'Not specified'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Total Guests</p>
+                    <p className="font-semibold text-gray-800">
+                      {selectedBooking.adults + selectedBooking.children + selectedBooking.infants} People
+                      <span className="text-sm text-gray-500 ml-2">
+                        ({selectedBooking.adults} Adults, {selectedBooking.children} Children, {selectedBooking.infants} Infants)
+                      </span>
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Check-in</p>
+                    <p className="font-semibold text-gray-800">
+                      {new Date(selectedBooking.check_in_date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                      <br />
+                      <span className="text-sm text-orange-600">at {selectedBooking.check_in_time}</span>
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Check-out</p>
+                    <p className="font-semibold text-gray-800">
+                      {new Date(selectedBooking.check_out_date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                      <br />
+                      <span className="text-sm text-orange-600">at {selectedBooking.check_out_time}</span>
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Booking Created</p>
+                    <p className="font-semibold text-gray-800">
+                      {new Date(selectedBooking.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment Information */}
+              <div className="bg-gray-50 rounded-lg p-6">
+                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  <CreditCard className="w-5 h-5 text-orange-500" />
+                  Payment Information
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <p className="text-sm text-gray-500">Payment Method</p>
+                    <p className="font-semibold text-gray-800 uppercase">{selectedBooking.payment_method}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Room Rate</p>
+                    <p className="font-semibold text-gray-800">₱{Number(selectedBooking.room_rate).toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Security Deposit</p>
+                    <p className="font-semibold text-gray-800">₱{Number(selectedBooking.security_deposit).toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Add-ons Total</p>
+                    <p className="font-semibold text-gray-800">₱{Number(selectedBooking.add_ons_total).toLocaleString()}</p>
+                  </div>
+                </div>
+                <div className="border-t pt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-white p-4 rounded-lg">
+                    <p className="text-sm text-gray-500">Total Amount</p>
+                    <p className="text-2xl font-bold text-gray-800">₱{Number(selectedBooking.total_amount).toLocaleString()}</p>
+                  </div>
+                  <div className="bg-white p-4 rounded-lg">
+                    <p className="text-sm text-gray-500">Down Payment</p>
+                    <p className="text-2xl font-bold text-green-600">₱{Number(selectedBooking.down_payment).toLocaleString()}</p>
+                  </div>
+                  <div className="bg-white p-4 rounded-lg">
+                    <p className="text-sm text-gray-500">Remaining Balance</p>
+                    <p className="text-2xl font-bold text-orange-600">₱{Number(selectedBooking.remaining_balance).toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Add-ons */}
+              {selectedBooking.add_ons && Object.keys(selectedBooking.add_ons).length > 0 && (
+                <div className="bg-gray-50 rounded-lg p-6">
+                  <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <Package className="w-5 h-5 text-orange-500" />
+                    Add-ons Selected
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {Object.entries(selectedBooking.add_ons).map(([key, value]: [string, any]) => {
+                      if (value > 0) {
+                        return (
+                          <div key={key} className="bg-white p-3 rounded-lg">
+                            <p className="text-sm text-gray-500 capitalize">{key.replace(/([A-Z])/g, ' $1')}</p>
+                            <p className="font-semibold text-gray-800">× {value}</p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Payment Proof */}
+              {selectedBooking.payment_proof_url && (
+                <div className="bg-gray-50 rounded-lg p-6">
+                  <h3 className="text-lg font-bold text-gray-800 mb-4">Payment Proof</h3>
+                  <div className="relative w-full h-96 bg-gray-200 rounded-lg overflow-hidden">
+                    <Image
+                      src={selectedBooking.payment_proof_url}
+                      alt="Payment Proof"
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
+                  <a
+                    href={selectedBooking.payment_proof_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-4 inline-block text-blue-600 hover:underline"
+                  >
+                    Open in new tab →
+                  </a>
+                </div>
+              )}
+
+              {/* Rejection Reason */}
+              {selectedBooking.rejection_reason && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+                  <h3 className="text-lg font-bold text-red-800 mb-2">Rejection Reason</h3>
+                  <p className="text-red-700">{selectedBooking.rejection_reason}</p>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 justify-end border-t pt-6">
+                {selectedBooking.status === "pending" && (
+                  <>
+                    <button
+                      onClick={() => {
+                        handleApprove(selectedBooking.id);
+                        closeModal();
+                      }}
+                      className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2"
+                    >
+                      <Check className="w-5 h-5" />
+                      Approve Booking
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleReject(selectedBooking.id);
+                        closeModal();
+                      }}
+                      className="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2"
+                    >
+                      <X className="w-5 h-5" />
+                      Reject Booking
+                    </button>
+                  </>
+                )}
+                {(selectedBooking.status === "approved" || selectedBooking.status === "confirmed") && (
+                  <button
+                    onClick={() => {
+                      handleCheckIn(selectedBooking.id);
+                      closeModal();
+                    }}
+                    className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                  >
+                    Check In Guest
+                  </button>
+                )}
+                {selectedBooking.status === "checked-in" && (
+                  <button
+                    onClick={() => {
+                      handleCheckOut(selectedBooking.id);
+                      closeModal();
+                    }}
+                    className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                  >
+                    Check Out Guest
+                  </button>
+                )}
+                <button
+                  onClick={closeModal}
+                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-6 animate-in fade-in duration-700">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -238,7 +505,11 @@ const ReservationsPage = () => {
                         Check Out
                       </button>
                     )}
-                    <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                    <button
+                      onClick={() => handleViewDetails(reservation)}
+                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+                    >
+                      <Eye className="w-4 h-4" />
                       View Details
                     </button>
                   </div>
@@ -248,7 +519,8 @@ const ReservationsPage = () => {
           ))
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

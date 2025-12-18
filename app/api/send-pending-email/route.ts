@@ -9,19 +9,19 @@ export async function POST(request: NextRequest) {
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: process.env.EMAIL_USER, // your-email@gmail.com
-        pass: process.env.EMAIL_PASSWORD, // your Gmail App Password
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASSWORD,
       },
     });
 
-    // Email HTML template
+    // Email HTML template for PENDING status
     const emailHtml = `
       <!DOCTYPE html>
       <html lang="en">
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Booking Confirmation</title>
+        <title>Booking Pending Approval</title>
         <style>
           * {
             margin: 0;
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
           }
 
           .header {
-            background: linear-gradient(135deg, #B8860B 0%, #DAA520 100%);
+            background: linear-gradient(135deg, #F59E0B 0%, #F97316 100%);
             color: #ffffff;
             padding: 40px 30px;
             text-align: center;
@@ -66,8 +66,8 @@ export async function POST(request: NextRequest) {
           }
 
           .status-badge {
-            background: #10B981;
-            color: white;
+            background: #FCD34D;
+            color: #78350F;
             padding: 8px 20px;
             border-radius: 20px;
             display: inline-block;
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
 
           .info-card {
             background: #F9FAFB;
-            border-left: 4px solid #B8860B;
+            border-left: 4px solid #F59E0B;
             padding: 20px;
             margin: 15px 0;
             border-radius: 6px;
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
           }
 
           .price-summary {
-            background: linear-gradient(135deg, #B8860B 0%, #DAA520 100%);
+            background: linear-gradient(135deg, #F59E0B 0%, #F97316 100%);
             color: white;
             padding: 25px;
             border-radius: 8px;
@@ -193,7 +193,7 @@ export async function POST(request: NextRequest) {
 
           .cta-button a {
             display: inline-block;
-            background: linear-gradient(135deg, #B8860B 0%, #DAA520 100%);
+            background: linear-gradient(135deg, #F59E0B 0%, #F97316 100%);
             color: white;
             padding: 14px 40px;
             text-decoration: none;
@@ -233,11 +233,6 @@ export async function POST(request: NextRequest) {
             margin-top: 15px;
           }
 
-          .icon {
-            display: inline-block;
-            margin-right: 8px;
-          }
-
           @media only screen and (max-width: 600px) {
             .email-container {
               border-radius: 0;
@@ -270,7 +265,7 @@ export async function POST(request: NextRequest) {
           <div class="header">
             <h1>🏖️ Staycation Haven</h1>
             <p>Your Perfect Getaway Awaits</p>
-            <span class="status-badge">✓ Booking Confirmed</span>
+            <span class="status-badge">⏳ Pending Approval</span>
           </div>
 
           <!-- Content -->
@@ -278,8 +273,9 @@ export async function POST(request: NextRequest) {
             <div class="greeting">Dear ${bookingData.firstName} ${bookingData.lastName},</div>
 
             <p class="intro-text">
-              Thank you for choosing Staycation Haven! We're thrilled to confirm your reservation.
-              Your booking has been successfully approved and we look forward to hosting you.
+              Thank you for choosing Staycation Haven! We have received your booking request
+              and it is currently pending approval from our team. We will review your booking
+              and get back to you within 24 hours.
             </p>
 
             <!-- Booking Information -->
@@ -341,20 +337,21 @@ export async function POST(request: NextRequest) {
 
             <!-- Important Information -->
             <div class="alert-box">
-              <div class="alert-title">⚠️ Important Reminders</div>
+              <div class="alert-title">⏳ What Happens Next?</div>
               <ul>
-                <li>Please bring a valid government-issued ID during check-in</li>
-                <li>Check-in time starts at ${bookingData.checkInTime}</li>
-                <li>Early check-in is subject to room availability</li>
-                <li>Keep this confirmation email for your records</li>
-                <li>Contact us immediately if you need to modify your booking</li>
-                <li>Cancellation policy applies as per our terms and conditions</li>
+                <li>Our team will review your booking request and payment proof</li>
+                <li>You will receive a confirmation email once your booking is approved</li>
+                <li>This usually takes 12-24 hours during business days</li>
+                <li>Keep this email for your records</li>
+                <li>If you have any questions, feel free to contact us</li>
+                <li>Please ensure your payment proof is clear and complete</li>
               </ul>
             </div>
 
             <p class="intro-text" style="margin-top: 25px;">
-              We're committed to making your stay comfortable and memorable. If you have any special
-              requests or questions, please don't hesitate to reach out to us.
+              Thank you for your patience! We're excited to host you at Staycation Haven.
+              If you have any urgent concerns or questions about your booking, please don't
+              hesitate to reach out to us directly.
             </p>
 
             <!-- Call to Action -->
@@ -390,15 +387,15 @@ export async function POST(request: NextRequest) {
     const mailOptions = {
       from: `"Staycation Haven" <${process.env.EMAIL_USER}>`,
       to: bookingData.email,
-      subject: `Booking Confirmation - ${bookingData.bookingId}`,
+      subject: `Booking Pending Approval - ${bookingData.bookingId}`,
       html: emailHtml,
     };
 
     await transporter.sendMail(mailOptions);
 
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Email sent successfully' 
+    return NextResponse.json({
+      success: true,
+      message: 'Pending email sent successfully'
     });
 
   } catch (error) {

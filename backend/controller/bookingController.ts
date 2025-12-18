@@ -126,6 +126,42 @@ export const createBooking = async (
     const result = await pool.query(query, values);
     console.log("✅ Booking Created:", result.rows[0]);
 
+    // Send pending approval email to guest
+    try {
+      const booking = result.rows[0];
+
+      const emailData = {
+        firstName: booking.guest_first_name,
+        lastName: booking.guest_last_name,
+        email: booking.guest_email,
+        bookingId: booking.booking_id,
+        roomName: booking.room_name,
+        checkInDate: new Date(booking.check_in_date).toLocaleDateString(),
+        checkInTime: booking.check_in_time,
+        checkOutDate: new Date(booking.check_out_date).toLocaleDateString(),
+        checkOutTime: booking.check_out_time,
+        guests: `${booking.adults} Adults, ${booking.children} Children, ${booking.infants} Infants`,
+        paymentMethod: booking.payment_method,
+        downPayment: booking.down_payment,
+        totalAmount: booking.total_amount,
+      };
+
+      const emailResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/send-pending-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(emailData),
+      });
+
+      if (!emailResponse.ok) {
+        console.error('❌ Failed to send pending approval email');
+      } else {
+        console.log('✅ Pending approval email sent to:', booking.guest_email);
+      }
+    } catch (emailError) {
+      console.error('❌ Email sending error:', emailError);
+      // Don't fail the whole request if email fails
+    }
+
     return NextResponse.json(
       {
         success: true,

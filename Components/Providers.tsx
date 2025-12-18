@@ -9,7 +9,7 @@ export function Proviers ({ children }: {children:React.ReactNode}) {
         <SessionProvider>
             <Provider store={store}>
                 {children}
-            </Provider>
+            </Provider> 
         </SessionProvider>
     );
 }
