@@ -27,7 +27,15 @@ const FeatureSectionMain = () => {
     },
     {
       id: "3",
-      icon: <Star className="w-10 h-10" />,
+      icon: (
+        <div className="flex gap-1">
+          <Star className="w-5 h-5 fill-orange-400 text-orange-400" />
+          <Star className="w-5 h-5 fill-orange-400 text-orange-400" />
+          <Star className="w-5 h-5 fill-orange-400 text-orange-400" />
+          <Star className="w-5 h-5 fill-orange-400 text-orange-400" />
+          <Star className="w-5 h-5 fill-orange-400 text-orange-400" />
+        </div>
+      ),
       title: "Exceptional Service",
       description: "24/7 support and concierge services for a perfect stay",
     },
@@ -52,17 +60,17 @@ const FeatureSectionMain = () => {
     },
   ];
   return (
-    <section className="py-16 sm:py-20 bg-gradient-to-br from-gray-50 via-white to-gray-100">
+    <section className="py-16 sm:py-20 bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12 sm:mb-16 lg:mb-20 animate-in fade-in slide-in-from-top duration-700">
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-800 mb-4">
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-800 dark:text-white mb-4">
             Why Choose
             <span className="bg-gradient-to-r from-orange-500 to-yellow-500 bg-clip-text text-transparent ml-3">
               Staycation Haven
             </span>
           </h2>
-          <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto leading-relaxed">
             Experience the perfect blend of comfort, convenience, and luxury at
             out premium hotel
           </p>

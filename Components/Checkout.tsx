@@ -67,6 +67,12 @@ const Checkout = () => {
     validIdPreview: string;
   }
 
+  useEffect (() => {
+    setTimeout(() => {
+
+    })
+  },[])
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",

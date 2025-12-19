@@ -39,7 +39,7 @@ interface Guests {
 
 const HeroSectionMain = () => {
   const [isScrolled, setIsScrolled] = useState<boolean>(false);
-  const [showSearchBar, setShowSearchBar] = useState<boolean>(true);
+  const [showSearchBar, setShowSearchBar] = useState<boolean>(false);
   const [lastScrollY, setLastScrollY] = useState<number>(0);
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(
     null
@@ -64,10 +64,10 @@ const HeroSectionMain = () => {
       const currentScrollY = window.scrollY;
       const heroHeight = window.innerHeight - 100; // Approximate hero section height
 
-      // If within hero section, always show
+      // If within hero section, don't show sticky bar
       if (currentScrollY < heroHeight) {
         setIsScrolled(false);
-        setShowSearchBar(true);
+        setShowSearchBar(false);
       }
       // If scrolled past hero section
       else {
@@ -75,8 +75,10 @@ const HeroSectionMain = () => {
 
         // Show on scroll up, hide on scroll down
         if (currentScrollY < lastScrollY) {
+          // Scrolling up
           setShowSearchBar(true);
-        } else if (currentScrollY > lastScrollY) {
+        } else if (currentScrollY > lastScrollY + 5) {
+          // Scrolling down (with small threshold to prevent jitter)
           setShowSearchBar(false);
         }
       }
@@ -84,7 +86,7 @@ const HeroSectionMain = () => {
       setLastScrollY(currentScrollY);
     };
 
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
   const handleGuestChange = (type: keyof Guests, value: number) => {

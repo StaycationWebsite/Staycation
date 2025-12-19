@@ -54,17 +54,20 @@ const SearchBarSticky = () => {
     infants: 0,
   });
 
-  // Track scroll position for dynamic height
+  // Hide search bar when scrolling down
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 100) {
+      const currentScrollY = window.scrollY;
+
+      // Hide search bar after scrolling 50px
+      if (currentScrollY > 50) {
         setIsScrolled(true);
       } else {
         setIsScrolled(false);
       }
     };
 
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -133,8 +136,10 @@ const SearchBarSticky = () => {
 
   return (
     <div
-      className={`fixed top-16 left-0 right-0 z-40 px-3 sm:px-4 md:px-6 lg:px-8 bg-cover bg-center transition-all duration-500 ease-in-out ${
-        isScrolled ? 'py-2 pb-4 sm:py-3 sm:pb-6' : 'py-8 pb-12 sm:py-12 sm:pb-16 md:py-20 md:pb-24'
+      className={`fixed left-0 right-0 z-40 px-3 sm:px-4 md:px-6 lg:px-8 bg-cover bg-center transition-all duration-500 ease-in-out ${
+        isScrolled
+          ? '-top-96 opacity-0 pointer-events-none'
+          : 'top-16 opacity-100 py-8 pb-12 sm:py-12 sm:pb-16 md:py-20 md:pb-24'
       }`}
       style={{
         backgroundImage: "url('/Images/bg.jpg')",
