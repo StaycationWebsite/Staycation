@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useAppSelector, useAppDispatch } from "@/redux/hooks";
 import { setCheckInDate, setCheckOutDate } from "@/redux/slices/bookingSlice";
 import { useRouter } from "next/navigation";
@@ -10,7 +10,7 @@ import { TimeInput } from "@nextui-org/date-input";
 import { parseDate, parseTime, today, getLocalTimeZone } from "@internationalized/date";
 import type { DateValue } from "@react-types/calendar";
 import type { TimeValue } from "@react-types/datepicker";
-import axios from "axios";
+import { useGetRoomBookingsQuery, useCreateBookingMutation } from "@/redux/api/bookingsApi";
 import {
   Calendar,
   Users,
@@ -57,6 +57,15 @@ const Checkout = () => {
   const [currentStep, setCurrentStep] = useState(1); // 1 = Guest Info, 2 = Confirmation & Payment
   const [errors, setErrors] = useState<Record<string, string>>({});
   const errorRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  // Fetch existing bookings for the selected room
+  const { data: roomBookingsData } = useGetRoomBookingsQuery(
+    bookingData.selectedRoom?.id || '',
+    { skip: !bookingData.selectedRoom?.id }
+  );
+
+  // RTK Query mutation for creating bookings
+  const [createBooking, { isLoading: isCreatingBooking }] = useCreateBookingMutation();
 
   interface GuestInfo {
     firstName: string;
@@ -130,14 +139,46 @@ const Checkout = () => {
     }
   }, [formData.adults, formData.children]);
 
-  // Calculate room rate from selected room or booking data
-  const roomRate = bookingData.selectedRoom?.price
-    ? parseInt(bookingData.selectedRoom.price.replace(/[₱,]/g, ""))
-    : bookingData.stayType?.price
-    ? parseInt(bookingData.stayType.price.replace(/[₱,]/g, ""))
-    : 1799;
+  // Calculate number of days for multi-day stay
+  const calculateNumberOfDays = (): number => {
+    if (!bookingData.checkInDate || !bookingData.checkOutDate) return 0;
 
-  const securityDeposit = 1000;
+    const checkIn = new Date(bookingData.checkInDate);
+    const checkOut = new Date(bookingData.checkOutDate);
+
+    // Calculate difference in milliseconds
+    const diffTime = Math.abs(checkOut.getTime() - checkIn.getTime());
+    // Convert to days
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    return diffDays;
+  };
+
+  // Calculate room rate from selected stay type
+  const getRoomRateFromStayType = (): number => {
+    if (!formData.stayType) return 0; // Return 0 if no stay type selected
+
+    if (formData.stayType === "10 Hours - ₱1,599") {
+      return 1599;
+    } else if (formData.stayType.includes("weekday")) {
+      return 1799;
+    } else if (formData.stayType.includes("Fri-Sat")) {
+      return 1999;
+    } else if (formData.stayType === "Multi-Day Stay") {
+      // For multi-day, calculate: base rate × number of days
+      const baseRate = bookingData.selectedRoom?.price
+        ? parseInt(bookingData.selectedRoom.price.replace(/[₱,]/g, ""))
+        : 1799;
+
+      const numberOfDays = calculateNumberOfDays();
+      return baseRate * numberOfDays;
+    }
+    return 0;
+  };
+
+  const roomRate = getRoomRateFromStayType();
+  const numberOfDays = calculateNumberOfDays();
+  const securityDeposit = formData.stayType ? 1000 : 0; // Only show if stay type selected
   const downPayment = 500;
 
   // Calculate add-ons total
@@ -147,6 +188,35 @@ const Checkout = () => {
 
   const totalAmount = roomRate + securityDeposit + addOnsTotal;
   const remainingBalance = totalAmount - downPayment;
+
+  // Create a function to check if a date is unavailable (booked)
+  const isDateUnavailable = useMemo(() => {
+    return (date: DateValue) => {
+      if (!roomBookingsData?.data) return false;
+
+      const checkDate = new Date(date.year, date.month - 1, date.day);
+      checkDate.setHours(0, 0, 0, 0);
+
+      // Check if the date falls within any existing booking's date range
+      return roomBookingsData.data.some((booking: any) => {
+        // Only block dates for approved/confirmed/checked-in bookings
+        // Pending bookings don't block dates until approved
+        const approvedStatuses = ['approved', 'confirmed', 'check_in', 'checked-in'];
+        if (!approvedStatuses.includes(booking.status)) {
+          return false;
+        }
+
+        const bookingCheckIn = new Date(booking.check_in_date);
+        bookingCheckIn.setHours(0, 0, 0, 0);
+
+        const bookingCheckOut = new Date(booking.check_out_date);
+        bookingCheckOut.setHours(0, 0, 0, 0);
+
+        // A date is unavailable if it falls between check-in and check-out (inclusive)
+        return checkDate >= bookingCheckIn && checkDate <= bookingCheckOut;
+      });
+    };
+  }, [roomBookingsData]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -447,17 +517,23 @@ const handleSubmit = async (e: React.FormEvent) => {
       add_ons: addOns,
     };
 
-    // Save booking to database
-    const response = await axios.post('/api/bookings', bookingRequestData);
+    // Save booking to database using RTK Query mutation
+    try {
+      const result = await createBooking(bookingRequestData).unwrap();
 
-    if (response.data.success) {
-      toast.success(`Booking Submitted Successfully!\n\nYour booking ID is: ${bookingId}\n\nStatus: Pending Admin Approval\n\nYou will receive a confirmation email once the admin approves your booking.`);
+      if (result.success) {
+        toast.success(`Booking Submitted Successfully!\n\nYour booking ID is: ${bookingId}\n\nStatus: Pending Admin Approval\n\nYou will receive a confirmation email once the admin approves your booking.`);
 
-      // Clear form and redirect
-      router.push('/');
-    } else {
+        // Clear form and redirect
+        router.push('/');
+      } else {
+        setIsLoading(false);
+        toast.error('Failed to create booking. Please try again or contact support.');
+      }
+    } catch (mutationError: any) {
       setIsLoading(false);
-      toast.error('Failed to create booking. Please try again or contact support.');
+      console.error('RTK Query mutation error:', mutationError);
+      toast.error(mutationError?.data?.error || 'An error occurred. Please try again or contact support.');
     }
 
   } catch (error) {
@@ -1083,33 +1159,31 @@ const handleSubmit = async (e: React.FormEvent) => {
                             const dateStr = `${date.year}-${String(date.month).padStart(2, '0')}-${String(date.day).padStart(2, '0')}`;
                             dispatch(setCheckInDate(dateStr));
 
-                            // Auto-calculate check-out date based on stay type
-                            if (formData.stayType) {
-                              let checkOutDate = new Date(date.year, date.month - 1, date.day);
-
-                              if (formData.stayType === "10 Hours - ₱1,599") {
-                                // 10 hours: same day if check-in is before 2 PM, next day otherwise
-                                // Since check-in is 2:00 PM and check-out is 12:00 AM (midnight), it's the next day
-                                checkOutDate.setDate(checkOutDate.getDate() + 1);
-                              } else if (formData.stayType.includes("21 Hours")) {
-                                // 21 hours: check-in 2:00 PM, check-out 11:00 AM next day
-                                checkOutDate.setDate(checkOutDate.getDate() + 1);
-                              } else if (formData.stayType === "Multi-Day Stay") {
-                                // Multi-day: add 1 day by default (user can change)
-                                checkOutDate.setDate(checkOutDate.getDate() + 1);
-                              }
-
+                            // Auto-set check-out date based on stay type
+                            if (formData.stayType === "10 Hours - ₱1,599" || formData.stayType.includes("21 Hours")) {
+                              // For 10 hours and 21 hours, check-out is next day
+                              const checkOutDate = new Date(date.year, date.month - 1, date.day);
+                              checkOutDate.setDate(checkOutDate.getDate() + 1);
+                              const checkOutStr = `${checkOutDate.getFullYear()}-${String(checkOutDate.getMonth() + 1).padStart(2, '0')}-${String(checkOutDate.getDate()).padStart(2, '0')}`;
+                              dispatch(setCheckOutDate(checkOutStr));
+                            } else if (formData.stayType === "Multi-Day Stay") {
+                              // For multi-day, add 1 day by default (user can change)
+                              const checkOutDate = new Date(date.year, date.month - 1, date.day);
+                              checkOutDate.setDate(checkOutDate.getDate() + 1);
                               const checkOutStr = `${checkOutDate.getFullYear()}-${String(checkOutDate.getMonth() + 1).padStart(2, '0')}-${String(checkOutDate.getDate()).padStart(2, '0')}`;
                               dispatch(setCheckOutDate(checkOutStr));
                             }
                           }
                         }}
                         minValue={today(getLocalTimeZone())}
+                        isDateUnavailable={isDateUnavailable}
+                        isDisabled={!formData.stayType}
                         isRequired
                         classNames={{
                           base: "w-full",
-                          label: "text-sm font-medium text-gray-700",
+                          label: "text-sm font-medium text-gray-700 dark:text-gray-300",
                         }}
+                        description={!formData.stayType ? "Please select stay type first" : undefined}
                       />
                     </div>
 
@@ -1124,11 +1198,34 @@ const handleSubmit = async (e: React.FormEvent) => {
                           }
                         }}
                         minValue={bookingData.checkInDate ? parseDate(bookingData.checkInDate) as any : today(getLocalTimeZone())}
+                        maxValue={
+                          // For 10 hours and 21 hours, max is same as check-in date + 1 day
+                          (formData.stayType === "10 Hours - ₱1,599" || formData.stayType.includes("21 Hours")) && bookingData.checkInDate
+                            ? (() => {
+                                const maxDate = parseDate(bookingData.checkInDate);
+                                return parseDate(`${maxDate.year}-${String(maxDate.month).padStart(2, '0')}-${String(maxDate.day + 1).padStart(2, '0')}`) as any;
+                              })()
+                            : undefined
+                        }
+                        isDisabled={
+                          !formData.stayType ||
+                          !bookingData.checkInDate ||
+                          formData.stayType === "10 Hours - ₱1,599" ||
+                          formData.stayType.includes("21 Hours")
+                        }
+                        isDateUnavailable={isDateUnavailable}
                         isRequired
                         classNames={{
                           base: "w-full",
-                          label: "text-sm font-medium text-gray-700",
+                          label: "text-sm font-medium text-gray-700 dark:text-gray-300",
                         }}
+                        description={
+                          formData.stayType === "10 Hours - ₱1,599" || formData.stayType.includes("21 Hours")
+                            ? "Auto-set based on check-in date"
+                            : !formData.stayType
+                            ? "Please select stay type first"
+                            : undefined
+                        }
                       />
                     </div>
 
@@ -1229,7 +1326,14 @@ const handleSubmit = async (e: React.FormEvent) => {
 
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-700">Room Rate</span>
+                    <span className="text-gray-700">
+                      Room Rate
+                      {formData.stayType === "Multi-Day Stay" && numberOfDays > 0 && (
+                        <span className="text-xs text-gray-500 ml-1">
+                          ({numberOfDays} {numberOfDays === 1 ? 'day' : 'days'})
+                        </span>
+                      )}
+                    </span>
                     <span className="font-semibold">₱{roomRate.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between items-center">
@@ -1424,7 +1528,14 @@ const handleSubmit = async (e: React.FormEvent) => {
 
                   <div className="space-y-2 mb-4">
                     <div className="flex justify-between">
-                      <span className="text-gray-700">Room Rate</span>
+                      <span className="text-gray-700">
+                        Room Rate
+                        {formData.stayType === "Multi-Day Stay" && numberOfDays > 0 && (
+                          <span className="text-xs text-gray-500 ml-1">
+                            ({numberOfDays} {numberOfDays === 1 ? 'day' : 'days'})
+                          </span>
+                        )}
+                      </span>
                       <span className="font-semibold">₱{roomRate.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">

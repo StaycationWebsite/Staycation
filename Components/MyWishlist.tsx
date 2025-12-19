@@ -3,57 +3,54 @@
 import { useState } from 'react';
 import { Heart, MapPin, Star, Trash2 } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import toast from 'react-hot-toast';
+import toast, { Toaster } from 'react-hot-toast';
+import { useGetUserWishlistQuery, useRemoveFromWishlistMutation } from '@/redux/api/wishlistApi';
 
 interface MyWishlistPageProps {
   initialData: {
     success: boolean;
     data: any[];
   };
+  userId: string;
 }
 
-const MyWishlistPage = ({ initialData }: MyWishlistPageProps) => {
-  const router = useRouter();
-  const [isRemoving, setIsRemoving] = useState(false);
-  const wishlistItems = initialData?.data || [];
+const MyWishlistPage = ({ initialData, userId }: MyWishlistPageProps) => {
+  // RTK Query hooks - skip if we have initial data on first render
+  const { data: wishlistData, isLoading, error, refetch } = useGetUserWishlistQuery(userId);
+
+  const [removeFromWishlist, { isLoading: isRemoving }] = useRemoveFromWishlistMutation();
+
+  // Use SSR data if RTK Query hasn't loaded yet, otherwise use RTK Query data
+  const wishlistItems = (wishlistData?.data || initialData?.data || []);
 
   const handleRemoveFromWishlist = async (wishlistId: string) => {
-    setIsRemoving(true);
     try {
-      const res = await fetch(`/api/wishlist/delete/${wishlistId}`, {
-        method: 'DELETE',
-      });
-
-      if (!res.ok) {
-        throw new Error('Failed to remove from wishlist');
-      }
-
+      await removeFromWishlist(wishlistId).unwrap();
       toast.success('Removed from wishlist');
-      router.refresh(); // Refresh server component data
+      refetch(); // Refetch the wishlist
     } catch (error) {
       console.error('Error removing from wishlist:', error);
       toast.error('Failed to remove from wishlist');
-    } finally {
-      setIsRemoving(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 pt-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 dark:text-white mb-2">
-            My Wishlist
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            {wishlistItems.length} saved {wishlistItems.length === 1 ? 'room' : 'rooms'}
-          </p>
-        </div>
+    <>
+      <Toaster position="top-center" />
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 pt-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-4xl font-bold text-gray-800 dark:text-white mb-2">
+              My Wishlist
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              {wishlistItems.length} saved {wishlistItems.length === 1 ? 'room' : 'rooms'}
+            </p>
+          </div>
 
-        {/* Empty State */}
-        {wishlistItems.length === 0 ? (
+          {/* Empty State */}
+          {wishlistItems.length === 0 ? (
           <div className="bg-white dark:bg-gray-800 rounded-xl p-12 text-center">
             <Heart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">
@@ -130,8 +127,9 @@ const MyWishlistPage = ({ initialData }: MyWishlistPageProps) => {
             })}
           </div>
         )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

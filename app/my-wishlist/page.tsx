@@ -8,27 +8,35 @@ export const metadata = {
 }
 
 const getWishlist = async (userId: string) => {
-  const res = await fetch(`${process.env.API_URL}/api/wishlist/${userId}`, {
-    cache: 'no-store'
-  });
+  try {
+    const res = await fetch(`${process.env.API_URL}/api/wishlist/${userId}`, {
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
 
-  if (!res.ok) {
-    throw new Error('Failed to fetch wishlist');
+    if (!res.ok) {
+      throw new Error('Failed to fetch wishlist');
+    }
+
+    return res.json();
+  } catch (error) {
+    console.error('Error fetching wishlist:', error);
+    return { success: false, data: [] };
   }
-
-  return res.json();
 }
 
 const MyWishlistPage = async () => {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
-    redirect('/login');
+    redirect('/login?callbackUrl=/my-wishlist');
   }
 
-  const data = await getWishlist(session.user.id);
+  const initialData = await getWishlist(session.user.id);
 
-  return <MyWishlistClient initialData={data} />;
+  return <MyWishlistClient initialData={initialData} userId={session.user.id} />;
 }
 
 export default MyWishlistPage;

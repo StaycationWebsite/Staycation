@@ -72,6 +72,16 @@ export const bookingsApi = createApi({
       },
       providesTags: ['Booking']
     }),
+
+    // Get bookings for a specific room/haven
+    getRoomBookings: builder.query({
+      query(havenId) {
+        return {
+          url: `/bookings/room/${havenId}`
+        };
+      },
+      providesTags: ['Booking']
+    }),
   })
 });
 
@@ -82,4 +92,5 @@ export const {
   useUpdateBookingStatusMutation,
   useDeleteBookingMutation,
   useGetUserBookingsQuery,
+  useGetRoomBookingsQuery,
 } = bookingsApi;

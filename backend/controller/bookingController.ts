@@ -536,3 +536,58 @@ export const getUserBookings = async (
     );
   }
 };
+
+// GET Room/Haven Bookings (for checking availability)
+export const getRoomBookings = async (
+  req: NextRequest,
+  { params }: { params: Promise<{ havenId: string }> }
+): Promise<NextResponse> => {
+  const { havenId } = await params;
+
+  try {
+    // First, get the room name from havens table using havenId
+    const havenQuery = `SELECT haven_name FROM havens WHERE uuid_id = $1`;
+    const havenResult = await pool.query(havenQuery, [havenId]);
+
+    if (havenResult.rows.length === 0) {
+      return NextResponse.json({
+        success: false,
+        error: "Haven not found",
+      }, { status: 404 });
+    }
+
+    const roomName = havenResult.rows[0].haven_name;
+
+    // Get all active bookings for this room (exclude cancelled and rejected)
+    const query = `
+      SELECT
+        id,
+        booking_id,
+        check_in_date,
+        check_out_date,
+        status,
+        room_name
+      FROM bookings
+      WHERE room_name = $1
+        AND status NOT IN ('cancelled', 'rejected')
+      ORDER BY check_in_date ASC
+    `;
+
+    const result = await pool.query(query, [roomName]);
+    console.log(`✅ Retrieved ${result.rows.length} active bookings for room ${roomName} (ID: ${havenId})`);
+
+    return NextResponse.json({
+      success: true,
+      data: result.rows,
+    });
+  } catch (error: any) {
+    console.log("❌ Error fetching room bookings:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: error.message || "Failed to fetch room bookings",
+      },
+      { status: 500 }
+    );
+  }
+};

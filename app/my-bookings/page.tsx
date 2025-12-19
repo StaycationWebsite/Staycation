@@ -8,27 +8,35 @@ export const metadata = {
 }
 
 const getBookings = async (userId: string) => {
-  const res = await fetch(`${process.env.API_URL}/api/bookings/user/${userId}?status=all`, {
-    cache: 'no-store'
-  });
+  try {
+    const res = await fetch(`${process.env.API_URL}/api/bookings/user/${userId}`, {
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
 
-  if (!res.ok) {
-    throw new Error('Failed to fetch bookings');
+    if (!res.ok) {
+      throw new Error('Failed to fetch bookings');
+    }
+
+    return res.json();
+  } catch (error) {
+    console.error('Error fetching bookings:', error);
+    return { success: false, data: [] };
   }
-
-  return res.json();
 }
 
 const MyBookingsPage = async () => {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
-    redirect('/login');
+    redirect('/login?callbackUrl=/my-bookings');
   }
 
-  const data = await getBookings(session.user.id);
+  const initialData = await getBookings(session.user.id);
 
-  return <MyBookingsClient initialData={data} />;
+  return <MyBookingsClient initialData={initialData} userId={session.user.id} />;
 }
 
-export default MyBookingsPage
+export default MyBookingsPage;
