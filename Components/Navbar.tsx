@@ -143,9 +143,9 @@ const Navbar = () => {
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
                 className="flex items-center gap-3 px-4 py-2 rounded-full bg-gradient-to-r from-yellow-50 to-orange-50 hover:from-yellow-100 hover:to-orange-100 border-2 border-orange-200 transition-all duration-300 transform hover:scale-105"
               >
-                {session.user.image ? (
+                {((session.user as any).profile_image_url || session.user.image) ? (
                   <img
-                    src={session.user.image}
+                    src={(session.user as any).profile_image_url || session.user.image}
                     alt={session.user.name || "User"}
                     className="w-8 h-8 rounded-full object-cover"
                   />
@@ -169,9 +169,9 @@ const Navbar = () => {
                 <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700 overflow-hidden z-50 animate-slide-down">
                   <div className="p-4 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-gray-700 dark:to-gray-700 border-b border-gray-100 dark:border-gray-700">
                     <div className="flex items-center gap-3">
-                      {session.user.image ? (
+                      {((session.user as any).profile_image_url || session.user.image) ? (
                         <img
-                          src={session.user.image}
+                          src={(session.user as any).profile_image_url || session.user.image}
                           alt={session.user.name || "User"}
                           className="w-12 h-12 rounded-full object-cover"
                         />
@@ -344,9 +344,9 @@ const Navbar = () => {
               <div className="space-y-3">
                 {/* User Info */}
                 <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-gray-700 dark:to-gray-700 rounded-lg border-2 border-orange-200 dark:border-gray-600">
-                  {session.user.image ? (
+                  {((session.user as any).profile_image_url || session.user.image) ? (
                     <img
-                      src={session.user.image}
+                      src={(session.user as any).profile_image_url || session.user.image}
                       alt={session.user.name || "User"}
                       className="w-12 h-12 rounded-full object-cover"
                     />

@@ -261,9 +261,9 @@ export default function OwnerDashboard() {
           {sidebar && (
             <div className="mb-3 p-3 bg-white rounded-lg border border-gray-200">
               <div className="flex items-center gap-3">
-                {session && ((session.user as any)?.image || (session.user as any)?.profile_image_url) ? (
+                {session && ((session.user as any)?.profile_image_url || (session.user as any)?.image) ? (
                   <Image
-                    src={(session.user as any)?.image || (session.user as any)?.profile_image_url}
+                    src={(session.user as any)?.profile_image_url || (session.user as any)?.image}
                     alt="Profile"
                     width={40}
                     height={40}
@@ -347,9 +347,9 @@ export default function OwnerDashboard() {
                 onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                 className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                {session && ((session.user as any)?.image || (session.user as any)?.profile_image_url) ? (
+                {session && ((session.user as any)?.profile_image_url || (session.user as any)?.image) ? (
                   <Image
-                    src={(session.user as any)?.image || (session.user as any)?.profile_image_url}
+                    src={(session.user as any)?.profile_image_url || (session.user as any)?.image}
                     alt="Profile"
                     width={40}
                     height={40}
@@ -369,9 +369,9 @@ export default function OwnerDashboard() {
                   {/* User Info */}
                   <div className="px-4 py-3 border-b border-gray-200">
                     <div className="flex items-center gap-3">
-                      {session && ((session.user as any)?.image || (session.user as any)?.profile_image_url) ? (
+                      {session && ((session.user as any)?.profile_image_url || (session.user as any)?.image) ? (
                         <Image
-                          src={(session.user as any)?.image || (session.user as any)?.profile_image_url}
+                          src={(session.user as any)?.profile_image_url || (session.user as any)?.image}
                           alt="Profile"
                           width={48}
                           height={48}

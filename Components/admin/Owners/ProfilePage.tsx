@@ -161,6 +161,12 @@ const ProfilePage = () => {
 
       // Update session with the data returned from the backend
       const fullName = `${result.data.first_name} ${result.data.last_name}`.trim();
+
+      // Add cache-busting timestamp to image URL
+      const imageUrl = result.data.profile_image_url
+        ? `${result.data.profile_image_url}?t=${Date.now()}`
+        : result.data.profile_image_url;
+
       await update({
         ...session,
         user: {
@@ -180,12 +186,15 @@ const ProfilePage = () => {
           emergency_contact_name: result.data.emergency_contact_name,
           emergency_contact_phone: result.data.emergency_contact_phone,
           emergency_contact_relation: result.data.emergency_contact_relation,
-          image: result.data.profile_image_url,
-          profile_image_url: result.data.profile_image_url,
+          image: imageUrl,
+          profile_image_url: imageUrl,
         }
       });
 
       toast.success("Profile updated successfully!");
+
+      // Force a page reload to update all instances of the profile image
+      window.location.reload();
 
       // Refetch employee data to get fresh data from database
       const response = await fetch(`/api/admin/employees/${userId}`, {
