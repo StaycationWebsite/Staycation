@@ -56,6 +56,29 @@ export const authOptions: NextAuthOptions = {
 
           console.log("✅ Password valid! Login successful");
 
+          // Create activity log for login
+          try {
+            await pool.query(
+              `INSERT INTO staff_activity_logs (employment_id, action_type, action, details, created_at)
+               VALUES ($1, $2, $3, $4, NOW())`,
+              [
+                user.id,
+                'login',
+                'Logged into system',
+                `${user.first_name} ${user.last_name} logged in successfully via NextAuth`
+              ]
+            );
+            console.log('✅ Activity log created for login');
+          } catch (logError: any) {
+            console.error('❌ Failed to create activity log:', logError);
+            console.error('Error details:', {
+              message: logError?.message,
+              code: logError?.code,
+              detail: logError?.detail
+            });
+            // Don't fail the login if activity log creation fails
+          }
+
           // Return user object
           return {
             id: String(user.id),  // ✅ Convert to string

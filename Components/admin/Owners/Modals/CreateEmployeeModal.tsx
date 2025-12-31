@@ -1,7 +1,7 @@
 "use client";
 
-import { X, Upload, User } from "lucide-react";
-import { useState, useEffect } from "react";
+import { X, Upload, User, AlertCircle } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import { Input } from "@nextui-org/input";
 import { Select, SelectItem } from "@nextui-org/select";
 import { DatePicker } from "@nextui-org/date-picker";
@@ -16,6 +16,7 @@ interface CreateEmployeeModalProps {
 
 const CreateEmployeeModal = ({ isOpen, onClose }: CreateEmployeeModalProps) => {
   const [createEmployee, { isLoading }] = useCreateEmployeeMutation();
+  const formRef = useRef<HTMLFormElement>(null);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -37,6 +38,9 @@ const CreateEmployeeModal = ({ isOpen, onClose }: CreateEmployeeModalProps) => {
     confirmPassword: "",
     profile_image: "",
   });
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
 
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
   const [profilePreview, setProfilePreview] = useState<string>("");
@@ -114,11 +118,142 @@ const CreateEmployeeModal = ({ isOpen, onClose }: CreateEmployeeModalProps) => {
     setProfilePreview("");
   };
 
+  const validateField = (name: string, value: string): string => {
+    switch (name) {
+      case "firstName":
+      case "lastName":
+        if (!value.trim()) return "This field is required";
+        if (value.trim().length < 2) return "Must be at least 2 characters";
+        return "";
+
+      case "email":
+        if (!value.trim()) return "Email is required";
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(value)) return "Invalid email format";
+        return "";
+
+      case "phone":
+        if (!value.trim()) return "Phone number is required";
+        const phoneRegex = /^(\+63|0)?9\d{9}$/;
+        if (!phoneRegex.test(value.replace(/[\s-]/g, ""))) {
+          return "Invalid PH phone number (e.g., 09123456789)";
+        }
+        return "";
+
+      case "role":
+        if (!value) return "Please select a role";
+        return "";
+
+      case "department":
+        if (!value) return "Please select a department";
+        return "";
+
+      case "hireDate":
+        if (!value) return "Hire date is required";
+        return "";
+
+      case "salary":
+        if (!value) return "Salary is required";
+        if (parseFloat(value) <= 0) return "Salary must be greater than 0";
+        return "";
+
+      case "address":
+        if (!value.trim()) return "Address is required";
+        return "";
+
+      case "city":
+        if (!value.trim()) return "City is required";
+        return "";
+
+      case "zipCode":
+        if (!value.trim()) return "Zip code is required";
+        if (!/^\d{4}$/.test(value)) return "Zip code must be 4 digits";
+        return "";
+
+      case "emergencyContactName":
+        if (!value.trim()) return "Emergency contact name is required";
+        return "";
+
+      case "emergencyContactPhone":
+        if (!value.trim()) return "Emergency contact phone is required";
+        const emergencyPhoneRegex = /^(\+63|0)?9\d{9}$/;
+        if (!emergencyPhoneRegex.test(value.replace(/[\s-]/g, ""))) {
+          return "Invalid PH phone number";
+        }
+        return "";
+
+      case "emergencyContactRelation":
+        if (!value.trim()) return "Relationship is required";
+        return "";
+
+      case "password":
+        if (!value) return "Password is required";
+        if (value.length < 8) return "Password must be at least 8 characters";
+        return "";
+
+      case "confirmPassword":
+        if (!value) return "Please confirm password";
+        if (value !== formData.password) return "Passwords do not match";
+        return "";
+
+      default:
+        return "";
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    const fields = [
+      "firstName", "lastName", "email", "phone", "role", "department",
+      "hireDate", "salary", "address", "city", "zipCode",
+      "emergencyContactName", "emergencyContactPhone", "emergencyContactRelation",
+      "password", "confirmPassword"
+    ];
+
+    fields.forEach(field => {
+      const error = validateField(field, formData[field as keyof typeof formData]);
+      if (error) {
+        newErrors[field] = error;
+      }
+    });
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const scrollToFirstError = () => {
+    const firstErrorField = Object.keys(errors)[0];
+    if (firstErrorField && formRef.current) {
+      const errorElement = formRef.current.querySelector(`[name="${firstErrorField}"]`);
+      if (errorElement) {
+        errorElement.scrollIntoView({ behavior: "smooth", block: "center" });
+        setTimeout(() => {
+          (errorElement as HTMLElement).focus();
+        }, 500);
+      }
+    }
+  };
+
+  const handleBlur = (fieldName: string) => {
+    setTouchedFields(prev => ({ ...prev, [fieldName]: true }));
+    const error = validateField(fieldName, formData[fieldName as keyof typeof formData]);
+    setErrors(prev => ({ ...prev, [fieldName]: error }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (formData.password !== formData.confirmPassword) {
-      toast.error("Password do not match!");
+    // Mark all fields as touched
+    const allFields = Object.keys(formData).reduce((acc, key) => {
+      acc[key] = true;
+      return acc;
+    }, {} as Record<string, boolean>);
+    setTouchedFields(allFields);
+
+    // Validate all fields
+    if (!validateForm()) {
+      toast.error("Please fix all validation errors");
+      setTimeout(scrollToFirstError, 100);
       return;
     }
 
@@ -146,6 +281,9 @@ const CreateEmployeeModal = ({ isOpen, onClose }: CreateEmployeeModalProps) => {
         street_address: formData.address,
         city: formData.city,
         zip_code: formData.zipCode,
+        emergency_contact_name: formData.emergencyContactName,
+        emergency_contact_phone: formData.emergencyContactPhone,
+        emergency_contact_relation: formData.emergencyContactRelation,
         password: formData.password,
         profile_image: profileImageBase64,
       };
@@ -176,6 +314,8 @@ const CreateEmployeeModal = ({ isOpen, onClose }: CreateEmployeeModalProps) => {
         });
         setProfilePicture(null);
         setProfilePreview("");
+        setErrors({});
+        setTouchedFields({});
         onClose();
       }
     } catch (error: any) {
@@ -212,7 +352,7 @@ const CreateEmployeeModal = ({ isOpen, onClose }: CreateEmployeeModalProps) => {
           </div>
 
           {/* Form - Scrollable */}
-          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6">
+          <form ref={formRef} onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6">
             <div className="space-y-6">
               {/* Personal Information Section */}
               <div className="space-y-4">
@@ -271,16 +411,24 @@ const CreateEmployeeModal = ({ isOpen, onClose }: CreateEmployeeModalProps) => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
+                  <div className={`transition-all duration-300 ${touchedFields.firstName && errors.firstName ? 'animate-shake' : ''}`}>
                     <Input
                       type="text"
+                      name="firstName"
                       label="First Name *"
                       placeholder="Enter first name"
                       labelPlacement="outside"
                       value={formData.firstName}
-                      onChange={(e) =>
-                        setFormData({ ...formData, firstName: e.target.value })
-                      }
+                      onChange={(e) => {
+                        setFormData({ ...formData, firstName: e.target.value });
+                        if (touchedFields.firstName) {
+                          const error = validateField("firstName", e.target.value);
+                          setErrors(prev => ({ ...prev, firstName: error }));
+                        }
+                      }}
+                      onBlur={() => handleBlur("firstName")}
+                      isInvalid={touchedFields.firstName && !!errors.firstName}
+                      errorMessage={touchedFields.firstName && errors.firstName}
                       isRequired
                       classNames={{
                         base: "w-full",
@@ -288,16 +436,24 @@ const CreateEmployeeModal = ({ isOpen, onClose }: CreateEmployeeModalProps) => {
                       }}
                     />
                   </div>
-                  <div>
+                  <div className={`transition-all duration-300 ${touchedFields.lastName && errors.lastName ? 'animate-shake' : ''}`}>
                     <Input
                       type="text"
+                      name="lastName"
                       label="Last Name *"
                       placeholder="Enter last name"
                       labelPlacement="outside"
                       value={formData.lastName}
-                      onChange={(e) =>
-                        setFormData({ ...formData, lastName: e.target.value })
-                      }
+                      onChange={(e) => {
+                        setFormData({ ...formData, lastName: e.target.value });
+                        if (touchedFields.lastName) {
+                          const error = validateField("lastName", e.target.value);
+                          setErrors(prev => ({ ...prev, lastName: error }));
+                        }
+                      }}
+                      onBlur={() => handleBlur("lastName")}
+                      isInvalid={touchedFields.lastName && !!errors.lastName}
+                      errorMessage={touchedFields.lastName && errors.lastName}
                       isRequired
                       classNames={{
                         base: "w-full",
@@ -308,16 +464,24 @@ const CreateEmployeeModal = ({ isOpen, onClose }: CreateEmployeeModalProps) => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
+                  <div className={`transition-all duration-300 ${touchedFields.email && errors.email ? 'animate-shake' : ''}`}>
                     <Input
                       type="email"
+                      name="email"
                       label="Email Address *"
                       placeholder="employee@example.com"
                       labelPlacement="outside"
                       value={formData.email}
-                      onChange={(e) =>
-                        setFormData({ ...formData, email: e.target.value })
-                      }
+                      onChange={(e) => {
+                        setFormData({ ...formData, email: e.target.value });
+                        if (touchedFields.email) {
+                          const error = validateField("email", e.target.value);
+                          setErrors(prev => ({ ...prev, email: error }));
+                        }
+                      }}
+                      onBlur={() => handleBlur("email")}
+                      isInvalid={touchedFields.email && !!errors.email}
+                      errorMessage={touchedFields.email && errors.email}
                       isRequired
                       classNames={{
                         base: "w-full",
@@ -325,16 +489,24 @@ const CreateEmployeeModal = ({ isOpen, onClose }: CreateEmployeeModalProps) => {
                       }}
                     />
                   </div>
-                  <div>
+                  <div className={`transition-all duration-300 ${touchedFields.phone && errors.phone ? 'animate-shake' : ''}`}>
                     <Input
                       type="tel"
+                      name="phone"
                       label="Phone Number *"
                       placeholder="+63 912 345 6789"
                       labelPlacement="outside"
                       value={formData.phone}
-                      onChange={(e) =>
-                        setFormData({ ...formData, phone: e.target.value })
-                      }
+                      onChange={(e) => {
+                        setFormData({ ...formData, phone: e.target.value });
+                        if (touchedFields.phone) {
+                          const error = validateField("phone", e.target.value);
+                          setErrors(prev => ({ ...prev, phone: error }));
+                        }
+                      }}
+                      onBlur={() => handleBlur("phone")}
+                      isInvalid={touchedFields.phone && !!errors.phone}
+                      errorMessage={touchedFields.phone && errors.phone}
                       isRequired
                       classNames={{
                         base: "w-full",
@@ -346,16 +518,24 @@ const CreateEmployeeModal = ({ isOpen, onClose }: CreateEmployeeModalProps) => {
               </div>
 
               <div className="grid grid-cols-2 gap-4 mt-2">
-                <div>
+                <div className={`transition-all duration-300 ${touchedFields.password && errors.password ? 'animate-shake' : ''}`}>
                   <Input
                     type="password"
+                    name="password"
                     label="Password *"
-                    placeholder="Enter password"
+                    placeholder="Enter password (min 8 characters)"
                     labelPlacement="outside"
                     value={formData.password}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
+                    onChange={(e) => {
+                      setFormData({ ...formData, password: e.target.value });
+                      if (touchedFields.password) {
+                        const error = validateField("password", e.target.value);
+                        setErrors(prev => ({ ...prev, password: error }));
+                      }
+                    }}
+                    onBlur={() => handleBlur("password")}
+                    isInvalid={touchedFields.password && !!errors.password}
+                    errorMessage={touchedFields.password && errors.password}
                     isRequired
                     classNames={{
                       base: "w-full",
@@ -364,19 +544,24 @@ const CreateEmployeeModal = ({ isOpen, onClose }: CreateEmployeeModalProps) => {
                   />
                 </div>
 
-                <div>
+                <div className={`transition-all duration-300 ${touchedFields.confirmPassword && errors.confirmPassword ? 'animate-shake' : ''}`}>
                   <Input
                     type="password"
+                    name="confirmPassword"
                     label="Confirm Password *"
                     placeholder="Re-enter password"
                     labelPlacement="outside"
                     value={formData.confirmPassword}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        confirmPassword: e.target.value,
-                      })
-                    }
+                    onChange={(e) => {
+                      setFormData({ ...formData, confirmPassword: e.target.value });
+                      if (touchedFields.confirmPassword) {
+                        const error = validateField("confirmPassword", e.target.value);
+                        setErrors(prev => ({ ...prev, confirmPassword: error }));
+                      }
+                    }}
+                    onBlur={() => handleBlur("confirmPassword")}
+                    isInvalid={touchedFields.confirmPassword && !!errors.confirmPassword}
+                    errorMessage={touchedFields.confirmPassword && errors.confirmPassword}
                     isRequired
                     classNames={{
                       base: "w-full",

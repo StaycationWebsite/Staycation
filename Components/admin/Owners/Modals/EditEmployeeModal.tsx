@@ -32,6 +32,9 @@ const EditEmployeeModal = ({ isOpen, onClose, employee }: EditEmployeeModalProps
     address: "",
     city: "",
     zipCode: "",
+    emergencyContactName: "",
+    emergencyContactPhone: "",
+    emergencyContactRelation: "",
     status: "active",
   });
 
@@ -89,6 +92,9 @@ const EditEmployeeModal = ({ isOpen, onClose, employee }: EditEmployeeModalProps
         address: employee.street_address || "",
         city: employee.city || "",
         zipCode: employee.zip_code || "",
+        emergencyContactName: employee.emergency_contact_name || "",
+        emergencyContactPhone: employee.emergency_contact_phone || "",
+        emergencyContactRelation: employee.emergency_contact_relation || "",
         status: employee.status || "active",
       });
       setProfilePreview(employee.profile_image_url || "");
@@ -145,6 +151,9 @@ const EditEmployeeModal = ({ isOpen, onClose, employee }: EditEmployeeModalProps
         street_address: formData.address,
         city: formData.city,
         zip_code: formData.zipCode,
+        emergency_contact_name: formData.emergencyContactName,
+        emergency_contact_phone: formData.emergencyContactPhone,
+        emergency_contact_relation: formData.emergencyContactRelation,
         status: formData.status,
         ...(profileImageBase64 && { profile_image: profileImageBase64 }),
       };
@@ -404,6 +413,45 @@ const EditEmployeeModal = ({ isOpen, onClose, employee }: EditEmployeeModalProps
                     input: "text-sm",
                   }}
                 />
+              </div>
+
+              {/* Emergency Contact Section */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2">
+                  Emergency Contact
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input
+                    label="Contact Name"
+                    placeholder="Full name"
+                    value={formData.emergencyContactName}
+                    onChange={(e) => setFormData({ ...formData, emergencyContactName: e.target.value })}
+                    classNames={{
+                      label: "text-sm font-medium",
+                      input: "text-sm",
+                    }}
+                  />
+                  <Input
+                    label="Contact Phone"
+                    placeholder="+63 912 345 6789"
+                    value={formData.emergencyContactPhone}
+                    onChange={(e) => setFormData({ ...formData, emergencyContactPhone: e.target.value })}
+                    classNames={{
+                      label: "text-sm font-medium",
+                      input: "text-sm",
+                    }}
+                  />
+                  <Input
+                    label="Relationship"
+                    placeholder="e.g., Spouse, Parent, Sibling"
+                    value={formData.emergencyContactRelation}
+                    onChange={(e) => setFormData({ ...formData, emergencyContactRelation: e.target.value })}
+                    classNames={{
+                      label: "text-sm font-medium",
+                      input: "text-sm",
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </form>

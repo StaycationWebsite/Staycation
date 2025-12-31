@@ -23,6 +23,9 @@ export interface Employee {
   updated_at?: string;
   password: string;
   profile_image_url?: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
+  emergency_contact_relation?: string;
 }
 
 // CREATE Employee
@@ -43,7 +46,10 @@ export const createEmployee = async (req: NextRequest): Promise<NextResponse> =>
       city,
       zip_code,
       password,
-      profile_image
+      profile_image,
+      emergency_contact_name,
+      emergency_contact_phone,
+      emergency_contact_relation
     } = body;
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -58,9 +64,11 @@ export const createEmployee = async (req: NextRequest): Promise<NextResponse> =>
       INSERT INTO employees (
         first_name, last_name, email, phone, employment_id,
         hire_date, role, department, monthly_salary,
-        street_address, city, zip_code, password, profile_image_url, created_at, updated_at
+        street_address, city, zip_code, password, profile_image_url,
+        emergency_contact_name, emergency_contact_phone, emergency_contact_relation,
+        status, created_at, updated_at
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW())
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, NOW(), NOW())
       RETURNING *
     `;
 
@@ -78,7 +86,11 @@ export const createEmployee = async (req: NextRequest): Promise<NextResponse> =>
       city,
       zip_code,
       hashedPassword,
-      profileImageUrl
+      profileImageUrl,
+      emergency_contact_name,
+      emergency_contact_phone,
+      emergency_contact_relation,
+      'active'
     ];
 
     const result = await pool.query(query, values);
@@ -340,6 +352,31 @@ export const loginEmployee = async (req: NextRequest):Promise <NextResponse> => 
     }
 
     console.log("Employee logged in. ", employee.email)
+    console.log("Attempting to create activity log for employee ID:", employee.id);
+
+    // Create activity log for login
+    try {
+      const activityLogResult = await pool.query(
+        `INSERT INTO staff_activity_logs (employment_id, action_type, action, details, created_at)
+         VALUES ($1, $2, $3, $4, NOW())
+         RETURNING *`,
+        [
+          employee.id,
+          'login',
+          'Logged into system',
+          `${employee.first_name} ${employee.last_name} logged in successfully`
+        ]
+      );
+      console.log('✅ Activity log created for login:', activityLogResult.rows[0]);
+    } catch (logError: any) {
+      console.error('❌ Failed to create activity log:', logError);
+      console.error('Error details:', {
+        message: logError?.message,
+        code: logError?.code,
+        detail: logError?.detail
+      });
+      // Don't fail the login if activity log creation fails
+    }
 
     return NextResponse.json(
       {

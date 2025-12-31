@@ -21,6 +21,7 @@ import MaintenancePage from "./MaintenancePage";
 import ReviewsPage from "./ReviewsPage";
 import SettingsPage from "./SettingsPage";
 import AuditLogsPage from "./AuditLogsPage";
+import MessagesPage from "./MessagesPage";
 import toast from 'react-hot-toast';
 import { useState, useEffect, useRef } from "react";
 import { signOut, useSession } from "next-auth/react";
@@ -133,6 +134,12 @@ export default function OwnerDashboard() {
       icon: DollarSign,
       label: "Revenue Management",
       color: "text-emerald-500",
+    },
+     {
+      id: "messages",
+      icon: MessageSquare,
+      label: "Messages",
+      color: "text-pink-500",
     },
     {
       id: "maintenance",
@@ -478,6 +485,7 @@ export default function OwnerDashboard() {
                 }}
               />
             )}
+            {page === "messages" && <MessagesPage />}
             {page === "settings" && <SettingsPage />}
             {page === "audit" && <AuditLogsPage />}
             {page === "profile" && <ProfilePage />}

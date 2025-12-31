@@ -17,18 +17,9 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useGetEmployeesQuery, useDeleteEmployeeMutation } from "@/redux/api/employeeApi";
+import { useGetActivityLogsQuery, useGetActivityStatsQuery } from "@/redux/api/activityLogApi";
 import toast from "react-hot-toast";
 import Image from "next/image";
-
-interface ActivityLog {
-  id: number;
-  timestamp: string;
-  staffName: string;
-  role: string;
-  action: string;
-  details: string;
-  type: "login" | "logout" | "task_complete" | "task_pending" | "update" | "other";
-}
 
 const StaffActivityPage = ({ onCreateClick, onEditClick }: any) => {
   const [tab, setTab] = useState("activity");
@@ -40,110 +31,37 @@ const StaffActivityPage = ({ onCreateClick, onEditClick }: any) => {
   const { data: employeesData, isLoading: isLoadingEmployees } = useGetEmployeesQuery({});
   const [deleteEmployee, { isLoading: isDeleting }] = useDeleteEmployeeMutation();
 
-  const employees = employeesData?.data || [];
-
-  // Sample activity log data
-  const activityLogs: ActivityLog[] = [
-    {
-      id: 1,
-      timestamp: "2025-01-11 2:30 PM",
-      staffName: "Maria Santos",
-      role: "Cleaner",
-      action: "Login",
-      details: "Logged in from Mobile App",
-      type: "login",
-    },
-    {
-      id: 2,
-      timestamp: "2025-01-11 1:15 PM",
-      staffName: "Juan Dela Cruz",
-      role: "CSR",
-      action: "Task Completed",
-      details: "Completed guest check-in for Haven 2",
-      type: "task_complete",
-    },
-    {
-      id: 3,
-      timestamp: "2025-01-11 12:45 PM",
-      staffName: "Carlos Reyes",
-      role: "Manager",
-      action: "Updated",
-      details: "Updated Haven 3 availability status",
-      type: "update",
-    },
-    {
-      id: 4,
-      timestamp: "2025-01-11 12:00 PM",
-      staffName: "Rosa Garcia",
-      role: "Cleaner",
-      action: "Login",
-      details: "Logged in from Admin Portal",
-      type: "login",
-    },
-    {
-      id: 5,
-      timestamp: "2025-01-11 11:30 AM",
-      staffName: "Pedro Cruz",
-      role: "CSR",
-      action: "Task Completed",
-      details: "Processed payment for booking BK-2025-045",
-      type: "task_complete",
-    },
-    {
-      id: 6,
-      timestamp: "2025-01-11 11:00 AM",
-      staffName: "Anna Martinez",
-      role: "Cleaner",
-      action: "Task Completed",
-      details: "Cleaned Haven 5 - Ready for next guest",
-      type: "task_complete",
-    },
-    {
-      id: 7,
-      timestamp: "2025-01-11 10:45 AM",
-      staffName: "Luis Reyes",
-      role: "Partner",
-      action: "Logout",
-      details: "Logged out from Admin Portal",
-      type: "logout",
-    },
-    {
-      id: 8,
-      timestamp: "2025-01-11 10:30 AM",
-      staffName: "Sofia Santos",
-      role: "CSR",
-      action: "Task Pending",
-      details: "Assigned to handle guest inquiry #234",
-      type: "task_pending",
-    },
-    {
-      id: 9,
-      timestamp: "2025-01-11 10:15 AM",
-      staffName: "Miguel Garcia",
-      role: "Manager",
-      action: "Updated",
-      details: "Modified staff schedule for next week",
-      type: "update",
-    },
-    {
-      id: 10,
-      timestamp: "2025-01-11 10:00 AM",
-      staffName: "Carmen Lopez",
-      role: "Cleaner",
-      action: "Task Completed",
-      details: "Cleaned Haven 1 and restocked amenities",
-      type: "task_complete",
-    },
-  ];
-
-  const filteredLogs = activityLogs.filter((log) => {
-    const matchesSearch =
-      log.staffName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      log.action.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      log.details.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = filterType === "all" || log.type === filterType;
-    return matchesSearch && matchesFilter;
+  // Fetch activity logs and stats from API
+  const { data: activityLogsData, isLoading: isLoadingLogs } = useGetActivityLogsQuery({
+    action_type: filterType !== "all" ? filterType : undefined,
+    limit: 50,
   });
+  const { data: statsData, isLoading: isLoadingStats } = useGetActivityStatsQuery({});
+
+  const employees = employeesData?.data || [];
+  const activityLogs = activityLogsData?.data || [];
+  const stats = statsData?.data || { active_csr: 0, active_cleaners: 0, logged_out: 0, total: 0 };
+
+  const filteredLogs = activityLogs.filter((log: any) => {
+    const staffName = `${log.first_name || ''} ${log.last_name || ''}`.toLowerCase();
+    const matchesSearch =
+      staffName.includes(searchQuery.toLowerCase()) ||
+      log.action.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (log.details && log.details.toLowerCase().includes(searchQuery.toLowerCase()));
+    return matchesSearch;
+  });
+
+  const formatTimestamp = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
 
   const getActionIcon = (type: string) => {
     switch (type) {
@@ -227,23 +145,29 @@ const StaffActivityPage = ({ onCreateClick, onEditClick }: any) => {
 
       {tab === "activity" && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[
-            { title: "Active CSR", count: "5" },
-            { title: "Active Cleaners", count: "8" },
-            { title: "Logged Out", count: "3" },
-            { title: "Total", count: "13" },
-          ].map((stat, i) => (
-            <div
-              key={i}
-              className="bg-gradient-to-br from-orange-100 to-yellow-100 rounded-lg p-6 text-center animate-in fade-in slide-in-from-bottom duration-500"
-              style={{ animationDelay: `${i * 100}ms` }}
-            >
-              <p className="text-sm font-semibold text-gray-700 mb-2">
-                {stat.title}
-              </p>
-              <p className="text-4xl font-bold text-orange-600">{stat.count}</p>
+          {isLoadingStats ? (
+            <div className="col-span-4 flex justify-center items-center py-12">
+              <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
             </div>
-          ))}
+          ) : (
+            [
+              { title: "Active CSR", count: stats.active_csr },
+              { title: "Active Cleaners", count: stats.active_cleaners },
+              { title: "Logged Out", count: stats.logged_out },
+              { title: "Total", count: stats.total },
+            ].map((stat, i) => (
+              <div
+                key={i}
+                className="bg-gradient-to-br from-orange-100 to-yellow-100 rounded-lg p-6 text-center animate-in fade-in slide-in-from-bottom duration-500"
+                style={{ animationDelay: `${i * 100}ms` }}
+              >
+                <p className="text-sm font-semibold text-gray-700 mb-2">
+                  {stat.title}
+                </p>
+                <p className="text-4xl font-bold text-orange-600">{stat.count}</p>
+              </div>
+            ))
+          )}
         </div>
       )}
 
@@ -424,7 +348,15 @@ const StaffActivityPage = ({ onCreateClick, onEditClick }: any) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredLogs.length === 0 ? (
+                  {isLoadingLogs ? (
+                    <tr>
+                      <td colSpan={5} className="text-center py-12">
+                        <div className="flex justify-center items-center">
+                          <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
+                        </div>
+                      </td>
+                    </tr>
+                  ) : filteredLogs.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="text-center py-12">
                         <div className="flex flex-col items-center gap-3">
@@ -439,57 +371,69 @@ const StaffActivityPage = ({ onCreateClick, onEditClick }: any) => {
                       </td>
                     </tr>
                   ) : (
-                    filteredLogs.map((log, index) => (
-                      <tr
-                        key={log.id}
-                        className="border-b border-gray-100 hover:bg-orange-50 transition-colors animate-in fade-in duration-500"
-                        style={{ animationDelay: `${index * 50}ms` }}
-                      >
-                        <td className="py-4 px-6">
-                          <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4 text-gray-500" />
-                            <span className="text-sm font-medium text-gray-700">
-                              {log.timestamp}
+                    filteredLogs.map((log: any, index: number) => {
+                      const staffName = `${log.first_name || ''} ${log.last_name || ''}`.trim();
+                      const initial = staffName.charAt(0) || 'U';
+                      return (
+                        <tr
+                          key={log.id}
+                          className="border-b border-gray-100 hover:bg-orange-50 transition-colors animate-in fade-in duration-500"
+                          style={{ animationDelay: `${index * 50}ms` }}
+                        >
+                          <td className="py-4 px-6">
+                            <div className="flex items-center gap-2">
+                              <Clock className="w-4 h-4 text-gray-500" />
+                              <span className="text-sm font-medium text-gray-700">
+                                {formatTimestamp(log.created_at)}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="flex items-center gap-3">
+                              {log.profile_image_url ? (
+                                <img
+                                  src={log.profile_image_url}
+                                  alt={staffName}
+                                  className="w-10 h-10 rounded-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center text-white font-bold">
+                                  {initial}
+                                </div>
+                              )}
+                              <div>
+                                <p className="text-sm font-semibold text-gray-800">
+                                  {staffName}
+                                </p>
+                                <p className="text-xs text-gray-500">{log.role}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="flex items-center gap-2">
+                              {getActionIcon(log.action_type)}
+                              <span className="text-sm font-medium text-gray-800">
+                                {log.action}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <span className="text-sm text-gray-600">
+                              {log.details || '-'}
                             </span>
-                          </div>
-                        </td>
-                        <td className="py-4 px-6">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center text-white font-bold">
-                              {log.staffName.charAt(0)}
-                            </div>
-                            <div>
-                              <p className="text-sm font-semibold text-gray-800">
-                                {log.staffName}
-                              </p>
-                              <p className="text-xs text-gray-500">{log.role}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-4 px-6">
-                          <div className="flex items-center gap-2">
-                            {getActionIcon(log.type)}
-                            <span className="text-sm font-medium text-gray-800">
+                          </td>
+                          <td className="py-4 px-6 text-center">
+                            <span
+                              className={`inline-block text-xs font-bold px-3 py-1.5 rounded-full ${getActionColor(
+                                log.action_type
+                              )}`}
+                            >
                               {log.action}
                             </span>
-                          </div>
-                        </td>
-                        <td className="py-4 px-6">
-                          <span className="text-sm text-gray-600">
-                            {log.details}
-                          </span>
-                        </td>
-                        <td className="py-4 px-6 text-center">
-                          <span
-                            className={`inline-block text-xs font-bold px-3 py-1.5 rounded-full ${getActionColor(
-                              log.type
-                            )}`}
-                          >
-                            {log.action}
-                          </span>
-                        </td>
-                      </tr>
-                    ))
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
