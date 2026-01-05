@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import {
   Search,
@@ -32,6 +32,7 @@ export default function MessagesPage() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [isNewMessageModalOpen, setIsNewMessageModalOpen] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Fetch conversations
   const {
@@ -73,6 +74,15 @@ export default function MessagesPage() {
       markAsRead({ conversation_id: activeId, user_id: userId });
     }
   }, [activeId, userId, markAsRead]);
+
+  // Auto-scroll to bottom when messages change
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const activeConversation = useMemo(
     () => conversations.find((c) => c.id === activeId) || conversations[0],
@@ -126,9 +136,13 @@ export default function MessagesPage() {
   };
 
   const formatMessageTime = (timestamp: string) => {
-    return new Date(timestamp).toLocaleTimeString("en-US", {
+    // Convert UTC timestamp to Philippine time (UTC+8)
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString("en-PH", {
       hour: "numeric",
       minute: "2-digit",
+      timeZone: "Asia/Manila",
+      hour12: true,
     });
   };
 
@@ -398,6 +412,7 @@ export default function MessagesPage() {
                       </p>
                     </div>
                   )}
+                  <div ref={messagesEndRef} />
                 </div>
 
                 {/* Message Input */}

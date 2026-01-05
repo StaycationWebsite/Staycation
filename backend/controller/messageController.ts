@@ -91,10 +91,10 @@ export const getConversations = async (
 // GET messages for a conversation
 export const getMessages = async (
   req: NextRequest,
-  { params }: { params: { conversationId: string } }
+  { params }: { params: Promise<{ conversationId: string }> }
 ): Promise<NextResponse> => {
   try {
-    const conversationId = params.conversationId;
+    const { conversationId } = await params;
 
     if (!conversationId) {
       return NextResponse.json(

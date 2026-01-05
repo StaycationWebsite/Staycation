@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import {
   Search,
@@ -33,6 +33,7 @@ export default function MessagePage({ onClose }: MessagePageProps) {
   const [search, setSearch] = useState("");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Fetch conversations
   const {
@@ -74,6 +75,15 @@ export default function MessagePage({ onClose }: MessagePageProps) {
       markAsRead({ conversation_id: activeId, user_id: userId });
     }
   }, [activeId, userId, markAsRead]);
+
+  // Auto-scroll to bottom when messages change
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const activeConversation = useMemo(
     () => conversations.find((c) => c.id === activeId) ?? conversations[0],
@@ -126,9 +136,13 @@ export default function MessagePage({ onClose }: MessagePageProps) {
   };
 
   const formatMessageTime = (timestamp: string) => {
-    return new Date(timestamp).toLocaleTimeString("en-US", {
+    // Convert UTC timestamp to Philippine time (UTC+8)
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString("en-PH", {
       hour: "numeric",
       minute: "2-digit",
+      timeZone: "Asia/Manila",
+      hour12: true,
     });
   };
 
@@ -321,6 +335,7 @@ export default function MessagePage({ onClose }: MessagePageProps) {
                       <p className="text-gray-500">No messages yet. Start the conversation!</p>
                     </div>
                   )}
+                  <div ref={messagesEndRef} />
                 </div>
 
                 <div className="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 py-3">
