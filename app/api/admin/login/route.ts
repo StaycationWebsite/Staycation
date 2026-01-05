@@ -101,9 +101,8 @@ import { NextRequest, NextResponse } from "next/server";
 interface RequestContext {}
 
 const router = createEdgeRouter<NextRequest, RequestContext>();
-
 router.post(loginEmployee);
 
-export async function POST (request: NextRequest, ctx: RequestContext) {
+export async function POST(request: NextRequest, ctx: RequestContext): Promise<NextResponse> {
   return router.run(request, ctx) as Promise<NextResponse>;
 }

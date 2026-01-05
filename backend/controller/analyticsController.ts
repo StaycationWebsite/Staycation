@@ -56,7 +56,7 @@ export async function fetchAnalyticsSummary(period: string = '30'): Promise<Anal
     SELECT
       COUNT(DISTINCT room_name) as total_rooms,
       SUM(
-        EXTRACT(DAY FROM (check_out_date::date - check_in_date::date))
+        check_out_date::date - check_in_date::date
       ) as booked_days
     FROM bookings
     WHERE created_at >= NOW() - INTERVAL '${period} days'
@@ -66,7 +66,7 @@ export async function fetchAnalyticsSummary(period: string = '30'): Promise<Anal
   const previousOccupancyQuery = `
     SELECT
       SUM(
-        EXTRACT(DAY FROM (check_out_date::date - check_in_date::date))
+        check_out_date::date - check_in_date::date
       ) as booked_days
     FROM bookings
     WHERE created_at >= NOW() - INTERVAL '${parseInt(period) * 2} days'
@@ -209,9 +209,7 @@ export const getAnalyticsSummary = async (req: NextRequest): Promise<NextRespons
       SELECT
         COUNT(DISTINCT room_name) as total_rooms,
         COUNT(*) as total_bookings,
-        SUM(
-          EXTRACT(DAY FROM (check_out_date::date - check_in_date::date))
-        ) as booked_days
+        SUM(check_out_date::date - check_in_date::date) as booked_days
       FROM bookings
       WHERE created_at >= NOW() - INTERVAL '${period} days'
         AND status IN ('approved', 'confirmed', 'checked-in', 'completed')
@@ -253,7 +251,7 @@ export const getAnalyticsSummary = async (req: NextRequest): Promise<NextRespons
     const previousOccupancyQuery = `
       SELECT
         SUM(
-          EXTRACT(DAY FROM (check_out_date::date - check_in_date::date))
+          check_out_date::date - check_in_date::date
         ) as booked_days
       FROM bookings
       WHERE created_at >= NOW() - INTERVAL '${parseInt(period) * 2} days'

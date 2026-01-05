@@ -3,6 +3,342 @@
 ## Overview
 Yung booking system ngayon ay nag-support na ng both **Guest Users** at **Logged-in Users**.
 
+---
+
+## Project File Structure
+
+Para sa mga future developers, ito yung complete file organization ng Staycation project:
+
+```
+STAYCATION/
+├── .claude/                                # Claude AI context files
+├── .git/                                   # Git repository
+├── .next/                                  # Next.js build output
+├── .env                                    # Environment variables
+├── .gitignore
+├── .gitattributes
+
+# ROOT CONFIGURATION FILES
+├── package.json                            # Node dependencies and scripts
+├── package-lock.json
+├── tsconfig.json                           # TypeScript configuration
+├── next.config.ts                          # Next.js configuration
+├── middleware.ts                           # NextAuth & role-based routing middleware
+├── tailwind.config.js                      # Tailwind CSS configuration
+├── postcss.config.js                       # PostCSS configuration
+├── eslint.config.mjs                       # ESLint configuration
+├── docker-compose.yml                      # Docker services (PostgreSQL)
+├── Dockerfile                              # Docker image configuration
+├── rename-routes.bat                       # Windows batch script
+├── next-env.d.ts                           # TypeScript definitions for Next.js
+
+# DOCUMENTATION
+├── BOOKING_SYSTEM_GUIDE.md                 # Booking system documentation
+├── EMAIL_INTEGRATION_GUIDE.md              # Email integration documentation
+├── README.md                               # Project README
+
+# PUBLIC ASSETS
+├── public/
+│   ├── favicon.ico
+│   ├── haven_logo.png
+│   ├── shlogo.png
+│   ├── file.svg, globe.svg, next.svg, vercel.svg, window.svg
+│   └── Images/                             # Room images (Cloudinary managed)
+│       ├── bg.jpg
+│       └── haven_9_*.jpg / haven9_*.jpg    # Room photos
+
+# FRONTEND PAGES (Next.js App Router)
+├── app/
+│   ├── layout.tsx                          # Root layout with providers
+│   ├── page.tsx                            # Home page
+│   ├── loading.tsx                         # Loading skeleton
+│   ├── globals.css                         # Global styles
+│
+│   # PUBLIC PAGES
+│   ├── about/page.tsx                      # About page
+│   ├── contacts/page.tsx                   # Contact us page
+│   ├── location/page.tsx                   # Location/map page
+│   ├── login/page.tsx                      # User login page
+│   ├── unauthorized/page.tsx               # Unauthorized access page
+│
+│   # USER AUTHENTICATED PAGES
+│   ├── profile/page.tsx                    # User profile page
+│   ├── my-bookings/page.tsx                # Booking history page
+│   ├── my-wishlist/page.tsx                # Wishlist page
+│   ├── checkout/page.tsx                   # Booking checkout page
+│   ├── bookings/[id]/page.tsx              # Booking details page
+│
+│   # ROOMS/LISTINGS
+│   ├── rooms/
+│   │   ├── page.tsx                        # Rooms listing page
+│   │   └── [id]/
+│   │       ├── page.tsx                    # Room detail server component
+│   │       └── RoomDetailsClient.tsx       # Room detail client component
+│
+│   # ADMIN PAGES
+│   ├── admin/
+│   │   ├── login/page.tsx                  # Admin login page
+│   │   ├── owners/                         # Property owners dashboard
+│   │   │   ├── page.tsx
+│   │   │   └── analytics/page.tsx          # Analytics page
+│   │   ├── csr/                            # Customer service rep dashboard
+│   │   │   ├── page.tsx
+│   │   │   └── inventory/page.tsx
+│   │   ├── cleaners/page.tsx               # Cleaners management
+│   │   └── partners/page.tsx               # Partners management
+│
+│   # API ROUTES
+│   └── api/
+│       ├── auth/[...nextauth]/route.ts     # NextAuth authentication handler
+│       │
+│       ├── admin/
+│       │   ├── login/route.ts              # Admin login API
+│       │   ├── haven/route.ts              # Haven management (GET, POST, DELETE)
+│       │   ├── haven/[id]/route.ts         # Individual haven CRUD
+│       │   ├── employees/route.ts          # Employee management
+│       │   ├── employees/[id]/route.ts
+│       │   ├── analytics/
+│       │   │   ├── summary/route.ts        # Analytics summary
+│       │   │   ├── monthly-revenue/route.ts
+│       │   │   └── revenue-by-room/route.ts
+│       │   ├── activity-logs/route.ts
+│       │   └── activity-stats/route.ts
+│       │
+│       ├── bookings/
+│       │   ├── route.ts                    # Create/list bookings
+│       │   ├── [id]/route.ts               # Get/update/delete booking
+│       │   ├── user/[userId]/route.ts      # Get user's bookings
+│       │   └── room/[havenId]/route.ts     # Get room bookings/availability
+│       │
+│       ├── haven/
+│       │   ├── route.ts                    # Get all havens
+│       │   ├── [id]/route.ts               # Get haven by ID
+│       │   └── addHavenRoom/route.ts       # Add new haven room
+│       │
+│       ├── wishlist/
+│       │   ├── route.ts                    # Create wishlist
+│       │   ├── [userId]/route.ts           # Get user's wishlist
+│       │   ├── check/[userId]/[havenId]/route.ts
+│       │   └── delete/[id]/route.ts
+│       │
+│       ├── messages/
+│       │   ├── send/route.ts
+│       │   ├── conversations/route.ts
+│       │   ├── mark-read/route.ts
+│       │   └── [conversationId]/route.ts
+│       │
+│       ├── users/route.ts
+│       ├── google-login/route.ts
+│       ├── inventory/route.ts
+│       │
+│       # EMAIL ROUTES
+│       ├── send-booking-email/route.ts     # Send booking confirmation
+│       ├── send-checkin-email/route.ts     # Send check-in reminder
+│       ├── send-checkout-email/route.ts    # Send check-out reminder
+│       └── send-pending-email/route.ts     # Send pending payment reminder
+
+# REACT COMPONENTS
+├── Components/
+│   # CORE UI COMPONENTS
+│   ├── Navbar.tsx                          # Navigation bar
+│   ├── Footer.tsx                          # Footer component
+│   ├── Modal.tsx                           # Reusable modal
+│   ├── Spinner.tsx                         # Loading spinner
+│   ├── Loading.tsx                         # Loading page
+│   ├── Providers.tsx                       # Redux provider
+│   ├── UIProviders.tsx                     # NextUI provider
+│   ├── Login.tsx                           # Login component
+│   ├── Contacts.tsx                        # Contact form
+│   ├── Location.tsx                        # Location map
+│   ├── MyBookings.tsx                      # Bookings list
+│   ├── MyWishlist.tsx                      # Wishlist display
+│   ├── Checkout.tsx                        # Checkout form
+│   ├── BookingDetailsClient.tsx            # Booking details
+│   ├── StayTypeCard.tsx                    # Stay type card
+│   ├── SocialIcon.tsx                      # Social icon
+│   ├── SoclalLoginButton.tsx               # Social login button
+│
+│   # HERO SECTION COMPONENTS
+│   ├── HeroSection/
+│   │   ├── HeroSectionMain.tsx             # Hero section container
+│   │   ├── SearchBarSticky.tsx             # Sticky search bar
+│   │   ├── SearchButton.tsx                # Search button
+│   │   ├── DatePicker.tsx                  # Date range picker
+│   │   ├── GuestCounter.tsx                # Guest counter
+│   │   ├── GuestSelectionModal.tsx         # Guest selection modal
+│   │   ├── LocationSelector.tsx            # Location dropdown
+│   │   ├── StayTypeSelectorModal.tsx       # Stay type modal
+│   │   └── ValidationModal.tsx             # Validation error modal
+│
+│   # ROOM LISTING COMPONENTS
+│   ├── Rooms/
+│   │   ├── HotelRoomListings.tsx           # Room listings container
+│   │   ├── RoomCard.tsx                    # Individual room card
+│   │   ├── RoomImageGallery.tsx            # Image carousel
+│   │   ├── RoomsDetailsPage.tsx            # Room details layout
+│   │   ├── RoomMap.tsx                     # Map component
+│   │   └── AmenityBadge.tsx                # Amenity badge
+│
+│   # FEATURES SECTION
+│   ├── Features/
+│   │   ├── FeatureSectionMain.tsx          # Features container
+│   │   └── FeatureCard.tsx                 # Feature card
+│
+│   # ADMIN COMPONENTS
+│   └── admin/
+│       # CUSTOMER SERVICE REP DASHBOARD
+│       ├── Csr/
+│       │   ├── CsrDashboardPage.tsx        # CSR main dashboard
+│       │   ├── BookingPage.tsx             # Bookings management
+│       │   ├── CleanersPage.tsx            # Cleaners management
+│       │   ├── InventoryPage.tsx           # Inventory management
+│       │   ├── MessagePage.tsx             # Messages
+│       │   ├── NotificationPage.tsx        # Notifications
+│       │   ├── PaymentPage.tsx             # Payment tracking
+│       │   ├── ProfilePage.tsx             # CSR profile
+│       │   ├── SettingsPage.tsx            # Settings
+│       │   │
+│       │   ├── Auth/
+│       │   │   ├── CsrLogout.tsx           # Logout logic
+│       │   │   └── ProtectedCsrRoute.tsx   # Route protection
+│       │   │
+│       │   └── Modals/
+│       │       ├── AddItem.tsx             # Add inventory item
+│       │       ├── EditItem.tsx            # Edit inventory item
+│       │       ├── ViewItem.tsx            # View item details
+│       │       ├── DeleteConfirmation.tsx
+│       │       ├── NewBookings.tsx         # Create booking
+│       │       ├── ViewBookings.tsx        # View booking details
+│       │       ├── Message.tsx
+│       │       └── Notification.tsx
+│       │
+│       # PROPERTY OWNERS DASHBOARD
+│       ├── Owners/
+│       │   ├── OwnerDashboardPage.tsx      # Main dashboard
+│       │   ├── HavenMagementPage.tsx       # Haven/room management
+│       │   ├── ViewAllUnits.tsx            # View all units
+│       │   ├── ReservationsPage.tsx        # Reservations list
+│       │   ├── AnalyticsPage.tsx           # Analytics dashboard
+│       │   ├── AnalyticsClient.tsx         # Analytics client component
+│       │   ├── RevenueManagementPage.tsx   # Revenue tracking
+│       │   ├── ReviewsPage.tsx             # Guest reviews
+│       │   ├── AuditLogsPage.tsx           # Audit logs
+│       │   ├── StaffActivityPage.tsx       # Staff activity tracking
+│       │   ├── MessagesPage.tsx            # Messages
+│       │   ├── GuestAssistancePage.tsx     # Guest support
+│       │   ├── MaintenancePage.tsx         # Maintenance tracking
+│       │   ├── ProfilePage.tsx             # Owner profile
+│       │   ├── SettingsPage.tsx            # Settings
+│       │   │
+│       │   └── Modals/
+│       │       ├── AddNewHavenModal.tsx    # Add new property
+│       │       ├── AddUnitModal.tsx        # Add unit to property
+│       │       ├── EditHavenModal.tsx      # Edit property details
+│       │       ├── DeleteHavenModal.tsx    # Delete property
+│       │       ├── AdminLogin.tsx          # Admin login modal
+│       │       ├── CreateEmployeeModal.tsx # Create staff member
+│       │       ├── EditEmployeeModal.tsx   # Edit staff member
+│       │       ├── BookingModalSetting.tsx
+│       │       ├── BookingDateModal.tsx
+│       │       ├── PaymentSettingsModal.tsx
+│       │       ├── PoliciesModal.tsx
+│       │       └── NewMessageModal.tsx
+│       │
+│       └── Partners/
+│           └── PartnersDashboard.tsx       # Partners dashboard
+
+# BACKEND LOGIC
+├── backend/
+│   ├── config/
+│   │   └── db.ts                           # PostgreSQL (Neon) connection pool
+│   │
+│   ├── models/                             # SQL schema definitions
+│   │   ├── room.sql                        # havens, haven_images, photo_tour_images, blocked_dates
+│   │   ├── bookings.sql                    # bookings table schema
+│   │   ├── employee.sql                    # employees table schema
+│   │   ├── wishlist.sql                    # wishlist table schema
+│   │   ├── messages.sql                    # messages table schema
+│   │   └── add_guest_details.sql           # guest details table schema
+│   │
+│   ├── controller/                         # Business logic handlers
+│   │   ├── roomController.ts               # Haven/room operations
+│   │   ├── bookingController.ts            # Booking management
+│   │   ├── userController.ts               # User management
+│   │   ├── employeeController.ts           # Employee operations
+│   │   ├── wishlistController.ts           # Wishlist operations
+│   │   ├── messageController.ts            # Messaging logic
+│   │   ├── inventoryController.ts          # Inventory management
+│   │   ├── activityLogController.ts        # Activity logging
+│   │   └── analyticsController.ts          # Analytics calculations
+│   │
+│   ├── middlewares/
+│   │   └── auth.ts                         # Authentication middleware
+│   │
+│   └── utils/
+│       └── cloudinary.ts                   # Cloudinary image upload config
+
+# STATE MANAGEMENT (Redux Toolkit)
+├── redux/
+│   ├── store.ts                            # Redux store configuration
+│   ├── hooks.ts                            # Custom Redux hooks
+│   │
+│   ├── slices/
+│   │   └── bookingSlice.ts                 # Booking state slice
+│   │
+│   └── api/                                # RTK Query APIs
+│       ├── roomApi.ts                      # Room queries
+│       ├── bookingsApi.ts                  # Booking queries
+│       ├── employeeApi.ts                  # Employee queries
+│       ├── wishlistApi.ts                  # Wishlist queries
+│       ├── messagesApi.ts                  # Message queries
+│       ├── activityLogApi.ts               # Activity log queries
+│       └── analyticsApi.ts                 # Analytics queries
+
+# TYPE DEFINITIONS
+├── types/
+│   ├── Haven.ts                            # Haven/Room interface
+│   └── next-auth.d.ts                      # NextAuth type extensions
+
+# UTILITIES
+├── lib/
+│   └── auth.ts                             # Authentication utilities
+```
+
+### Architecture Summary
+
+**Frontend:**
+- Next.js 15 with App Router
+- Feature-based component organization
+- Admin dashboards for different roles (Owners, CSR, Partners, Cleaners)
+
+**Backend:**
+- Next.js API routes (serverless)
+- PostgreSQL database (Neon)
+- Controller pattern for business logic
+
+**State Management:**
+- Redux Toolkit with RTK Query
+- 7 API endpoints for data synchronization
+- Booking state slice
+
+**Authentication:**
+- NextAuth with Google OAuth
+- Role-based middleware routing
+- Protected admin routes
+
+**Database Tables:**
+1. havens - Room/property info
+2. haven_images - Display images
+3. photo_tour_images - Category photos
+4. blocked_dates - Availability
+5. bookings - Reservations
+6. employees - Staff management
+7. wishlist - User favorites
+8. messages - Conversations
+9. guest_details - Additional info
+
+---
+
 ## Key Difference: Guest vs Logged-in User
 
 ### Guest User (Continue as Guest)

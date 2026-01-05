@@ -385,12 +385,6 @@ const HotelRoomListings = ({ initialHavens  }: HotelRoomListingsProps) => {
           </div>
         </div>
 
-        {isLoading && (
-          <div className="text-center py-20 text-gray-500">
-            Loading rooms...
-          </div>
-        )}
-
         {isError && (
           <div className="text-center py-20 text-red-500">
               Failed to load rooms
