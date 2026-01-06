@@ -39,6 +39,10 @@ const formatTimestamp = (timestamp?: string) => {
   });
 };
 
+const Skeleton = ({ className }: { className: string }) => (
+  <div className={`animate-pulse bg-gray-200 dark:bg-gray-700 ${className}`} />
+);
+
 export default function MessageModal({
   conversations,
   currentUserId,
@@ -169,8 +173,22 @@ export default function MessageModal({
 
           <div className="max-h-[70vh] overflow-y-auto">
             {isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-6 h-6 animate-spin text-brand-primary" />
+              <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                {Array.from({ length: 5 }).map((_, idx) => (
+                  <div key={idx} className="px-6 py-4 flex items-start gap-3">
+                    <div className="relative flex-shrink-0">
+                      <Skeleton className="w-12 h-12 rounded-full" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <Skeleton className="h-4 w-32 rounded" />
+                        <Skeleton className="h-3 w-16 rounded" />
+                      </div>
+                      <Skeleton className="h-3 w-40 rounded mt-2" />
+                      <Skeleton className="h-3 w-20 rounded mt-2" />
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : topConversations.length === 0 ? (
               <div className="text-center py-10 text-sm text-gray-500 dark:text-gray-400">

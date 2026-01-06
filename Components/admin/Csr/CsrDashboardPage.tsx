@@ -461,7 +461,9 @@ export default function CsrDashboard() {
                 className="flex items-center gap-2 p-1 hover:bg-brand-primaryLighter dark:hover:bg-gray-800 rounded-lg transition-colors"
               >
                 <div className="w-10 h-10 bg-gradient-to-br from-brand-primary to-brand-primaryDark rounded-full overflow-hidden flex items-center justify-center text-white font-bold cursor-pointer hover:shadow-lg transition-shadow">
-                  {employee?.profile_image_url ? (
+                  {isLoading ? (
+                    <div className="w-full h-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
+                  ) : employee?.profile_image_url ? (
                     <img
                       src={employee.profile_image_url}
                       alt={employee.first_name ? `${employee.first_name} ${employee.last_name}` : "Profile"}
