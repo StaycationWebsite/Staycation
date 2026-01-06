@@ -155,8 +155,9 @@ export const sendMessage = async (
         sender_id,
         sender_name,
         message_text,
-        is_read
-      ) VALUES ($1, $2, $3, $4, false)
+        is_read,
+        created_at
+      ) VALUES ($1, $2, $3, $4, false, timezone('Asia/Manila', NOW()))
       RETURNING *
       `,
       [conversation_id, sender_id, sender_name, message_text]
@@ -164,7 +165,7 @@ export const sendMessage = async (
 
     // Update conversation's updated_at timestamp
     await pool.query(
-      `UPDATE conversations SET updated_at = NOW() WHERE id = $1`,
+      `UPDATE conversations SET updated_at = timezone('Asia/Manila', NOW()) WHERE id = $1`,
       [conversation_id]
     );
 
