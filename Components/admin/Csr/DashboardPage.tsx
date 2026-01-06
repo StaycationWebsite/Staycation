@@ -1,10 +1,18 @@
 "use client";
 
-import { Calendar, DollarSign, FileText, Users, Wallet, Package, CreditCard, Sparkles, XCircle } from "lucide-react";
+import { Calendar, DollarSign, Users, Package, CreditCard, Sparkles, XCircle } from "lucide-react";
 
 export default function DashboardPage() {
   return (
     <div className="space-y-6 animate-in fade-in duration-700">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Dashboard Overview</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Monitor key metrics and recent activities</p>
+        </div>
+      </div>
+
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
@@ -37,7 +45,7 @@ export default function DashboardPage() {
           return (
             <div
               key={i}
-              className={`${kpi.color} text-white rounded-lg p-6 shadow hover:shadow-lg transition-all`}
+              className={`${kpi.color} text-white rounded-lg p-6 shadow dark:shadow-gray-900 hover:shadow-lg transition-all`}
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -52,25 +60,25 @@ export default function DashboardPage() {
       </div>
 
       {/* Recent Activity Table */}
-      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 border border-transparent dark:border-gray-800">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900 p-6">
         <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">Recent Activity</h3>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead>
-              <tr className="border-b-2 border-gray-200 dark:border-gray-800">
-                <th className="text-left py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200">
+            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border-b-2 border-gray-200 dark:border-gray-600">
+              <tr>
+                <th className="text-left py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 whitespace-nowrap">
                   Time
                 </th>
-                <th className="text-left py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200">
+                <th className="text-left py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 whitespace-nowrap">
                   Action
                 </th>
-                <th className="text-left py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200">
+                <th className="text-left py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 whitespace-nowrap">
                   Customer
                 </th>
-                <th className="text-left py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200">
+                <th className="text-left py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 whitespace-nowrap">
                   Details
                 </th>
-                <th className="text-center py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200">
+                <th className="text-center py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 whitespace-nowrap">
                   Status
                 </th>
               </tr>
@@ -132,7 +140,7 @@ export default function DashboardPage() {
                 return (
                   <tr
                     key={i}
-                    className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors animate-in fade-in duration-500"
+                    className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors animate-in fade-in duration-500"
                     style={{ animationDelay: `${i * 50}ms` }}
                   >
                     <td className="py-4 px-4">
@@ -173,9 +181,9 @@ export default function DashboardPage() {
         </div>
 
         {/* Pagination */}
-        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-800 flex justify-between items-center">
+        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600 flex justify-between items-center">
           <p className="text-sm text-gray-600 dark:text-gray-300">Showing 5 of 48 activities</p>
-          <button className="text-sm font-semibold text-orange-600 hover:text-orange-700 transition-colors">
+          <button className="text-sm font-semibold bg-gradient-to-r from-brand-primary to-brand-primaryDark bg-clip-text text-transparent hover:opacity-80 transition-opacity">
             View All Activity
           </button>
         </div>
@@ -183,56 +191,56 @@ export default function DashboardPage() {
 
       {/* Quick Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6 border border-transparent dark:border-gray-800">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900 p-6">
           <h4 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Today&apos;s Tasks</h4>
           <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-              <span className="text-sm font-medium text-gray-700">Check-ins</span>
-              <span className="text-xl font-bold text-blue-600">8</span>
+            <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Check-ins</span>
+              <span className="text-xl font-bold text-blue-600 dark:text-blue-400">8</span>
             </div>
-            <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
-              <span className="text-sm font-medium text-gray-700">Check-outs</span>
-              <span className="text-xl font-bold text-orange-600">12</span>
+            <div className="flex items-center justify-between p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Check-outs</span>
+              <span className="text-xl font-bold text-orange-600 dark:text-orange-400">12</span>
             </div>
-            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-              <span className="text-sm font-medium text-gray-700">Cleanings</span>
-              <span className="text-xl font-bold text-green-600">15</span>
+            <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Cleanings</span>
+              <span className="text-xl font-bold text-green-600 dark:text-green-400">15</span>
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6 border border-transparent dark:border-gray-800">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900 p-6">
           <h4 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Payment Status</h4>
           <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-              <span className="text-sm font-medium text-gray-700">Paid</span>
-              <span className="text-xl font-bold text-green-600">45</span>
+            <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Paid</span>
+              <span className="text-xl font-bold text-green-600 dark:text-green-400">45</span>
             </div>
-            <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-              <span className="text-sm font-medium text-gray-700">Pending</span>
-              <span className="text-xl font-bold text-yellow-600">18</span>
+            <div className="flex items-center justify-between p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Pending</span>
+              <span className="text-xl font-bold text-yellow-600 dark:text-yellow-400">18</span>
             </div>
-            <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-              <span className="text-sm font-medium text-gray-700">Overdue</span>
-              <span className="text-xl font-bold text-red-600">3</span>
+            <div className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Overdue</span>
+              <span className="text-xl font-bold text-red-600 dark:text-red-400">3</span>
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6 border border-transparent dark:border-gray-800">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900 p-6">
           <h4 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Inventory Alerts</h4>
           <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-              <span className="text-sm font-medium text-gray-700">Low Stock</span>
-              <span className="text-xl font-bold text-red-600">5</span>
+            <div className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Low Stock</span>
+              <span className="text-xl font-bold text-red-600 dark:text-red-400">5</span>
             </div>
-            <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-              <span className="text-sm font-medium text-gray-700">Reorder</span>
-              <span className="text-xl font-bold text-yellow-600">8</span>
+            <div className="flex items-center justify-between p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Reorder</span>
+              <span className="text-xl font-bold text-yellow-600 dark:text-yellow-400">8</span>
             </div>
-            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-              <span className="text-sm font-medium text-gray-700">In Stock</span>
-              <span className="text-xl font-bold text-green-600">42</span>
+            <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">In Stock</span>
+              <span className="text-xl font-bold text-green-600 dark:text-green-400">42</span>
             </div>
           </div>
         </div>
