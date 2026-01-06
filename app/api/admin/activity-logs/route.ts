@@ -1,23 +1,18 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getAllActivityLogs, createActivityLog, deleteActivityLog } from "@/backend/controller/activityLogController";
-import { createEdgeRouter } from "next-connect";
+import { NextRequest } from "next/server";
+import {
+  getAllActivityLogs,
+  createActivityLog,
+  deleteActivityLog,
+} from "@/backend/controller/activityLogController";
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-type RequestContext = Record<string, never>;
-
-const router = createEdgeRouter<NextRequest, RequestContext>();
-router.get(getAllActivityLogs);
-router.post(createActivityLog);
-router.delete(deleteActivityLog);
-
-export async function GET(request: NextRequest, ctx: RequestContext): Promise<NextResponse> {
-  return router.run(request, ctx) as Promise<NextResponse>;
+export async function GET(request: NextRequest) {
+  return getAllActivityLogs(request);
 }
 
-export async function POST(request: NextRequest, ctx: RequestContext): Promise<NextResponse> {
-  return router.run(request, ctx) as Promise<NextResponse>;
+export async function POST(request: NextRequest) {
+  return createActivityLog(request);
 }
 
-export async function DELETE(request: NextRequest, ctx: RequestContext): Promise<NextResponse> {
-  return router.run(request, ctx) as Promise<NextResponse>;
+export async function DELETE(request: NextRequest) {
+  return deleteActivityLog(request);
 }
