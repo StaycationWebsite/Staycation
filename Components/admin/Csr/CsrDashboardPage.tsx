@@ -2,7 +2,7 @@
 
 import { Menu, X, Home, Calendar, DollarSign, FileText, Users, Wallet, Package, Settings, Bell, ChevronDown, User, MessageSquare } from "lucide-react";
 import Image from "next/image";
-import { useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import CsrLogout from "./Auth/CsrLogout";
 import ProfilePage from "./ProfilePage";
@@ -17,8 +17,11 @@ import DashboardPage, {
 } from "./DashboardPage";
 import NotificationPage from "./NotificationPage";
 import NotificationModal from "./Modals/Notification";
+import MessageModal from "./Modals/MessageModal";
 import MessagePage from "./MessagePage";
 import SettingsPage from "./SettingsPage";
+import { useGetConversationsQuery } from "@/redux/api/messagesApi";
+import { useGetEmployeesQuery } from "@/redux/api/employeeApi";
 
 interface EmployeeProfile {
   id: string;
@@ -55,6 +58,7 @@ export default function CsrDashboard() {
   const [page, setPage] = useState("dashboard");
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
+  const [messageModalOpen, setMessageModalOpen] = useState(false);
   const [messageBadge, setMessageBadge] = useState(true);
   const [now, setNow] = useState<Date | null>(null);
   const [employee, setEmployee] = useState<EmployeeProfile | null>(null);
@@ -63,6 +67,35 @@ export default function CsrDashboard() {
   const notificationButtonRef = useRef<HTMLButtonElement | null>(null);
   const messageButtonRef = useRef<HTMLButtonElement | null>(null);
   const { data: session } = useSession();
+
+  const userId = (session?.user as any)?.id;
+  const {
+    data: headerConversationsData,
+    isLoading: isLoadingHeaderConversations,
+  } = useGetConversationsQuery(
+    { userId: userId || "" },
+    { skip: !userId, pollingInterval: 5000 }
+  );
+
+  const { data: employeesData } = useGetEmployeesQuery({});
+  const employees = employeesData?.data || [];
+  const employeeNameById = useMemo(() => {
+    const map: Record<string, string> = {};
+    employees.forEach((emp: any) => {
+      const name = `${emp.first_name ?? ""} ${emp.last_name ?? ""}`.trim();
+      map[emp.id] = name || emp.email || emp.employment_id || "Employee";
+    });
+    return map;
+  }, [employees]);
+  const employeeProfileImageById = useMemo(() => {
+    const map: Record<string, string> = {};
+    employees.forEach((emp: any) => {
+      if (emp?.id && emp?.profile_image_url) {
+        map[emp.id] = emp.profile_image_url;
+      }
+    });
+    return map;
+  }, [employees]);
   const notifications = [
     {
       id: "1",
@@ -401,7 +434,7 @@ export default function CsrDashboard() {
               className="relative p-2 hover:bg-brand-primaryLighter dark:hover:bg-gray-800 rounded-lg transition-colors"
               onClick={() => {
                 setMessageBadge(false);
-                setPage("messages");
+                setMessageModalOpen((prev) => !prev);
               }}
             >
               <MessageSquare className="w-6 h-6 text-gray-600 dark:text-gray-300" />
@@ -562,6 +595,21 @@ export default function CsrDashboard() {
             setPage("notifications");
           }}
           anchorRef={notificationButtonRef}
+        />
+      )}
+      {messageModalOpen && (
+        <MessageModal
+          conversations={headerConversationsData?.data || []}
+          currentUserId={userId || ""}
+          employeeNameById={employeeNameById}
+          employeeProfileImageById={employeeProfileImageById}
+          isLoading={isLoadingHeaderConversations}
+          onClose={() => setMessageModalOpen(false)}
+          onViewAll={() => {
+            setMessageModalOpen(false);
+            setPage("messages");
+          }}
+          anchorRef={messageButtonRef}
         />
       )}
     </div>
