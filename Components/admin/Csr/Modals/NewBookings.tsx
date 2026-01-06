@@ -51,10 +51,11 @@ export default function NewBookingModal({ onClose }: NewBookingModalProps) {
     infants: "0",
     facebookLink: "",
     paymentMethod: "cash",
+    paymentType: "down-payment", // "down-payment" or "full-payment"
     roomRate: "",
     securityDeposit: "0",
     addOnsTotal: "0",
-    downPayment: "",
+    downPaymentAmount: "",
     status: "pending",
     notes: "",
   });
@@ -89,9 +90,20 @@ export default function NewBookingModal({ onClose }: NewBookingModalProps) {
     const roomRate = parseFloat(form.roomRate) || 0;
     const securityDeposit = parseFloat(form.securityDeposit) || 0;
     const addOnsTotal = parseFloat(form.addOnsTotal) || 0;
-    const downPayment = parseFloat(form.downPayment) || 0;
     const totalAmount = roomRate + securityDeposit + addOnsTotal;
-    const remainingBalance = totalAmount - downPayment;
+
+    // Calculate down payment and remaining balance based on payment type
+    let downPayment = 0;
+    let remainingBalance = 0;
+
+    if (form.paymentType === "full-payment") {
+      downPayment = totalAmount;
+      remainingBalance = 0;
+    } else {
+      // Down payment
+      downPayment = parseFloat(form.downPaymentAmount) || 0;
+      remainingBalance = totalAmount - downPayment;
+    }
 
     const bookingData = {
       guest_first_name: form.guestFirstName,
@@ -376,17 +388,6 @@ export default function NewBookingModal({ onClose }: NewBookingModalProps) {
                   onChange={handleChange}
                   placeholder="0.00"
                 />
-                <LabeledInput
-                  label="Down Payment (₱)"
-                  name="downPayment"
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  value={form.downPayment}
-                  onChange={handleChange}
-                  placeholder="0.00"
-                  required
-                />
                 <LabeledSelect
                   label="Payment Method"
                   name="paymentMethod"
@@ -395,6 +396,48 @@ export default function NewBookingModal({ onClose }: NewBookingModalProps) {
                   options={paymentMethods}
                   required
                 />
+              </div>
+
+              {/* Payment Type Section */}
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <LabeledSelect
+                    label="Payment Type"
+                    name="paymentType"
+                    value={form.paymentType}
+                    onChange={handleChange}
+                    options={["down-payment", "full-payment"]}
+                    required
+                  />
+
+                  {form.paymentType === "down-payment" && (
+                    <LabeledInput
+                      label="Down Payment Amount (₱)"
+                      name="downPaymentAmount"
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={form.downPaymentAmount}
+                      onChange={handleChange}
+                      placeholder="0.00"
+                      required
+                    />
+                  )}
+
+                  {form.paymentType === "full-payment" && (
+                    <div className="space-y-2">
+                      <span className="text-sm font-medium text-gray-600">Total Amount (₱)</span>
+                      <div className="w-full rounded-2xl border border-gray-200 px-3 py-3 text-sm text-gray-800 bg-gray-50">
+                        {(() => {
+                          const total = (parseFloat(form.roomRate) || 0) +
+                                       (parseFloat(form.securityDeposit) || 0) +
+                                       (parseFloat(form.addOnsTotal) || 0);
+                          return `₱${total.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                        })()}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </section>
 
@@ -472,19 +515,29 @@ interface LabeledSelectProps extends React.SelectHTMLAttributes<HTMLSelectElemen
   options: string[];
 }
 
-const LabeledSelect = ({ label, options, ...props }: LabeledSelectProps) => (
-  <label className="space-y-2">
-    <span className="text-sm font-medium text-gray-600">{label}</span>
-    <select
-      {...props}
-      className="w-full rounded-2xl border border-gray-200 px-3 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition bg-white"
-    >
-      <option value="">Select an option</option>
-      {options.map((option) => (
-        <option key={option} value={option}>
-          {option}
-        </option>
-      ))}
-    </select>
-  </label>
-);
+const LabeledSelect = ({ label, options, ...props }: LabeledSelectProps) => {
+  const formatOptionText = (option: string) => {
+    // Format option text for display
+    return option
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
+  return (
+    <label className="space-y-2">
+      <span className="text-sm font-medium text-gray-600">{label}</span>
+      <select
+        {...props}
+        className="w-full rounded-2xl border border-gray-200 px-3 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition bg-white"
+      >
+        <option value="">Select an option</option>
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {formatOptionText(option)}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+};
