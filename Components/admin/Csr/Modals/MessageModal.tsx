@@ -19,6 +19,7 @@ interface MessageModalProps {
   currentUserId?: string;
   employeeNameById?: Record<string, string>;
   employeeProfileImageById?: Record<string, string>;
+  onSelectConversation?: (conversationId: string) => void;
   onClose: () => void;
   onViewAll?: () => void;
   anchorRef?: React.RefObject<HTMLElement | null>;
@@ -43,6 +44,7 @@ export default function MessageModal({
   currentUserId,
   employeeNameById,
   employeeProfileImageById,
+  onSelectConversation,
   onClose,
   onViewAll,
   anchorRef,
@@ -194,6 +196,10 @@ export default function MessageModal({
                     key={conversation.id}
                     type="button"
                     onClick={() => {
+                      if (onSelectConversation) {
+                        onSelectConversation(conversation.id);
+                        return;
+                      }
                       if (onViewAll) onViewAll();
                       onClose();
                     }}

@@ -59,6 +59,7 @@ export default function CsrDashboard() {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [messageModalOpen, setMessageModalOpen] = useState(false);
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [messageBadge, setMessageBadge] = useState(true);
   const [now, setNow] = useState<Date | null>(null);
   const [employee, setEmployee] = useState<EmployeeProfile | null>(null);
@@ -563,7 +564,15 @@ export default function CsrDashboard() {
             {page === "inventory" && <InventoryPage />}
             {page === "profile" && <ProfilePage user={session?.user} onClose={() => setPage("dashboard")} />}
             {page === "notifications" && <NotificationPage />}
-            {page === "messages" && <MessagePage />}
+            {page === "messages" && (
+              <MessagePage
+                initialConversationId={selectedConversationId}
+                onClose={() => {
+                  setSelectedConversationId(null);
+                  setPage("dashboard");
+                }}
+              />
+            )}
             {page === "settings" && <SettingsPage />}
           </div>
         </div>
@@ -604,6 +613,11 @@ export default function CsrDashboard() {
           employeeNameById={employeeNameById}
           employeeProfileImageById={employeeProfileImageById}
           isLoading={isLoadingHeaderConversations}
+          onSelectConversation={(conversationId) => {
+            setSelectedConversationId(conversationId);
+            setMessageModalOpen(false);
+            setPage("messages");
+          }}
           onClose={() => setMessageModalOpen(false)}
           onViewAll={() => {
             setMessageModalOpen(false);

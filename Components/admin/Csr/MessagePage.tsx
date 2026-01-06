@@ -26,9 +26,10 @@ import NewMessageModal from "./Modals/NewMessageModal";
 
 interface MessagePageProps {
   onClose?: () => void;
+  initialConversationId?: string | null;
 }
 
-export default function MessagePage({ onClose }: MessagePageProps) {
+export default function MessagePage({ onClose, initialConversationId }: MessagePageProps) {
   const { data: session } = useSession();
   const userId = (session?.user as any)?.id;
 
@@ -88,10 +89,18 @@ export default function MessagePage({ onClose }: MessagePageProps) {
 
   // Set first conversation as active on load
   useEffect(() => {
-    if (conversations.length > 0 && !activeId) {
+    if (conversations.length === 0) return;
+
+    if (initialConversationId && !activeId) {
+      const exists = conversations.some((c: any) => c.id === initialConversationId);
+      setActiveId(exists ? initialConversationId : conversations[0].id);
+      return;
+    }
+
+    if (!activeId) {
       setActiveId(conversations[0].id);
     }
-  }, [conversations, activeId]);
+  }, [conversations, activeId, initialConversationId]);
 
   // Mark messages as read when opening a conversation
   useEffect(() => {
