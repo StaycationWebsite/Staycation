@@ -1,0 +1,199 @@
+import { NextRequest, NextResponse } from 'next/server';
+import pool from '../config/db';
+
+export interface ActivityLog {
+  id?: string;
+  employment_id: string;
+  action_type: 'login' | 'logout' | 'task_complete' | 'task_pending' | 'update' | 'other';
+  action: string;
+  details?: string;
+  created_at?: string;
+}
+
+// CREATE Activity Log
+export const createActivityLog = async (req: NextRequest): Promise<NextResponse> => {
+  try {
+    const body = await req.json();
+    const { employment_id, action_type, action, details } = body;
+
+    if (!employment_id || !action_type || !action) {
+      return NextResponse.json({
+        success: false,
+        error: 'Missing required fields: employment_id, action_type, action',
+      }, { status: 400 });
+    }
+
+    const query = `
+      INSERT INTO staff_activity_logs (employment_id, action_type, action, details, created_at)
+      VALUES ($1, $2, $3, $4, NOW())
+      RETURNING *
+    `;
+
+    const values = [employment_id, action_type, action, details || null];
+    const result = await pool.query(query, values);
+
+    console.log('✅ Activity Log Created:', result.rows[0]);
+
+    return NextResponse.json({
+      success: true,
+      data: result.rows[0],
+      message: 'Activity log created successfully',
+    }, { status: 201 });
+
+  } catch (error: any) {
+    console.log('❌ Error creating activity log:', error);
+    return NextResponse.json({
+      success: false,
+      error: error.message || 'Failed to create activity log',
+    }, { status: 500 });
+  }
+};
+
+// GET All Activity Logs with Employee Details
+export const getAllActivityLogs = async (req: NextRequest): Promise<NextResponse> => {
+  try {
+    const { searchParams } = new URL(req.url);
+    const action_type = searchParams.get('action_type');
+    const limit = searchParams.get('limit') || '50';
+    const offset = searchParams.get('offset') || '0';
+
+    let query = `
+      SELECT
+        al.id,
+        al.employment_id,
+        al.action_type,
+        al.action,
+        al.details,
+        al.created_at,
+        e.first_name,
+        e.last_name,
+        e.role,
+        e.profile_image_url
+      FROM staff_activity_logs al
+      LEFT JOIN employees e ON al.employment_id = e.id
+    `;
+
+    const values: any[] = [];
+    let paramCount = 1;
+
+    if (action_type) {
+      query += ` WHERE al.action_type = $${paramCount}`;
+      values.push(action_type);
+      paramCount++;
+    }
+
+    query += ` ORDER BY al.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+    values.push(parseInt(limit), parseInt(offset));
+
+    const result = await pool.query(query, values);
+
+    console.log(`✅ Retrieved ${result.rows.length} activity logs`);
+
+    return NextResponse.json({
+      success: true,
+      data: result.rows,
+      count: result.rows.length,
+    });
+
+  } catch (error: any) {
+    console.log('❌ Error getting activity logs:', error);
+    return NextResponse.json({
+      success: false,
+      error: error.message || 'Failed to get activity logs',
+    }, { status: 500 });
+  }
+};
+
+// GET Activity Stats
+export const getActivityStats = async (req: NextRequest): Promise<NextResponse> => {
+  try {
+    // Get counts of employees by role and status
+    const statsQuery = `
+      SELECT
+        role,
+        status,
+        COUNT(*) as count
+      FROM employees
+      GROUP BY role, status
+    `;
+
+    const statsResult = await pool.query(statsQuery);
+
+    // Calculate stats
+    const stats = {
+      active_csr: 0,
+      active_cleaners: 0,
+      logged_out: 0,
+      total: 0,
+    };
+
+    statsResult.rows.forEach((row: any) => {
+      const count = parseInt(row.count);
+      stats.total += count;
+
+      if (row.status === 'active') {
+        if (row.role === 'CSR' || row.role === 'Csr') {
+          stats.active_csr += count;
+        } else if (row.role === 'Cleaner') {
+          stats.active_cleaners += count;
+        }
+      } else if (row.status === 'inactive') {
+        stats.logged_out += count;
+      }
+    });
+
+    console.log('✅ Activity Stats:', stats);
+
+    return NextResponse.json({
+      success: true,
+      data: stats,
+    });
+
+  } catch (error: any) {
+    console.log('❌ Error getting activity stats:', error);
+    return NextResponse.json({
+      success: false,
+      error: error.message || 'Failed to get activity stats',
+    }, { status: 500 });
+  }
+};
+
+// DELETE Activity Log
+export const deleteActivityLog = async (req: NextRequest): Promise<NextResponse> => {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({
+        success: false,
+        error: 'Activity log ID is required',
+      }, { status: 400 });
+    }
+
+    const query = `DELETE FROM staff_activity_logs WHERE id = $1 RETURNING *`;
+    const result = await pool.query(query, [id]);
+
+    if (result.rows.length === 0) {
+      return NextResponse.json({
+        success: false,
+        error: 'Activity log not found',
+      }, { status: 404 });
+    }
+
+    console.log('✅ Activity log deleted:', result.rows[0]);
+
+    return NextResponse.json({
+      success: true,
+      data: result.rows[0],
+      message: 'Activity log deleted successfully',
+    });
+
+  } catch (error: any) {
+    console.log('❌ Error deleting activity log:', error);
+    return NextResponse.json({
+      success: false,
+      error: error.message || 'Failed to delete activity log',
+    }, { status: 500 });
+  }
+};

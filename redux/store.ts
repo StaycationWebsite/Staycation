@@ -1,0 +1,27 @@
+import { configureStore } from "@reduxjs/toolkit";
+import bookingReducer from './slices/bookingSlice';
+import { employeeApi } from "./api/employeeApi";
+import { roomApi } from "./api/roomApi";
+import { bookingsApi } from "./api/bookingsApi";
+import { wishlistApi } from "./api/wishlistApi";
+import { messagesApi } from "./api/messagesApi";
+import { activityLogApi } from "./api/activityLogApi";
+import { analyticsApi } from "./api/analyticsApi";
+
+export const store = configureStore({
+    reducer: {
+        booking: bookingReducer,
+        [employeeApi.reducerPath]: employeeApi.reducer,
+        [roomApi.reducerPath]: roomApi.reducer,
+        [bookingsApi.reducerPath]: bookingsApi.reducer,
+        [wishlistApi.reducerPath]: wishlistApi.reducer,
+        [messagesApi.reducerPath]: messagesApi.reducer,
+        [activityLogApi.reducerPath]: activityLogApi.reducer,
+        [analyticsApi.reducerPath]: analyticsApi.reducer,
+    },
+    middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(employeeApi.middleware).concat(roomApi.middleware).concat(bookingsApi.middleware).concat(wishlistApi.middleware).concat(messagesApi.middleware).concat(activityLogApi.middleware).concat(analyticsApi.middleware),
+
+});
+
+export type RootState = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;

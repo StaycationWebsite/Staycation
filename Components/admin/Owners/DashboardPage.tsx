@@ -1,0 +1,453 @@
+"use client";
+
+import {
+  ChevronLeft,
+  ChevronRight,
+  DollarSign,
+  Plus,
+  Settings,
+  TrendingUp,
+  FileText,
+} from "lucide-react";
+import { useState } from "react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+const DashboardPage = ({
+  onAddUnitClick,
+  onPaymentClick,
+  onBookingClick,
+  onPoliciesClick,
+  havens,
+  onDateClick,
+}: any) => {
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedHaven, setSelectedHaven] = useState(havens[0]);
+
+  const monthName = currentMonth.toLocaleString("default", {
+    month: "long",
+    year: "numeric",
+  });
+  const daysInMonth = new Date(
+    currentMonth.getFullYear(),
+    currentMonth.getMonth() + 1,
+    0
+  ).getDate();
+
+  const today = new Date();
+  const isCurrentMonth =
+    currentMonth.getMonth() === today.getMonth() &&
+    currentMonth.getFullYear() === today.getFullYear();
+
+  const calendarDays = Array.from({ length: daysInMonth }, (_, i) => {
+    const dayNumber = i + 1;
+    const isPast = isCurrentMonth && dayNumber < today.getDate();
+
+    return {
+      date: dayNumber,
+      status: isPast
+        ? "past"
+        : i % 3 === 0
+        ? "booked"
+        : i % 4 === 0
+        ? "blocked"
+        : "available",
+    };
+  });
+
+  const handleDateClick = (day: any) => {
+    if (day.status === "past" || day.status === "booked" || day.status === "blocked") {
+      return; // Don't allow clicking on unavailable dates
+    }
+
+    const clickedDate = new Date(
+      currentMonth.getFullYear(),
+      currentMonth.getMonth(),
+      day.date
+    );
+    onDateClick(clickedDate, selectedHaven);
+  };
+
+  const getColor = (status: string) => {
+    switch (status) {
+      case "available":
+        return "bg-green-500 text-white";
+      case "booked":
+        return "bg-red-500 text-white";
+      case "blocked":
+        return "bg-orange-500 text-white";
+      case "past":
+        return "bg-gray-300 text-gray-600";
+      default:
+        return "bg-white";
+    }
+  };
+
+  const revenueData = [
+    { month: "Jan", revenue: 12000 },
+    { month: "Feb", revenue: 18000 },
+    { month: "Mar", revenue: 16000 },
+    { month: "Apr", revenue: 22000 },
+    { month: "May", revenue: 25000 },
+    { month: "Jun", revenue: 28000 },
+  ];
+
+  return (
+    <div className="space-y-6 animate-in fade-in duration-700">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {[
+          {
+            title: "Total Revenue",
+            value: "₱121,000",
+            icon: "💰",
+            color: "bg-blue-500"
+          },
+          {
+            title: "Occupancy",
+            value: "78%",
+            icon: "👥",
+            color: "bg-green-500",
+          },
+          { title: "Pending", value: "12", icon: "⏳", color: "bg-orange-500" },
+          {
+            title: "Target",
+            value: "₱30,000",
+            icon: "🎯",
+            color: "bg-purple-500",
+          },
+        ].map((kpi, i) => (
+          <div
+            key={i}
+            className={`${kpi.color} text-white rounded-lg p-6 shadow hover:shadow-lg animate-in fade-in slide-in-from-bottom duration-500`}
+            style={{ animationDelay: `${i * 100}ms` }}
+          >
+            <p className="text-sm opacity-90">{kpi.title}</p>
+            <p className="text-3xl font-bold mt-2">{kpi.value}</p>
+            <p className="text-2xl mt-2">{kpi.icon}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-xl font-bold mb-4">Revenue Overview</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={revenueData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip />
+              <Line
+                type="monotone"
+                dataKey="revenue"
+                stroke="#f97316"
+                strokeWidth={2}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="mb-4">
+            <label className="block text-sm font-semibold mb-2">
+              Select Haven
+            </label>
+            <select
+              value={selectedHaven}
+              onChange={(e) => setSelectedHaven(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+            >
+              {havens.map((h: string) => (
+                <option key={h}>{h}</option>
+              ))}
+            </select>
+          </div>
+
+          <h3 className="text-xl font-bold mb-4">Haven Booking Calendar</h3>
+
+          {/* Legend - At Top */}
+          <div className="flex justify-center flex-wrap gap-4 mb-4 pb-4 border-b border-gray-200">
+            <div className="flex gap-2 items-center">
+              <div className="w-4 h-4 bg-green-500 rounded"></div>
+              <span className="text-sm font-medium text-gray-700">Available - Click to book</span>
+            </div>
+            <div className="flex gap-2 items-center">
+              <div className="w-4 h-4 bg-red-500 rounded"></div>
+              <span className="text-sm font-medium text-gray-700">Booked</span>
+            </div>
+            <div className="flex gap-2 items-center">
+              <div className="w-4 h-4 bg-orange-500 rounded"></div>
+              <span className="text-sm font-medium text-gray-700">Blocked</span>
+            </div>
+            <div className="flex gap-2 items-center">
+              <div className="w-4 h-4 bg-gray-300 rounded"></div>
+              <span className="text-sm font-medium text-gray-700">Past</span>
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center mb-3">
+            <button
+              onClick={() =>
+                setCurrentMonth(
+                  new Date(
+                    currentMonth.getFullYear(),
+                    currentMonth.getMonth() - 1
+                  )
+                )
+              }
+              className="p-1 hover:bg-gray-100"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="font-semibold text-sm">{monthName}</span>
+            <button
+              onClick={() =>
+                setCurrentMonth(
+                  new Date(
+                    currentMonth.getFullYear(),
+                    currentMonth.getMonth() + 1
+                  )
+                )
+              }
+              className="p-1 hover:bg-gray-100"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-7 gap-2 mb-4">
+            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+              <div
+                key={d}
+                className="text-sm font-bold text-center text-gray-700 py-2"
+              >
+                {d}
+              </div>
+            ))}
+            {calendarDays.map((day, i) => (
+              <button
+                key={i}
+                onClick={() => handleDateClick(day)}
+                disabled={day.status === "past" || day.status === "booked" || day.status === "blocked"}
+                className={`text-sm p-3 rounded-lg text-center font-bold transition-all ${getColor(
+                  day.status
+                )} ${
+                  day.status === "available"
+                    ? "hover:shadow-lg hover:scale-105 cursor-pointer"
+                    : "cursor-not-allowed opacity-75"
+                }`}
+              >
+                {day.date}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-xl font-bold mb-4">Quick Actions</h3>
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <button
+            onClick={onAddUnitClick}
+            className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg p-6 text-center transition-all"
+          >
+            <Plus className="w-6 h-6 mx-auto mb-2" />
+            <p className="font-bold text-sm">Add Unit</p>
+          </button>
+          <button
+            onClick={onBookingClick}
+            className="bg-purple-500 hover:bg-purple-600 text-white rounded-lg p-6 text-center transition-all"
+          >
+            <Settings className="w-6 h-6 mx-auto mb-2" />
+            <p className="font-bold text-sm">Booking Settings</p>
+          </button>
+          <button
+            onClick={onPaymentClick}
+            className="bg-green-500 hover:bg-green-600 text-white rounded-lg p-6 text-center transition-all"
+          >
+            <DollarSign className="w-6 h-6 mx-auto mb-2" />
+            <p className="font-bold text-sm">Payment Settings</p>
+          </button>
+          <button
+            onClick={onPoliciesClick}
+            className="bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg p-6 text-center transition-all"
+          >
+            <FileText className="w-6 h-6 mx-auto mb-2" />
+            <p className="font-bold text-sm">Policies</p>
+          </button>
+          <button className="bg-orange-500 hover:bg-orange-600 text-white rounded-lg p-6 text-center transition-all">
+            <TrendingUp className="w-6 h-6 mx-auto mb-2" />
+            <p className="font-bold text-sm">Finance</p>
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <h3 className="text-xl font-bold mb-4">Recent Activity</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b-2 border-gray-200">
+                <th className="text-left py-3 px-4 text-sm font-bold text-gray-700">
+                  Time
+                </th>
+                <th className="text-left py-3 px-4 text-sm font-bold text-gray-700">
+                  Action
+                </th>
+                <th className="text-left py-3 px-4 text-sm font-bold text-gray-700">
+                  User
+                </th>
+                <th className="text-left py-3 px-4 text-sm font-bold text-gray-700">
+                  Details
+                </th>
+                <th className="text-center py-3 px-4 text-sm font-bold text-gray-700">
+                  Status
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                {
+                  time: "2:30 PM",
+                  action: "User Login",
+                  user: "Maria Santos",
+                  role: "Cleaner",
+                  details: "Logged in from Admin Portal",
+                  status: "Success",
+                  statusColor: "bg-green-100 text-green-700",
+                  icon: "✓",
+                },
+                {
+                  time: "1:15 PM",
+                  action: "Booking Created",
+                  user: "Juan Dela Cruz",
+                  role: "CSR",
+                  details: "New booking for Haven 2 - March 15",
+                  status: "Completed",
+                  statusColor: "bg-blue-100 text-blue-700",
+                  icon: "📅",
+                },
+                {
+                  time: "12:45 PM",
+                  action: "Payment Received",
+                  user: "Guest #1234",
+                  role: "Guest",
+                  details: "₱5,000 payment for Haven 1",
+                  status: "Success",
+                  statusColor: "bg-green-100 text-green-700",
+                  icon: "💰",
+                },
+                {
+                  time: "12:00 PM",
+                  action: "User Login",
+                  user: "Rosa Garcia",
+                  role: "Cleaner",
+                  details: "Logged in from Mobile App",
+                  status: "Success",
+                  statusColor: "bg-green-100 text-green-700",
+                  icon: "✓",
+                },
+                {
+                  time: "11:30 AM",
+                  action: "Unit Updated",
+                  user: "Carlos Reyes",
+                  role: "Manager",
+                  details: "Updated Haven 3 availability",
+                  status: "Completed",
+                  statusColor: "bg-blue-100 text-blue-700",
+                  icon: "🏠",
+                },
+                {
+                  time: "10:45 AM",
+                  action: "User Logout",
+                  user: "Anna Martinez",
+                  role: "Partner",
+                  details: "Logged out from Admin Portal",
+                  status: "Success",
+                  statusColor: "bg-gray-100 text-gray-700",
+                  icon: "↩",
+                },
+                {
+                  time: "10:15 AM",
+                  action: "Booking Cancelled",
+                  user: "Guest #5678",
+                  role: "Guest",
+                  details: "Cancelled booking for Haven 4",
+                  status: "Cancelled",
+                  statusColor: "bg-red-100 text-red-700",
+                  icon: "✕",
+                },
+                {
+                  time: "9:30 AM",
+                  action: "Staff Created",
+                  user: "Admin",
+                  role: "Owner",
+                  details: "New employee added: Pedro Cruz",
+                  status: "Completed",
+                  statusColor: "bg-blue-100 text-blue-700",
+                  icon: "👤",
+                },
+              ].map((item, i) => (
+                <tr
+                  key={i}
+                  className="border-b border-gray-100 hover:bg-gray-50 transition-colors animate-in fade-in duration-500"
+                  style={{ animationDelay: `${i * 50}ms` }}
+                >
+                  <td className="py-4 px-4">
+                    <span className="text-sm font-medium text-gray-600">
+                      {item.time}
+                    </span>
+                  </td>
+                  <td className="py-4 px-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{item.icon}</span>
+                      <span className="text-sm font-semibold text-gray-800">
+                        {item.action}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="py-4 px-4">
+                    <div>
+                      <p className="text-sm font-medium text-gray-800">
+                        {item.user}
+                      </p>
+                      <p className="text-xs text-gray-500">{item.role}</p>
+                    </div>
+                  </td>
+                  <td className="py-4 px-4">
+                    <span className="text-sm text-gray-600">
+                      {item.details}
+                    </span>
+                  </td>
+                  <td className="py-4 px-4 text-center">
+                    <span
+                      className={`inline-block text-xs font-bold px-3 py-1.5 rounded-full ${item.statusColor}`}
+                    >
+                      {item.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination or View All button */}
+        <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
+          <p className="text-sm text-gray-600">Showing 8 of 127 activities</p>
+          <button className="text-sm font-semibold text-orange-600 hover:text-orange-700 transition-colors">
+            View All Activity →
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default DashboardPage;
