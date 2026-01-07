@@ -49,16 +49,6 @@ const DashboardPage = ({
 
   const bookings = bookingsData?.data || [];
 
-  // Debug logs
-  useEffect(() => {
-    console.log('🏠 Selected Haven:', selectedHaven);
-    console.log('🔑 Haven UUID:', selectedHaven?.uuid_id);
-    console.log('🚫 Skip API call:', !selectedHaven?.uuid_id);
-    console.log('📊 Bookings Data:', bookingsData);
-    console.log('📋 Bookings Array:', bookings);
-    console.log('🔢 Number of bookings:', bookings.length);
-  }, [selectedHaven, bookingsData, bookings]);
-
   const monthName = currentMonth.toLocaleString("default", {
     month: "long",
     year: "numeric",

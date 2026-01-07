@@ -562,17 +562,12 @@ export const getRoomBookings = async (
 ): Promise<NextResponse> => {
   const { havenId } = await params;
 
-  console.log('🔍 getRoomBookings called with havenId:', havenId);
-
   try {
     // First, get the room name from havens table using havenId
     const havenQuery = `SELECT haven_name FROM havens WHERE uuid_id = $1`;
     const havenResult = await pool.query(havenQuery, [havenId]);
 
-    console.log('🔍 Haven query result:', havenResult.rows);
-
     if (havenResult.rows.length === 0) {
-      console.log('❌ Haven not found with uuid_id:', havenId);
       return NextResponse.json({
         success: false,
         error: "Haven not found",
@@ -580,7 +575,6 @@ export const getRoomBookings = async (
     }
 
     const roomName = havenResult.rows[0].haven_name.trim();
-    console.log('🔍 Found haven_name:', roomName);
 
     // Get all active bookings for this room (exclude cancelled and rejected)
     // Use TRIM to handle any whitespace issues in room_name
@@ -599,8 +593,6 @@ export const getRoomBookings = async (
     `;
 
     const result = await pool.query(query, [roomName]);
-    console.log(`✅ Retrieved ${result.rows.length} active bookings for room ${roomName} (ID: ${havenId})`);
-    console.log('🔍 Bookings found:', result.rows);
 
     return NextResponse.json({
       success: true,
