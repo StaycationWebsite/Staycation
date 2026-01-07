@@ -9,7 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-interface RequestContext {}
+type RequestContext = Record<string, never>;
 
 const router = createEdgeRouter<NextRequest, RequestContext>();
 

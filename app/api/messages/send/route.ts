@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { sendMessage } from "@/backend/controller/messageController";
 import { createEdgeRouter } from "next-connect";
 
-interface RequestContext {}
+type RequestContext = Record<string, never>;
 
 const router = createEdgeRouter<NextRequest, RequestContext>();
 router.post(sendMessage);

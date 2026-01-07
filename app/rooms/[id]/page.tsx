@@ -1,5 +1,3 @@
-import RoomsDetailsPage from "@/Components/Rooms/RoomsDetailsPage";
-import { Armata } from "next/font/google";
 import { notFound } from "next/navigation";
 import RoomDetailsClient from "./RoomDetailsClient";
 
@@ -210,13 +208,14 @@ interface Props {
 }
 
 const getRoomById = async (id: string) => {
-  const res = await fetch(`${process.env.API_URL}/api/haven/${id}`, {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:3000';
+  const res = await fetch(`${baseUrl}/api/haven/${id}`, {
     cache: 'no-cache'
   })
 
   if (!res.ok) {
     return null
-  } 
+  }
 
   return res.json();
 }

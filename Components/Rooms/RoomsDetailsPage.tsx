@@ -5,9 +5,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Home,
-  Mail,
   MapPin,
-  Phone,
   Star,
   Users,
   X,
@@ -15,7 +13,7 @@ import {
   Heart,
 } from "lucide-react";
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppDispatch } from "@/redux/hooks";
 import { setSelectedRoom } from "@/redux/slices/bookingSlice";
@@ -179,9 +177,10 @@ const RoomsDetailsPage = ({ room, onBack }: RoomsDetailsPageProps) => {
           toast.success('Added to wishlist');
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const apiError = error as { data?: { error?: string } };
       console.error('Error toggling wishlist:', error);
-      toast.error(error?.data?.error || 'An error occurred. Please try again.');
+      toast.error(apiError?.data?.error || 'An error occurred. Please try again.');
     }
   };
 

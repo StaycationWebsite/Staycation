@@ -20,19 +20,55 @@ import {
   useSendMessageMutation,
   useMarkMessagesAsReadMutation,
 } from "@/redux/api/messagesApi";
+import { useGetEmployeesQuery } from "@/redux/api/employeeApi";
 import toast from "react-hot-toast";
+import NewMessageModal from "./Modals/NewMessageModal";
 
 interface MessagePageProps {
   onClose?: () => void;
+  initialConversationId?: string | null;
 }
 
-export default function MessagePage({ onClose }: MessagePageProps) {
+interface Employee {
+  id: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  employment_id?: string;
+  profile_image_url?: string;
+}
+
+interface Message {
+  id: string;
+  sender_id: string;
+  sender_name?: string;
+  message_text: string;
+  created_at: string;
+}
+
+interface Conversation {
+  id: string;
+  name?: string;
+  type: string;
+  participant_ids?: string[];
+  last_message?: string;
+  last_message_time?: string;
+  unread_count?: number;
+}
+
+// Skeleton component defined outside the main component
+const Skeleton = ({ className }: { className: string }) => (
+  <div className={`animate-pulse bg-gray-200 dark:bg-gray-800 ${className}`} />
+);
+
+export default function MessagePage({ onClose, initialConversationId }: MessagePageProps) {
   const { data: session } = useSession();
-  const userId = (session?.user as any)?.id;
+  const userId = (session?.user as { id?: string })?.id;
 
   const [search, setSearch] = useState("");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const [isNewMessageModalOpen, setIsNewMessageModalOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Fetch conversations
@@ -59,15 +95,48 @@ export default function MessagePage({ onClose }: MessagePageProps) {
   const [sendMessage, { isLoading: isSending }] = useSendMessageMutation();
   const [markAsRead] = useMarkMessagesAsReadMutation();
 
-  const conversations = conversationsData?.data || [];
-  const messages = messagesData?.data || [];
+  const conversations = useMemo(() => conversationsData?.data || [], [conversationsData?.data]);
+  const messages = useMemo(() => messagesData?.data || [], [messagesData?.data]);
+  const { data: employeesData } = useGetEmployeesQuery({});
+  const employees = useMemo(() => employeesData?.data || [], [employeesData?.data]);
+
+  const employeeMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    employees.forEach((emp: Employee) => {
+      const name = `${emp.first_name ?? ""} ${emp.last_name ?? ""}`.trim();
+      map[emp.id] = name || emp.email || emp.employment_id || "Employee";
+    });
+    return map;
+  }, [employees]);
+
+  const employeeProfileImageById = useMemo(() => {
+    const map: Record<string, string> = {};
+    employees.forEach((emp: Employee) => {
+      if (emp?.id && emp?.profile_image_url) {
+        map[emp.id] = emp.profile_image_url;
+      }
+    });
+    return map;
+  }, [employees]);
 
   // Set first conversation as active on load
   useEffect(() => {
-    if (conversations.length > 0 && !activeId) {
+    if (conversations.length === 0) return;
+
+    if (initialConversationId && !activeId) {
+      const exists = conversations.some((c: Conversation) => c.id === initialConversationId);
+      if (exists) {
+        setActiveId(initialConversationId);
+      } else {
+        setActiveId(conversations[0].id);
+      }
+      return;
+    }
+
+    if (!activeId) {
       setActiveId(conversations[0].id);
     }
-  }, [conversations, activeId]);
+  }, [conversations, activeId, initialConversationId]);
 
   // Mark messages as read when opening a conversation
   useEffect(() => {
@@ -85,17 +154,115 @@ export default function MessagePage({ onClose }: MessagePageProps) {
     scrollToBottom();
   }, [messages]);
 
+  const getConversationDisplayName = (conversation: Conversation | undefined | null) => {
+    if (!conversation) return "";
+    if (conversation.type === "guest") {
+      return conversation.name;
+    }
+
+    const otherParticipantIds = (conversation.participant_ids || []).filter(
+      (id: string) => id !== userId
+    );
+    const otherNames = otherParticipantIds
+      .map((id: string) => employeeMap[id])
+      .filter(Boolean);
+
+    if (otherNames.length > 0) {
+      return otherNames.join(", ");
+    }
+
+    return conversation.name;
+  };
+
   const activeConversation = useMemo(
     () => conversations.find((c) => c.id === activeId) ?? conversations[0],
     [activeId, conversations]
   );
 
+  const activeConversationName = getConversationDisplayName(activeConversation);
+  const activeConversationOtherParticipantIds = userId
+    ? (activeConversation?.participant_ids || []).filter((id: string) => id !== userId)
+    : (activeConversation?.participant_ids || []);
+  const activeConversationAvatarUrl =
+    activeConversation?.type !== "guest" && activeConversationOtherParticipantIds.length === 1
+      ? employeeProfileImageById[activeConversationOtherParticipantIds[0]]
+      : undefined;
+
+  const showSkeletonConversations = isLoadingConversations && conversations.length === 0;
+  const showSkeletonMessages = isLoadingMessages && messages.length === 0;
+
+  if (showSkeletonConversations) {
+    return (
+      <div className="space-y-6 animate-in fade-in duration-700">
+        <div className="flex items-center justify-between mb-4">
+          <div className="space-y-2">
+            <Skeleton className="h-7 w-48 rounded" />
+            <Skeleton className="h-4 w-64 rounded" />
+          </div>
+          <Skeleton className="h-10 w-10 rounded-full" />
+        </div>
+
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr]">
+            <div className="border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-col h-[72vh]">
+              <div className="h-16 px-4 flex items-center gap-3 border-b border-gray-200 dark:border-gray-800">
+                <Skeleton className="h-5 w-24 rounded" />
+              </div>
+              <div className="p-4">
+                <Skeleton className="h-10 w-full rounded-full" />
+              </div>
+              <div className="flex-1 overflow-y-auto">
+                {Array.from({ length: 6 }).map((_, idx) => (
+                  <div key={idx} className="px-4 py-3 flex items-center gap-3 border-b border-gray-100 dark:border-gray-800">
+                    <Skeleton className="w-11 h-11 rounded-full" />
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <Skeleton className="h-4 w-40 rounded" />
+                      <Skeleton className="h-3 w-32 rounded" />
+                    </div>
+                    <Skeleton className="h-4 w-10 rounded" />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-900 flex flex-col h-[72vh]">
+              <div className="h-16 px-4 flex items-center gap-3 border-b border-gray-200 dark:border-gray-800">
+                <Skeleton className="w-10 h-10 rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-48 rounded" />
+                  <Skeleton className="h-3 w-32 rounded" />
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+                {Array.from({ length: 8 }).map((_, idx) => (
+                  <div key={idx} className={`flex ${idx % 2 === 0 ? "justify-start" : "justify-end"}`}>
+                    <div className={`max-w-[75%] flex flex-col gap-2 ${idx % 2 === 0 ? "items-start" : "items-end"}`}>
+                      <Skeleton className="h-10 w-48 rounded-2xl" />
+                      <Skeleton className="h-3 w-16 rounded" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="border-t border-gray-200 dark:border-gray-800 px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <Skeleton className="h-10 flex-1 rounded-full" />
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const filteredConversations = useMemo(() => {
     const term = search.trim().toLowerCase();
     if (!term) return conversations;
-    return conversations.filter((c) => {
+    return conversations.filter((c: Conversation) => {
       return (
-        c.name.toLowerCase().includes(term) ||
+        c.name?.toLowerCase().includes(term) ||
         (c.last_message && c.last_message.toLowerCase().includes(term)) ||
         c.type.toLowerCase().includes(term)
       );
@@ -117,9 +284,12 @@ export default function MessagePage({ onClose }: MessagePageProps) {
       setDraft("");
       refetchMessages();
       refetchConversations();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to send message:", error);
-      toast.error(error?.data?.error || "Failed to send message");
+      const errorMessage = error && typeof error === 'object' && 'data' in error 
+        ? (error as { data?: { error?: string } }).data?.error 
+        : "Failed to send message";
+      toast.error(errorMessage || "Failed to send message");
     }
   };
 
@@ -174,14 +344,6 @@ export default function MessagePage({ onClose }: MessagePageProps) {
     return { isActive: false, statusText: "Offline" };
   };
 
-  if (isLoadingConversations) {
-    return (
-      <div className="flex items-center justify-center h-[72vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
-      </div>
-    );
-  }
-
   return (
     <div className="animate-in fade-in duration-700">
       <div className="flex items-center justify-between mb-4">
@@ -198,6 +360,7 @@ export default function MessagePage({ onClose }: MessagePageProps) {
               <div className="ml-auto flex items-center gap-2">
                 <button
                   type="button"
+                  onClick={() => setIsNewMessageModalOpen(true)}
                   className="p-2 rounded-full hover:bg-brand-primaryLighter transition-colors"
                   title="New message"
                 >
@@ -229,51 +392,83 @@ export default function MessagePage({ onClose }: MessagePageProps) {
             </div>
 
             <div className="flex-1 overflow-y-auto">
-              {filteredConversations.map((c) => {
-                const isActive = c.id === activeId;
-                const activeStatus = getActiveStatus(c.last_message_time, c.type);
-                return (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => setActiveId(c.id)}
-                    className={`w-full px-4 py-3 flex items-center gap-3 text-left transition-colors ${
-                      isActive
-                        ? "bg-brand-primaryLighter dark:bg-gray-800"
-                        : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                    }`}
-                  >
-                    <div className="relative">
-                      <div className="w-11 h-11 rounded-full bg-gradient-to-br from-brand-primary to-brand-primaryDark text-white font-bold flex items-center justify-center">
-                        {c.name.charAt(0).toUpperCase()}
+              {isLoadingConversations ? (
+                <div className="flex items-center justify-center py-10">
+                  <Loader2 className="w-6 h-6 animate-spin text-brand-primary" />
+                </div>
+              ) : (
+                filteredConversations.map((c) => {
+                  const isActive = c.id === activeId;
+                  const conversationName = getConversationDisplayName(c);
+                  const activeStatus = getActiveStatus(c.last_message_time, c.type);
+                  const otherParticipantIds = userId
+                    ? (c.participant_ids || []).filter((id: string) => id !== userId)
+                    : (c.participant_ids || []);
+                  const avatarUrl =
+                    c.type !== "guest" && otherParticipantIds.length === 1
+                      ? employeeProfileImageById[otherParticipantIds[0]]
+                      : undefined;
+                  const avatarLetter = (conversationName || c.name || "?")
+                    .charAt(0)
+                    .toUpperCase();
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setActiveId(c.id)}
+                      className={`w-full px-4 py-3 flex items-center gap-3 text-left transition-colors ${
+                        isActive
+                          ? "bg-brand-primaryLighter dark:bg-gray-800"
+                          : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                      }`}
+                    >
+                      <div className="relative">
+                        <div className="w-11 h-11 rounded-full bg-gradient-to-br from-brand-primary to-brand-primaryDark text-white font-bold flex items-center justify-center">
+                          {avatarUrl ? (
+                            <img
+                              src={avatarUrl}
+                              alt={conversationName || c.name || "Conversation"}
+                              className="w-11 h-11 rounded-full object-cover"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = "";
+                                target.onerror = null;
+                              }}
+                            />
+                          ) : (
+                            avatarLetter
+                          )}
+                        </div>
+                        {activeStatus.isActive && (
+                          <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
+                        )}
                       </div>
-                      {activeStatus.isActive && (
-                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{c.name}</p>
-                        <span className="text-xs text-gray-400">•</span>
-                        <p className="text-xs text-gray-400 whitespace-nowrap">
-                          {c.last_message_time ? formatTime(c.last_message_time) : ""}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                            {conversationName || c.name}
+                          </p>
+                          <span className="text-xs text-gray-400">•</span>
+                          <p className="text-xs text-gray-400 whitespace-nowrap">
+                            {c.last_message_time ? formatTime(c.last_message_time) : ""}
+                          </p>
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                          {activeStatus.statusText}
                         </p>
                       </div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                        {activeStatus.statusText}
-                      </p>
-                    </div>
 
-                    {(c.unread_count || 0) > 0 && (
-                      <div className="w-6 flex justify-end">
-                        <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-brand-primary text-white text-xs font-bold">
-                          {c.unread_count}
-                        </span>
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
+                      {(c.unread_count || 0) > 0 && (
+                        <div className="w-6 flex justify-end">
+                          <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-brand-primary text-white text-xs font-bold">
+                            {c.unread_count}
+                          </span>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })
+              )}
             </div>
           </div>
 
@@ -282,11 +477,28 @@ export default function MessagePage({ onClose }: MessagePageProps) {
               <>
                 <div className="h-16 px-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 sticky top-0 z-10">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-primary to-brand-primaryDark text-white font-bold flex items-center justify-center flex-shrink-0">
-                      {activeConversation.name.charAt(0).toUpperCase()}
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-primary to-brand-primaryDark text-white font-bold flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      {activeConversationAvatarUrl ? (
+                        <img
+                          src={activeConversationAvatarUrl}
+                          alt={activeConversationName || activeConversation.name || "Conversation"}
+                          className="w-10 h-10 object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = "";
+                            target.onerror = null;
+                          }}
+                        />
+                      ) : (
+                        (activeConversationName || activeConversation.name || "?")
+                          .charAt(0)
+                          .toUpperCase()
+                      )}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-bold text-gray-900 dark:text-gray-100 truncate">{activeConversation.name}</p>
+                      <p className="text-sm font-bold text-gray-900 dark:text-gray-100 truncate">
+                        {activeConversationName || activeConversation.name}
+                      </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                         {getActiveStatus(activeConversation.last_message_time, activeConversation.type).statusText}
                       </p>
@@ -306,16 +518,35 @@ export default function MessagePage({ onClose }: MessagePageProps) {
                 </div>
 
                 <div className="flex-1 overflow-y-auto bg-gradient-to-b from-gray-50 to-white dark:from-gray-950 dark:to-gray-900 px-4 py-4 space-y-3">
-                  {isLoadingMessages ? (
+                  {showSkeletonMessages ? (
+                    Array.from({ length: 6 }).map((_, idx) => (
+                      <div key={idx} className={`flex ${idx % 2 === 0 ? "justify-start" : "justify-end"}`}>
+                        <div className={`max-w-[75%] flex flex-col gap-2 ${idx % 2 === 0 ? "items-start" : "items-end"}`}>
+                          <Skeleton className={`h-10 ${idx % 2 === 0 ? "w-48" : "w-40"} rounded-2xl`} />
+                          <Skeleton className="h-3 w-16 rounded" />
+                        </div>
+                      </div>
+                    ))
+                  ) : isLoadingMessages ? (
                     <div className="flex items-center justify-center h-full">
                       <Loader2 className="w-6 h-6 animate-spin text-brand-primary" />
                     </div>
                   ) : messages.length > 0 ? (
-                    messages.map((m) => {
+                    messages.map((m: Message) => {
                       const isMe = m.sender_id === userId;
+                      const senderLabel = !isMe
+                        ? employeeMap[m.sender_id] ||
+                          m.sender_name ||
+                          (activeConversation?.type === "guest" ? "Guest" : "Staff")
+                        : undefined;
                       return (
                         <div key={m.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
                           <div className={`max-w-[75%] ${isMe ? "items-end" : "items-start"} flex flex-col gap-1`}>
+                            {!isMe && senderLabel && (
+                              <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+                                {senderLabel}
+                              </span>
+                            )}
                             <div
                               className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm ${
                                 isMe
@@ -340,7 +571,12 @@ export default function MessagePage({ onClose }: MessagePageProps) {
 
                 <div className="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 py-3">
                   <div className="flex items-end gap-2">
-                    <button type="button" className="p-2 rounded-full hover:bg-brand-primaryLighter transition-colors" title="Add">
+                    <button
+                      type="button"
+                      onClick={() => setIsNewMessageModalOpen(true)}
+                      className="p-2 rounded-full hover:bg-brand-primaryLighter transition-colors"
+                      title="New message"
+                    >
                       <Plus className="w-5 h-5 text-brand-primary" />
                     </button>
                     <button type="button" className="p-2 rounded-full hover:bg-brand-primaryLighter transition-colors" title="Attach">
@@ -389,6 +625,16 @@ export default function MessagePage({ onClose }: MessagePageProps) {
           </div>
         </div>
       </div>
+
+      <NewMessageModal
+        isOpen={isNewMessageModalOpen}
+        onClose={() => setIsNewMessageModalOpen(false)}
+        currentUserId={userId || ""}
+        onConversationCreated={(conversationId) => {
+          setActiveId(conversationId);
+          refetchConversations();
+        }}
+      />
     </div>
   );
 }

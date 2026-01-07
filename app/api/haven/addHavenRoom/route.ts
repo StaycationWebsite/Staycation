@@ -2,7 +2,7 @@ import { createHaven } from "@/backend/controller/roomController";
 import { NextRequest, NextResponse } from "next/server";
 import { createEdgeRouter } from "next-connect";
 
-interface RequestContext {}
+type RequestContext = Record<string, never>;
 
 const router = createEdgeRouter<NextRequest, RequestContext>();
 router.post(createHaven);

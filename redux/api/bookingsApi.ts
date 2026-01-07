@@ -12,6 +12,9 @@ export const bookingsApi = createApi({
           params
         };
       },
+      transformResponse: (response: { success: boolean; data: unknown[] }) => {
+        return response.data || [];
+      },
       providesTags: ['Booking']
     }),
 

@@ -27,7 +27,7 @@
     "bcryptjs": "^3.0.3",
     "cloudinary": "^2.8.0",
     "framer-motion": "^12.23.25",
-    "jspdf": "^3.0.4",
+    "jspdf": "^4.0.0",
     "jspdf-autotable": "^5.0.2",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.555.0",

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getBookingById, updateBookingStatus, deleteBooking } from "@/backend/controller/bookingController";
 import { createEdgeRouter } from "next-connect";
 
-interface RequestContext {}
+type RequestContext = Record<string, never>;
 
 const router = createEdgeRouter<NextRequest, RequestContext>();
 router.get(getBookingById);

@@ -1,9 +1,45 @@
 "use client";
 
 import { Calendar, Search, Filter, Plus, Eye, Edit, Trash2, MapPin, User, Phone, Mail, CheckCircle, Clock, LogIn, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUpDown } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import ViewBookings from "./Modals/ViewBookings";
 import NewBookings from "./Modals/NewBookings";
+import { useGetBookingsQuery, useDeleteBookingMutation } from "@/redux/api/bookingsApi";
+import toast from "react-hot-toast";
+
+interface BookingData {
+  id: string;
+  booking_id: string;
+  guest_first_name: string;
+  guest_last_name: string;
+  guest_email: string;
+  guest_phone: string;
+  guest_gender?: string;
+  room_name: string;
+  check_in_date: string;
+  check_out_date: string;
+  check_in_time: string;
+  check_out_time: string;
+  adults: number;
+  children: number;
+  infants: number;
+  facebook_link?: string;
+  payment_method: string;
+  payment_proof_url?: string;
+  valid_id_url?: string;
+  room_rate: number;
+  security_deposit: number;
+  add_ons_total: number;
+  total_amount: number;
+  down_payment: number;
+  remaining_balance: number;
+  status: string;
+  add_ons?: unknown;
+  additional_guests?: unknown;
+  user_id?: string;
+  created_at?: string;
+  updated_at?: string;
+}
 
 export default function BookingsPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -12,100 +48,113 @@ export default function BookingsPage() {
   const [entriesPerPage, setEntriesPerPage] = useState(5);
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
-  const [selectedBooking, setSelectedBooking] = useState<typeof bookings[0] | null>(null);
+  const [selectedBooking, setSelectedBooking] = useState<BookingData | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isNewBookingModalOpen, setIsNewBookingModalOpen] = useState(false);
 
-  const bookings = [
-    {
-      id: "BK-001",
-      guestName: "John Smith",
-      email: "john.smith@email.com",
-      phone: "+63 912 345 6789",
-      haven: "Haven 2",
-      checkIn: "2024-03-15",
-      checkOut: "2024-03-20",
-      guests: 4,
-      status: "Confirmed",
-      statusColor: "bg-green-100 text-green-700",
-      total: "₱25,000",
-    },
-    {
-      id: "BK-002",
-      guestName: "Sarah Johnson",
-      email: "sarah.j@email.com",
-      phone: "+63 923 456 7890",
-      haven: "Haven 1",
-      checkIn: "2024-03-18",
-      checkOut: "2024-03-22",
-      guests: 2,
-      status: "Pending",
-      statusColor: "bg-yellow-100 text-yellow-700",
-      total: "₱18,000",
-    },
-    {
-      id: "BK-003",
-      guestName: "Mike Wilson",
-      email: "mike.w@email.com",
-      phone: "+63 934 567 8901",
-      haven: "Haven 3",
-      checkIn: "2024-03-20",
-      checkOut: "2024-03-25",
-      guests: 6,
-      status: "Cancelled",
-      statusColor: "bg-red-100 text-red-700",
-      total: "₱30,000",
-    },
-    {
-      id: "BK-004",
-      guestName: "Emily Brown",
-      email: "emily.b@email.com",
-      phone: "+63 945 678 9012",
-      haven: "Haven 4",
-      checkIn: "2024-03-22",
-      checkOut: "2024-03-27",
-      guests: 3,
-      status: "Confirmed",
-      statusColor: "bg-green-100 text-green-700",
-      total: "₱22,500",
-    },
-    {
-      id: "BK-005",
-      guestName: "David Lee",
-      email: "david.lee@email.com",
-      phone: "+63 956 789 0123",
-      haven: "Haven 2",
-      checkIn: "2024-03-25",
-      checkOut: "2024-03-30",
-      guests: 5,
-      status: "Checked-In",
-      statusColor: "bg-blue-100 text-blue-700",
-      total: "₱27,500",
-    },
-  ];
+  // Fetch bookings from API
+  const { data: bookings = [], isLoading, error } = useGetBookingsQuery({});
+  const [deleteBooking] = useDeleteBookingMutation();
 
-  const filteredBookings = bookings.filter((booking) => {
-    const matchesSearch =
-      booking.guestName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.haven.toLowerCase().includes(searchTerm.toLowerCase());
+  // Get status color
+  const getStatusColor = (status: string) => {
+    const statusLower = status?.toLowerCase() || '';
+    switch (statusLower) {
+      case "approved":
+        return "bg-green-100 text-green-700";
+      case "pending":
+        return "bg-yellow-100 text-yellow-700";
+      case "declined":
+        return "bg-red-100 text-red-700";
+      case "checked-in":
+        return "bg-blue-100 text-blue-700";
+      case "checked-out":
+        return "bg-indigo-100 text-indigo-700";
+      case "cancelled":
+        return "bg-orange-100 text-orange-700";
+      case "completed":
+        return "bg-purple-100 text-purple-700";
+      default:
+        return "bg-gray-100 text-gray-700";
+    }
+  };
 
-    const matchesFilter = filterStatus === "all" || booking.status === filterStatus;
+  // Calculate statistics
+  const stats = useMemo(() => {
+    if (!Array.isArray(bookings) || bookings.length === 0) {
+      return { total: 0, confirmed: 0, pending: 0, checkedIn: 0 };
+    }
 
-    return matchesSearch && matchesFilter;
-  });
+    return {
+      total: bookings.length,
+      confirmed: bookings.filter((b: BookingData) => {
+        const normalized = (b.status || '').toLowerCase().replace(/\s+/g, '-');
+        return normalized === "confirmed" || normalized === "approved";
+      }).length,
+      pending: bookings.filter((b: BookingData) => {
+        const normalized = (b.status || '').toLowerCase().replace(/\s+/g, '-');
+        return normalized === "pending";
+      }).length,
+      checkedIn: bookings.filter((b: BookingData) => {
+        const normalized = (b.status || '').toLowerCase().replace(/\s+/g, '-');
+        return normalized === "checked-in";
+      }).length,
+    };
+  }, [bookings]);
+
+  const filteredBookings = useMemo(() => {
+    if (!Array.isArray(bookings)) return [];
+
+    return bookings.filter((booking: BookingData) => {
+      const guestName = `${booking.guest_first_name || ''} ${booking.guest_last_name || ''}`;
+      const matchesSearch =
+        guestName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (booking.booking_id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (booking.room_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (booking.guest_email || '').toLowerCase().includes(searchTerm.toLowerCase());
+
+      // Normalize status: remove spaces and convert to lowercase for comparison
+      const normalizedBookingStatus = (booking.status || '').toLowerCase().replace(/\s+/g, '-');
+      const normalizedFilterStatus = filterStatus.toLowerCase();
+      const matchesFilter = filterStatus === "all" || normalizedBookingStatus === normalizedFilterStatus;
+
+      return matchesSearch && matchesFilter;
+    });
+  }, [bookings, searchTerm, filterStatus]);
 
   // Sort bookings
-  const sortedBookings = [...filteredBookings].sort((a, b) => {
-    if (!sortField) return 0;
+  const sortedBookings = useMemo(() => {
+    return [...filteredBookings].sort((a: BookingData, b: BookingData) => {
+      if (!sortField) return 0;
 
-    const aValue = a[sortField as keyof typeof a];
-    const bValue = b[sortField as keyof typeof b];
+      let aValue: string | number;
+      let bValue: string | number;
 
-    if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
-    if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
-    return 0;
-  });
+      if (sortField === "guestName") {
+        aValue = `${a.guest_first_name} ${a.guest_last_name}`;
+        bValue = `${b.guest_first_name} ${b.guest_last_name}`;
+      } else if (sortField === "id") {
+        aValue = a.booking_id;
+        bValue = b.booking_id;
+      } else if (sortField === "haven") {
+        aValue = a.room_name;
+        bValue = b.room_name;
+      } else if (sortField === "checkIn") {
+        aValue = a.check_in_date;
+        bValue = b.check_in_date;
+      } else if (sortField === "checkOut") {
+        aValue = a.check_out_date;
+        bValue = b.check_out_date;
+      } else {
+        aValue = a[sortField as keyof BookingData];
+        bValue = b[sortField as keyof BookingData];
+      }
+
+      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [filteredBookings, sortField, sortDirection]);
 
   // Paginate bookings
   const totalPages = Math.ceil(sortedBookings.length / entriesPerPage);
@@ -122,7 +171,7 @@ export default function BookingsPage() {
     }
   };
 
-  const handleViewBooking = (booking: typeof bookings[0]) => {
+  const handleViewBooking = (booking: BookingData) => {
     setSelectedBooking(booking);
     setIsViewModalOpen(true);
   };
@@ -130,6 +179,35 @@ export default function BookingsPage() {
   const handleCloseModal = () => {
     setIsViewModalOpen(false);
     setSelectedBooking(null);
+  };
+
+  const handleDeleteBooking = async (bookingId: string) => {
+    if (!confirm("Are you sure you want to delete this booking?")) return;
+
+    try {
+      await deleteBooking(bookingId).unwrap();
+      toast.success("Booking deleted successfully");
+    } catch (error) {
+      toast.error("Failed to delete booking");
+      console.error(error);
+    }
+  };
+
+  // Format currency
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-PH", {
+      style: "currency",
+      currency: "PHP",
+    }).format(amount);
+  };
+
+  // Format date
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
   };
 
   return (
@@ -153,10 +231,10 @@ export default function BookingsPage() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
-          { label: "Total Bookings", value: "156", color: "bg-blue-500", icon: Calendar },
-          { label: "Confirmed", value: "89", color: "bg-green-500", icon: CheckCircle },
-          { label: "Pending", value: "45", color: "bg-yellow-500", icon: Clock },
-          { label: "Checked-In", value: "22", color: "bg-indigo-500", icon: LogIn },
+          { label: "Total Bookings", value: stats.total.toString(), color: "bg-blue-500", icon: Calendar },
+          { label: "Confirmed", value: stats.confirmed.toString(), color: "bg-green-500", icon: CheckCircle },
+          { label: "Pending", value: stats.pending.toString(), color: "bg-yellow-500", icon: Clock },
+          { label: "Checked-In", value: stats.checkedIn.toString(), color: "bg-indigo-500", icon: LogIn },
         ].map((stat, i) => {
           const IconComponent = stat.icon;
           return (
@@ -221,10 +299,13 @@ export default function BookingsPage() {
               className="px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary"
             >
               <option value="all">All Status</option>
-              <option value="Confirmed">Confirmed</option>
-              <option value="Pending">Pending</option>
-              <option value="Checked-In">Checked-In</option>
-              <option value="Cancelled">Cancelled</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="declined">Declined</option>
+              <option value="checked-in">Checked-In</option>
+              <option value="checked-out">Checked-Out</option>
+              <option value="cancelled">Cancelled</option>
+              <option value="completed">Completed</option>
             </select>
           </div>
         </div>
@@ -296,91 +377,166 @@ export default function BookingsPage() {
               </tr>
             </thead>
             <tbody>
-              {paginatedBookings.map((booking) => (
-                <tr
-                  key={booking.id}
-                  className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <td className="py-4 px-4">
-                    <span className="font-semibold text-gray-800 dark:text-gray-100 text-sm">{booking.id}</span>
-                  </td>
-                  <td className="py-4 px-4">
-                    <div className="space-y-1 min-w-[200px]">
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                        <span className="font-semibold text-gray-800 dark:text-gray-100 text-sm">{booking.guestName}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                        <Mail className="w-3 h-3 flex-shrink-0" />
-                        <span className="truncate">{booking.email}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                        <Phone className="w-3 h-3 flex-shrink-0" />
-                        {booking.phone}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-4 px-4">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-orange-500 flex-shrink-0" />
-                      <span className="font-medium text-gray-700 dark:text-gray-200 text-sm whitespace-nowrap">{booking.haven}</span>
-                    </div>
-                  </td>
-                  <td className="py-4 px-4">
-                    <span className="text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">{booking.checkIn}</span>
-                  </td>
-                  <td className="py-4 px-4">
-                    <span className="text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">{booking.checkOut}</span>
-                  </td>
-                  <td className="py-4 px-4 text-center">
-                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">{booking.guests}</span>
-                  </td>
-                  <td className="py-4 px-4 text-center">
-                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${booking.statusColor}`}>
-                      {booking.status}
-                    </span>
-                  </td>
-                  <td className="py-4 px-4 text-right">
-                    <span className="font-bold text-gray-800 dark:text-gray-100 text-sm whitespace-nowrap">{booking.total}</span>
-                  </td>
-                  <td className="py-4 px-4">
-                    <div className="flex items-center justify-center gap-1">
-                      <button
-                        onClick={() => handleViewBooking(booking)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="View"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button className="p-2 text-brand-primary hover:bg-brand-primaryLighter rounded-lg transition-colors" title="Edit">
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={8} className="py-10 px-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                    <div className="flex items-center justify-center gap-3">
+                      <span className="inline-block w-5 h-5 rounded-full border-2 border-gray-300 border-t-gray-600 animate-spin" />
+                      Loading Bookings...
                     </div>
                   </td>
                 </tr>
-              ))}
+              ) : error ? (
+                <tr>
+                  <td colSpan={9} className="py-16 text-center">
+                    <div className="text-red-600">
+                      <p className="text-lg font-semibold">Error loading bookings</p>
+                      <p className="text-sm mt-2">Please try again later</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : paginatedBookings.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="py-8 text-center text-gray-500">
+                    No bookings found
+                  </td>
+                </tr>
+              ) : (
+                paginatedBookings.map((booking: BookingData) => {
+                  const guestName = `${booking.guest_first_name} ${booking.guest_last_name}`;
+                  const totalGuests = booking.adults + booking.children + booking.infants;
+
+                  return (
+                    <tr
+                      key={booking.id}
+                      className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      <td className="py-4 px-4">
+                        <span className="font-semibold text-gray-800 dark:text-gray-100 text-sm">{booking.booking_id}</span>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="space-y-1 min-w-[200px]">
+                          <div className="flex items-center gap-2">
+                            <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            <span className="font-semibold text-gray-800 dark:text-gray-100 text-sm">{guestName}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                            <Mail className="w-3 h-3 flex-shrink-0" />
+                            <span className="truncate">{booking.guest_email}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                            <Phone className="w-3 h-3 flex-shrink-0" />
+                            {booking.guest_phone}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-orange-500 flex-shrink-0" />
+                          <span className="font-medium text-gray-700 dark:text-gray-200 text-sm whitespace-nowrap">{booking.room_name}</span>
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="text-sm text-gray-600 dark:text-gray-300">
+                          <div className="whitespace-nowrap">{formatDate(booking.check_in_date)}</div>
+                          <div className="text-xs text-gray-500">{booking.check_in_time}</div>
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="text-sm text-gray-600 dark:text-gray-300">
+                          <div className="whitespace-nowrap">{formatDate(booking.check_out_date)}</div>
+                          <div className="text-xs text-gray-500">{booking.check_out_time}</div>
+                        </div>
+                      </td>
+                      <td className="py-4 px-4 text-center">
+                        <div className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                          {totalGuests}
+                          <div className="text-xs text-gray-500 font-normal">
+                            A:{booking.adults} C:{booking.children} I:{booking.infants}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-4 px-4 text-center">
+                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap capitalize ${getStatusColor(booking.status)}`}>
+                          {booking.status}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 text-right">
+                        <div className="text-sm">
+                          <div className="font-bold text-gray-800 dark:text-gray-100 whitespace-nowrap">
+                            {formatCurrency(booking.total_amount)}
+                          </div>
+                          {booking.remaining_balance > 0 && (
+                            <div className="text-xs text-orange-600 dark:text-orange-400">
+                              Bal: {formatCurrency(booking.remaining_balance)}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            onClick={() => handleViewBooking(booking)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="View"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button className="p-2 text-brand-primary hover:bg-brand-primaryLighter rounded-lg transition-colors" title="Edit">
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteBooking(booking.id)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
       {/* Mobile/Tablet Card View */}
-      <div className="lg:hidden space-y-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900 overflow-hidden">
-        {paginatedBookings.map((booking) => (
-          <div
-            key={booking.id}
-            className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900 p-4 border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all"
-          >
+      <div className="lg:hidden space-y-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900 overflow-hidden p-4">
+        {isLoading ? (
+          <div className="py-16 text-center">
+            <div className="flex flex-col items-center justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-primary"></div>
+              <p className="mt-4 text-gray-600 dark:text-gray-400">Loading bookings...</p>
+            </div>
+          </div>
+        ) : error ? (
+          <div className="py-16 text-center">
+            <div className="text-red-600">
+              <p className="text-lg font-semibold">Error loading bookings</p>
+              <p className="text-sm mt-2">Please try again later</p>
+            </div>
+          </div>
+        ) : paginatedBookings.length === 0 ? (
+          <div className="py-8 text-center text-gray-500">No bookings found</div>
+        ) : (
+          paginatedBookings.map((booking: BookingData) => {
+            const guestName = `${booking.guest_first_name} ${booking.guest_last_name}`;
+            const totalGuests = booking.adults + booking.children + booking.infants;
+            return (
+              <div
+                key={booking.id}
+                className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900 p-4 border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all"
+              >
             {/* Header */}
             <div className="flex items-start justify-between mb-3 pb-3 border-b border-gray-200 dark:border-gray-700">
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Booking ID</p>
-                <p className="font-bold text-gray-800 dark:text-gray-100">{booking.id}</p>
+                <p className="font-bold text-gray-800 dark:text-gray-100">{booking.booking_id}</p>
               </div>
-              <span className={`px-3 py-1 rounded-full text-xs font-bold ${booking.statusColor}`}>
+              <span className={`px-3 py-1 rounded-full text-xs font-bold capitalize ${getStatusColor(booking.status)}`}>
                 {booking.status}
               </span>
             </div>
@@ -391,15 +547,15 @@ export default function BookingsPage() {
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                  <span className="font-semibold text-gray-800 dark:text-gray-100 text-sm">{booking.guestName}</span>
+                  <span className="font-semibold text-gray-800 dark:text-gray-100 text-sm">{guestName}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                  <span className="text-xs text-gray-600 dark:text-gray-300 break-all">{booking.email}</span>
+                  <span className="text-xs text-gray-600 dark:text-gray-300 break-all">{booking.guest_email}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                  <span className="text-xs text-gray-600 dark:text-gray-300">{booking.phone}</span>
+                  <span className="text-xs text-gray-600 dark:text-gray-300">{booking.guest_phone}</span>
                 </div>
               </div>
             </div>
@@ -410,12 +566,17 @@ export default function BookingsPage() {
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Haven</p>
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-orange-500 flex-shrink-0" />
-                  <span className="font-medium text-gray-700 dark:text-gray-200 text-sm">{booking.haven}</span>
+                  <span className="font-medium text-gray-700 dark:text-gray-200 text-sm">{booking.room_name}</span>
                 </div>
               </div>
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Guests</p>
-                <p className="font-semibold text-gray-800 dark:text-gray-100">{booking.guests}</p>
+                <p className="font-semibold text-gray-800 dark:text-gray-100">
+                  {totalGuests}
+                  <span className="text-xs text-gray-500 font-normal ml-1">
+                    (A:{booking.adults} C:{booking.children} I:{booking.infants})
+                  </span>
+                </p>
               </div>
             </div>
 
@@ -423,11 +584,13 @@ export default function BookingsPage() {
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Check-In</p>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-200">{booking.checkIn}</p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-200">{formatDate(booking.check_in_date)}</p>
+                <p className="text-xs text-gray-500">{booking.check_in_time}</p>
               </div>
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Check-Out</p>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-200">{booking.checkOut}</p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-200">{formatDate(booking.check_out_date)}</p>
+                <p className="text-xs text-gray-500">{booking.check_out_time}</p>
               </div>
             </div>
 
@@ -435,7 +598,12 @@ export default function BookingsPage() {
             <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Amount</p>
-                <p className="font-bold text-gray-800 dark:text-gray-100 text-lg">{booking.total}</p>
+                <p className="font-bold text-gray-800 dark:text-gray-100 text-lg">{formatCurrency(booking.total_amount)}</p>
+                {booking.remaining_balance > 0 && (
+                  <p className="text-xs text-orange-600 dark:text-orange-400">
+                    Balance: {formatCurrency(booking.remaining_balance)}
+                  </p>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -448,13 +616,19 @@ export default function BookingsPage() {
                 <button className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors" title="Edit">
                   <Edit className="w-5 h-5" />
                 </button>
-                <button className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+                <button
+                  onClick={() => handleDeleteBooking(booking.id)}
+                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  title="Delete"
+                >
                   <Trash2 className="w-5 h-5" />
                 </button>
+                </div>
               </div>
-            </div>
-          </div>
-        ))}
+              </div>
+            );
+          })
+        )}
       </div>
 
       {/* Pagination */}

@@ -4,7 +4,6 @@ import {
   Bell,
   ShieldCheck,
   Palette,
-  Globe,
   Info,
   Smartphone,
   Mail,
@@ -36,16 +35,17 @@ export default function SettingsPage() {
   });
 
   const [appearance, setAppearance] = useState({
-    theme: "light",
+    theme: theme || "light",
     density: "comfortable",
     language: "en",
     timezone: "GMT+08",
   });
 
   useEffect(() => {
-    if (!theme) return;
-    setAppearance((prev) => ({ ...prev, theme }));
-  }, [theme]);
+    if (theme && theme !== appearance.theme) {
+      setAppearance((prev) => ({ ...prev, theme }));
+    }
+  }, [theme, appearance.theme]);
 
   const toggleNotification = (key: keyof typeof notificationPrefs) => {
     setNotificationPrefs((prev) => ({ ...prev, [key]: !prev[key] }));

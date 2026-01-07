@@ -98,7 +98,7 @@ import { NextRequest, NextResponse } from "next/server";
 //   }
 // }
 
-interface RequestContext {}
+type RequestContext = Record<string, never>;
 
 const router = createEdgeRouter<NextRequest, RequestContext>();
 router.post(loginEmployee);

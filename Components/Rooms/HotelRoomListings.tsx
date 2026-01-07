@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import RoomCard from "./RoomCard";
-import { SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal, ChevronRight, ChevronLeft } from "lucide-react";
 import { useGetHavensQuery } from "@/redux/api/roomApi";
+import { useRouter } from "next/navigation";
 
 interface Room {
   id: string;
@@ -21,6 +22,7 @@ interface Room {
   roomSize?: string;
   location?: string;
   tower?: string;
+  floor?: string;
   photoTour?: {
     livingArea?: string[];
     kitchenette?: string[];
@@ -35,13 +37,40 @@ interface Room {
   youtubeUrl?: string;
 }
 
+interface Haven {
+  uuid_id?: string;
+  id?: string;
+  haven_name?: string;
+  name?: string;
+  six_hour_rate?: number;
+  weekday_rate?: number;
+  weekend_rate?: number;
+  images?: Array<{ url: string }>;
+  rating?: number;
+  review_count?: number;
+  capacity?: number;
+  amenities?: Record<string, boolean>;
+  description?: string;
+  full_description?: string;
+  beds?: string;
+  room_size?: string;
+  location?: string;
+  tower?: string;
+  floor?: string;
+  photo_tours?: Array<{ category: string; url: string }>;
+  youtube_url?: string;
+}
+
 interface HotelRoomListingsProps {
-  initialHavens : any[];
+  initialHavens: Haven[];
 }
 
 const HotelRoomListings = ({ initialHavens  }: HotelRoomListingsProps) => {
-  const { data, isLoading, isError } = useGetHavensQuery({});
+  const { isError } = useGetHavensQuery({});
   const [sortBy, setSortBy] = useState<string>("recommended");
+  const [currentPage, setCurrentPage] = useState<Record<string, number>>({});
+  const router = useRouter();
+  const ROOMS_PER_PAGE = 5;
   // const [rooms] = useState<Room[]>([
   //   {
   //     id: "1",
@@ -330,17 +359,17 @@ const HotelRoomListings = ({ initialHavens  }: HotelRoomListingsProps) => {
   //   },
   // ]);
 
-  const rooms: Room[] = initialHavens.map((haven: any) => ({
-    id: haven.uuid_id ?? haven.id,
+  const rooms: Room[] = initialHavens.map((haven: Haven) => ({
+    id: haven.uuid_id ?? haven.id ?? '',
     name: haven.haven_name ?? haven.name ?? "Unnamed Haven",
     price: `₱${haven.six_hour_rate ?? haven.weekday_rate ?? haven.weekend_rate ?? "N/A"}`,
     pricePerNight: "per night",
-    images: haven.images?.map((img: any) => img.url) ?? [],
+    images: haven.images?.map((img) => img.url) ?? [],
     rating: haven.rating ?? 4.5,
     reviews: haven.review_count ?? 0,
     capacity: haven.capacity ?? 2,
     amenities: Object.entries(haven.amenities || {})
-      .filter(([_, value]) => value === true)
+      .filter(([, value]) => value === true)
       .map(([key]) => key),
     description: haven.description ?? "",
     fullDescription: haven.full_description,
@@ -348,61 +377,192 @@ const HotelRoomListings = ({ initialHavens  }: HotelRoomListingsProps) => {
     roomSize: haven.room_size,
     location: haven.location,
     tower: haven.tower,
+    floor: haven.floor,
     photoTour: haven.photo_tours
-      ? haven.photo_tours.reduce((acc: any, item: any) => {
+      ? haven.photo_tours.reduce((acc: Record<string, string[]>, item) => {
           acc[item.category] = acc[item.category] || [];
           acc[item.category].push(item.url);
           return acc;
-        }, {})
+        }, {} as Record<string, string[]>)
       : {},
     youtubeUrl: haven.youtube_url,
   })) ?? [];
 
+  // Group rooms by haven number
+  const groupedRooms = rooms.reduce((acc, room) => {
+    // Extract haven number from room name or location
+    const havenMatch = room.name.match(/Haven (\d+)/) || room.location?.match(/Haven (\d+)/);
+    const havenNumber = havenMatch ? `Haven ${havenMatch[1]}` : 'Other Havens';
+    
+    if (!acc[havenNumber]) {
+      acc[havenNumber] = [];
+    }
+    acc[havenNumber].push(room);
+    return acc;
+  }, {} as Record<string, Room[]>);
+
+  // Sort haven numbers
+  const sortedHavenNumbers = Object.keys(groupedRooms).sort((a, b) => {
+    const aNum = parseInt(a.replace('Haven ', '')) || 999;
+    const bNum = parseInt(b.replace('Haven ', '')) || 999;
+    return aNum - bNum;
+  });
+
+  const handlePageChange = (havenNumber: string, page: number) => {
+    setCurrentPage(prev => ({
+      ...prev,
+      [havenNumber]: page
+    }));
+  };
+
+  const handleHavenClick = (havenNumber: string) => {
+    // Navigate to haven-specific page
+    const havenId = havenNumber.replace('Haven ', '');
+    router.push(`/havens/${havenId}`);
+  };
+
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 py-8 sm:py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Filter Section */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-          {/* Available Rooms Text */}
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white">
-            Available Rooms
+    <div className="min-h-screen bg-white dark:bg-gray-900 py-6 sm:py-8">
+      <div className="max-w-[2520px] mx-auto px-4 sm:px-6 lg:px-20 xl:px-20">
+        {/* Header Section - Airbnb style */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+          {/* Results Count */}
+          <h2 className="text-sm text-gray-600 dark:text-gray-400">
+            {rooms.length} havens
           </h2>
 
-          {/* Filter Dropdown */}
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <SlidersHorizontal className="w-5 h-5 text-gray-600 dark:text-gray-400 flex-shrink-0" />
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="flex-1 sm:flex-initial px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 cursor-pointer hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-300 text-sm sm:text-base"
-            >
-              <option value="recommended">Recommended</option>
-              <option value="price-low">Price: Low to High</option>
-              <option value="price-high">Price: High to Low</option>
-              <option value="rating">Highest Rating</option>
-              <option value="capacity">Capacity</option>
+          {/* Filter Dropdown - Airbnb style */}
+          <div className="flex items-center gap-3">
+            <button className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl hover:border-gray-400 dark:hover:border-gray-500">
+              <SlidersHorizontal className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filters</span>
+            </button>
+            
+            {/* Price Range Filter */}
+            <select className="px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl text-sm text-gray-700 dark:text-gray-300">
+              <option>Price Range</option>
+              <option>Under ₱2,000</option>
+              <option>₱2,000 - ₱5,000</option>
+              <option>₱5,000 - ₱10,000</option>
+              <option>Above ₱10,000</option>
+            </select>
+            
+            {/* Room Type Filter */}
+            <select className="px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl text-sm text-gray-700 dark:text-gray-300">
+              <option>Room Type</option>
+              <option>Standard Room</option>
+              <option>Deluxe Room</option>
+              <option>Suite</option>
+              <option>Family Room</option>
             </select>
           </div>
         </div>
 
         {isError && (
           <div className="text-center py-20 text-red-500">
-              Failed to load rooms
+            Failed to load rooms
           </div>
         )}
 
-        {/* Room Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-          {rooms.map((room, index) => (
-            <div
-              key={room.id}
-              className="animate-in fade-in slide-in-from-bottom duration-500"
-              style={{ animationDelay: `${(index + 1) * 100}ms` }}
-            >
-              <RoomCard room={room} mode="browse" />
+        {/* Room Groups by Haven */}
+        {sortedHavenNumbers.map((havenNumber) => {
+          const havenRooms = groupedRooms[havenNumber];
+          const page = currentPage[havenNumber] || 1;
+          const totalPages = Math.ceil(havenRooms.length / ROOMS_PER_PAGE);
+          const startIndex = (page - 1) * ROOMS_PER_PAGE;
+          const endIndex = startIndex + ROOMS_PER_PAGE;
+          const displayedRooms = havenRooms.slice(startIndex, endIndex);
+
+          return (
+            <div key={havenNumber} className="mb-12">
+              {/* Haven Header - Clickable */}
+              <div
+                className="mb-6 flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity w-fit"
+                onClick={() => handleHavenClick(havenNumber)}
+              >
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                  {havenNumber}
+                </h2>
+                <ChevronRight className="w-5 h-5 text-brand-primary" />
+              </div>
+
+              {/* Room Grid for this Haven */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-x-6 gap-y-8">
+                {displayedRooms.map((room) => (
+                  <div key={room.id}>
+                    <RoomCard room={room} mode="browse" />
+                  </div>
+                ))}
+              </div>
+
+              {/* Pagination Dots for this Haven */}
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-3 mt-8">
+                  {/* Previous Button Icon */}
+                  <button
+                    onClick={() => handlePageChange(havenNumber, Math.max(1, page - 1))}
+                    disabled={page === 1}
+                    className={`p-2 rounded-full transition-all duration-200 ${
+                      page === 1
+                        ? 'bg-gray-200 dark:bg-gray-700 cursor-not-allowed opacity-50'
+                        : 'bg-brand-primary hover:bg-brand-primaryDark'
+                    }`}
+                    aria-label="Previous page"
+                  >
+                    <ChevronLeft className={`w-5 h-5 ${
+                      page === 1
+                        ? 'text-gray-400 dark:text-gray-500'
+                        : 'text-white'
+                    }`} />
+                  </button>
+
+                  {/* Page Dots */}
+                  <div className="flex gap-2 items-center">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                      <button
+                        key={pageNum}
+                        onClick={() => handlePageChange(havenNumber, pageNum)}
+                        className={`transition-all duration-200 rounded-full ${
+                          page === pageNum
+                            ? 'w-8 h-3 bg-brand-primary'
+                            : 'w-3 h-3 bg-gray-300 dark:bg-gray-600 hover:bg-brand-primary/50 dark:hover:bg-brand-primary/50'
+                        }`}
+                        aria-label={`Go to page ${pageNum}`}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Next Button Icon */}
+                  <button
+                    onClick={() => handlePageChange(havenNumber, Math.min(totalPages, page + 1))}
+                    disabled={page === totalPages}
+                    className={`p-2 rounded-full transition-all duration-200 ${
+                      page === totalPages
+                        ? 'bg-gray-200 dark:bg-gray-700 cursor-not-allowed opacity-50'
+                        : 'bg-brand-primary hover:bg-brand-primaryDark'
+                    }`}
+                    aria-label="Next page"
+                  >
+                    <ChevronRight className={`w-5 h-5 ${
+                      page === totalPages
+                        ? 'text-gray-400 dark:text-gray-500'
+                        : 'text-white'
+                    }`} />
+                  </button>
+                </div>
+              )}
             </div>
-          ))}
-        </div>
+          );
+        })}
+
+        {/* Show more button - Airbnb style */}
+        {rooms.length > 20 && (
+          <div className="flex justify-center mt-12">
+            <button className="px-6 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-lg font-medium hover:bg-gray-800 dark:hover:bg-gray-100">
+              Show more
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

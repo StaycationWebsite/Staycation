@@ -134,6 +134,7 @@ const StayTypeSelectorModal = ({
   }, [selectedStay]);
 
   if (!shouldRender) return null;
+
   return (
     <>
       {/* Backdrop with fade-in animation */}

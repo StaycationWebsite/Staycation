@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { User, Mail, Calendar, Shield, MapPin, Phone, Edit } from "lucide-react";
 import Footer from "@/Components/Footer";
+import LoadingAnimation from "@/Components/LoadingAnimation";
 
 const ProfilePage = () => {
   const { data: session, status } = useSession();
@@ -17,14 +18,7 @@ const ProfilePage = () => {
   }, [status, router]);
 
   if (status === "loading") {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-yellow-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading your profile...</p>
-        </div>
-      </div>
-    );
+    return <LoadingAnimation />;
   }
 
   if (!session?.user) {

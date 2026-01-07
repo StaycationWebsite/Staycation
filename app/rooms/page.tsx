@@ -5,7 +5,8 @@ import FeatureSectionMain from "@/Components/Features/FeatureSectionMain";
 
 
 const getAllHavens = async () => {
-  const res = await fetch(`${process.env.API_URL}/api/haven`, {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:3000';
+  const res = await fetch(`${baseUrl}/api/haven`, {
     cache: 'no-cache'
   });
 
@@ -20,10 +21,10 @@ export default async function RoomsPage() {
   const response = await getAllHavens();
   const havens = response?.data || [];
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
+    <div className="min-h-screen bg-white dark:bg-gray-900">
       <SearchBarSticky />
-      {/* Add top padding to account for fixed header + sticky search bar - responsive sizing */}
-      <div className="pt-[280px] sm:pt-[320px] md:pt-[400px] lg:pt-[450px]">
+      {/* Add top padding to account for fixed header + sticky search bar */}
+      <div className="pt-[220px] sm:pt-[240px] md:pt-[260px] lg:pt-[280px] bg-white dark:bg-gray-900">
         <HotelRoomListings initialHavens={havens}/>
       </div>
       <FeatureSectionMain />

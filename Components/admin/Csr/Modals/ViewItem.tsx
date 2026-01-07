@@ -57,14 +57,15 @@ const formatDateTime = (value: unknown) => {
 export default function ViewItem({ item, onClose }: ViewItemProps) {
   const [isMounted, setIsMounted] = useState(false);
 
+  // Set mounted state after component mounts
   useEffect(() => {
     setIsMounted(true);
     return () => setIsMounted(false);
   }, []);
 
-  const statusColor = useMemo(() => statusToColor(item.status), [item.status]);
-
   if (!isMounted) return null;
+
+  const statusColor = useMemo(() => statusToColor(item.status), [item.status]);
 
   return createPortal(
     <>

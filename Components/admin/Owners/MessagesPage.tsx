@@ -24,9 +24,27 @@ import {
 import toast from "react-hot-toast";
 import NewMessageModal from "./Modals/NewMessageModal";
 
+interface Conversation {
+  id: string;
+  name?: string;
+  type: string;
+  participant_ids?: string[];
+  last_message?: string;
+  last_message_time?: string;
+  unread_count?: number;
+}
+
+interface Message {
+  id: string;
+  sender_id: string;
+  sender_name?: string;
+  message_text: string;
+  created_at: string;
+}
+
 export default function MessagesPage() {
   const { data: session } = useSession();
-  const userId = (session?.user as any)?.id;
+  const userId = (session?.user as { id?: string })?.id;
 
   const [search, setSearch] = useState("");
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -58,8 +76,8 @@ export default function MessagesPage() {
   const [sendMessage, { isLoading: isSending }] = useSendMessageMutation();
   const [markAsRead] = useMarkMessagesAsReadMutation();
 
-  const conversations = conversationsData?.data || [];
-  const messages = messagesData?.data || [];
+  const conversations = useMemo(() => conversationsData?.data || [], [conversationsData?.data]);
+  const messages = useMemo(() => messagesData?.data || [], [messagesData?.data]);
 
   // Set first conversation as active on load
   useEffect(() => {
@@ -92,9 +110,9 @@ export default function MessagesPage() {
   const filteredConversations = useMemo(() => {
     const term = search.trim().toLowerCase();
     if (!term) return conversations;
-    return conversations.filter((c) => {
+    return conversations.filter((c: Conversation) => {
       return (
-        c.name.toLowerCase().includes(term) ||
+        c.name?.toLowerCase().includes(term) ||
         (c.last_message && c.last_message.toLowerCase().includes(term)) ||
         c.type.toLowerCase().includes(term)
       );
@@ -117,9 +135,12 @@ export default function MessagesPage() {
       // Refetch to get the latest messages
       refetchMessages();
       refetchConversations();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to send message:", error);
-      toast.error(error?.data?.error || "Failed to send message");
+      const errorMessage = error && typeof error === 'object' && 'data' in error 
+        ? (error as { data?: { error?: string } }).data?.error 
+        : "Failed to send message";
+      toast.error(errorMessage || "Failed to send message");
     }
   };
 

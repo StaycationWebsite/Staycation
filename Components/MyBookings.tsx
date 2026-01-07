@@ -1,15 +1,37 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Calendar, MapPin, Clock, Users, ChevronRight, Filter, X } from 'lucide-react';
+import { Calendar, MapPin, Clock, Users, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import toast, { Toaster } from 'react-hot-toast';
 import { useGetUserBookingsQuery, useUpdateBookingStatusMutation } from '@/redux/api/bookingsApi';
 
+interface Booking {
+  id: string;
+  booking_id: string;
+  guest_first_name: string;
+  guest_last_name: string;
+  guest_email: string;
+  guest_phone: string;
+  room_name: string;
+  room_images?: string[];
+  tower?: string;
+  check_in_date: string;
+  check_out_date: string;
+  check_in_time: string;
+  check_out_time: string;
+  adults: number;
+  children: number;
+  infants: number;
+  status: string;
+  total_amount: number;
+  created_at?: string;
+}
+
 interface MyBookingsPageProps {
   initialData: {
     success: boolean;
-    data: any[];
+    data: Booking[];
   };
   userId: string;
 }
@@ -27,14 +49,14 @@ const MyBookingsPage = ({ initialData, userId }: MyBookingsPageProps) => {
   };
 
   // RTK Query hooks - fetch all bookings, filter on client side
-  const { data: bookingsData, isLoading, error, refetch } = useGetUserBookingsQuery(
+  const { data: bookingsData, refetch } = useGetUserBookingsQuery(
     { userId, status: undefined } // Always fetch all bookings
   );
 
   const [updateBookingStatus, { isLoading: isUpdating }] = useUpdateBookingStatusMutation();
 
   // Map database status to display status
-  const getDisplayStatus = (booking: any) => {
+  const getDisplayStatus = (booking: Booking) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Reset to start of day for accurate comparison
 
@@ -84,7 +106,7 @@ const MyBookingsPage = ({ initialData, userId }: MyBookingsPageProps) => {
     const dataSource = bookingsData?.data || initialData?.data || [];
     if (filterStatus === 'all') return dataSource;
 
-    return dataSource.filter((booking: any) => {
+    return dataSource.filter((booking: Booking) => {
       const displayStatus = getDisplayStatus(booking);
       return displayStatus === filterStatus;
     });
@@ -204,7 +226,7 @@ const MyBookingsPage = ({ initialData, userId }: MyBookingsPageProps) => {
           </div>
         ) : (
           <div className="space-y-6">
-            {bookings.map((booking: any) => {
+            {bookings.map((booking: Booking) => {
               const displayStatus = getDisplayStatus(booking);
               // Get first image from room_images array, fallback to default
               const firstImage = Array.isArray(booking.room_images) && booking.room_images.length > 0

@@ -93,9 +93,10 @@ export default function AddItem({ onClose, onAdd }: AddItemProps) {
       window.setTimeout(() => {
         onClose();
       }, 800);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.log("[AddItem] onAdd failed", err);
-      setError(err?.message || "Failed to add item");
+      const errorMessage = err instanceof Error ? err.message : "Failed to add item";
+      setError(errorMessage);
     } finally {
       console.log("[AddItem] submit finished");
       setIsSaving(false);

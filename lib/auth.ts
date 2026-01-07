@@ -69,12 +69,13 @@ export const authOptions: NextAuthOptions = {
               ]
             );
             console.log('✅ Activity log created for login');
-          } catch (logError: any) {
+          } catch (logError: unknown) {
+            const error = logError as { message?: string; code?: string; detail?: string };
             console.error('❌ Failed to create activity log:', logError);
             console.error('Error details:', {
-              message: logError?.message,
-              code: logError?.code,
-              detail: logError?.detail
+              message: error?.message,
+              code: error?.code,
+              detail: error?.detail
             });
             // Don't fail the login if activity log creation fails
           }
@@ -86,10 +87,11 @@ export const authOptions: NextAuthOptions = {
             name: `${user.first_name} ${user.last_name}`,
             role: user.role,
           };
-        } catch (error: any) {
-          console.error("❌ Auth error:", error.message);
-          console.error("Stack:", error.stack);
-          
+        } catch (error: unknown) {
+          const authError = error as { message?: string; stack?: string };
+          console.error("❌ Auth error:", authError.message);
+          console.error("Stack:", authError.stack);
+
           // Re-throw the error so NextAuth can handle it
           throw error;
         }
@@ -124,8 +126,8 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.role = (user as any).role;
-        console.log("✅ JWT token created with role:", (user as any).role);
+        token.role = (user as { role?: string }).role;
+        console.log("✅ JWT token created with role:", (user as { role?: string }).role);
       }
       return token;
     },
@@ -158,7 +160,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         if (token.role) {
-          (session.user as any).role = token.role as string;
+          (session.user as { role?: string }).role = token.role as string;
           console.log("✅ Session created with role:", token.role);
         }
       }

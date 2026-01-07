@@ -11,17 +11,19 @@ interface RoomImageGalleryProps {
 const RoomImageGallery = ({ images }: RoomImageGalleryProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  const nextImage = () => {
+  const nextImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
   };
 
-  const prevImage = () => {
+  const prevImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
     setCurrentImageIndex((prev) =>
       prev === 0 ? images.length - 1 : prev - 1
     );
   };
   return (
-    <div className="relative w-full h-64 sm:h-72 bg-gray-200 rounded-t-lg sm:rounded-lg overflow-hidden group">
+    <div className="relative w-full aspect-[4/3] bg-gray-200 dark:bg-gray-700 overflow-hidden group">
       {/* Images Slider */}
       <div
         className="w-full h-full flex transition-transform duration-500"
@@ -66,11 +68,14 @@ const RoomImageGallery = ({ images }: RoomImageGalleryProps) => {
         {images.map((_, index) => (
           <button
             key={index}
-            onClick={() => setCurrentImageIndex(index)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setCurrentImageIndex(index);
+            }}
             className={`w-2 h-2 rounded-full transition-all duration-300 ${
               index === currentImageIndex
-                ? "bg-gradient-to-r from-yellow-500 to-orange-500 w-6"
-                : "bg-white/60 hover:bg-orange-300"
+                ? "bg-brand-primary w-6"
+                : "bg-white/60 hover:bg-brand-primaryLight"
             }`}
             aria-label={`Go to image ${index + 1}`}
           />

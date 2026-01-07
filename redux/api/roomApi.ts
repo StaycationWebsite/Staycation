@@ -13,6 +13,16 @@ export const roomApi = createApi({
                     params
                 };
             },
+            transformResponse: (response: { success: boolean; data: unknown[] } | unknown[]) => {
+                // Handle both formats: { success: true, data: [...] } and direct array [...]
+                if (Array.isArray(response)) {
+                    return response;
+                }
+                if (response && typeof response === 'object' && 'data' in response) {
+                    return response.data || [];
+                }
+                return [];
+            },
             providesTags: ['Haven']
         }),
 

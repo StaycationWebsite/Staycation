@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createEmployee, getAllEmployees } from '@/backend/controller/employeeController';
 import { createEdgeRouter } from "next-connect";
 
-interface RequestContext {}
+type RequestContext = Record<string, never>;
 
 const router = createEdgeRouter<NextRequest, RequestContext>();
 router.get(getAllEmployees);

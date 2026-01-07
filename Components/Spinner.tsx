@@ -1,16 +1,30 @@
 "use client";
 
+import LoadingAnimation from "./LoadingAnimation";
+
 interface SpinnerProps {
-    label: string;
+  label: string;
+  variant?: "default" | "csr";
 }
 
-const Spinner = ({ label }:SpinnerProps) => {
+const Spinner = ({ label, variant = "default" }: SpinnerProps) => {
   return (
     <>
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 rounded-2xl animate-fade-in">
-        <div className="bg-white rounded-lg p-8 text-center animate-scale-in">
-          <div className="w-12 h-12 border-4 border-gray-300 border-t-orange-500 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-700 font-semibold">
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-8 text-center animate-scale-in shadow-2xl">
+          <div className="w-12 h-12 mx-auto mb-4">
+            <div className={`w-12 h-12 border-4 ${
+              variant === "csr"
+                ? "border-brand-primaryLighter dark:border-gray-700"
+                : "border-orange-200 dark:border-gray-700"
+            } rounded-full`}></div>
+            <div className={`w-12 h-12 border-4 border-transparent border-t-4 ${
+              variant === "csr"
+                ? "border-t-brand-primary dark:border-t-brand-primaryDark"
+                : "border-t-orange-500 dark:border-t-orange-400"
+            } rounded-full animate-spin absolute`}></div>
+          </div>
+          <p className="text-gray-700 dark:text-gray-300 font-semibold">
             {label}
           </p>
         </div>
