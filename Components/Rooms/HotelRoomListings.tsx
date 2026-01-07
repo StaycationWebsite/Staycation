@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import RoomCard from "./RoomCard";
-import { SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal, ChevronRight } from "lucide-react";
 import { useGetHavensQuery } from "@/redux/api/roomApi";
 
 interface Room {
@@ -21,6 +21,7 @@ interface Room {
   roomSize?: string;
   location?: string;
   tower?: string;
+  floor?: string;
   photoTour?: {
     livingArea?: string[];
     kitchenette?: string[];
@@ -54,6 +55,7 @@ interface Haven {
   room_size?: string;
   location?: string;
   tower?: string;
+  floor?: string;
   photo_tours?: Array<{ category: string; url: string }>;
   youtube_url?: string;
 }
@@ -371,6 +373,7 @@ const HotelRoomListings = ({ initialHavens  }: HotelRoomListingsProps) => {
     roomSize: haven.room_size,
     location: haven.location,
     tower: haven.tower,
+    floor: haven.floor,
     photoTour: haven.photo_tours
       ? haven.photo_tours.reduce((acc: Record<string, string[]>, item) => {
           acc[item.category] = acc[item.category] || [];
@@ -381,51 +384,79 @@ const HotelRoomListings = ({ initialHavens  }: HotelRoomListingsProps) => {
     youtubeUrl: haven.youtube_url,
   })) ?? [];
 
+  // Group rooms by haven number
+  const groupedRooms = rooms.reduce((acc, room) => {
+    // Extract haven number from room name or location
+    const havenMatch = room.name.match(/Haven (\d+)/) || room.location?.match(/Haven (\d+)/);
+    const havenNumber = havenMatch ? `Haven ${havenMatch[1]}` : 'Other Havens';
+    
+    if (!acc[havenNumber]) {
+      acc[havenNumber] = [];
+    }
+    acc[havenNumber].push(room);
+    return acc;
+  }, {} as Record<string, Room[]>);
+
+  // Sort haven numbers
+  const sortedHavenNumbers = Object.keys(groupedRooms).sort((a, b) => {
+    const aNum = parseInt(a.replace('Haven ', '')) || 999;
+    const bNum = parseInt(b.replace('Haven ', '')) || 999;
+    return aNum - bNum;
+  });
+
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 py-8 sm:py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Filter Section */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-          {/* Available Rooms Text */}
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white">
-            Available Rooms
+    <div className="min-h-screen bg-white dark:bg-gray-900 py-6 sm:py-8">
+      <div className="max-w-[2520px] mx-auto px-4 sm:px-6 lg:px-20 xl:px-20">
+        {/* Header Section - Airbnb style */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+          {/* Results Count */}
+          <h2 className="text-sm text-gray-600 dark:text-gray-400">
+            {rooms.length} stays
           </h2>
 
-          {/* Filter Dropdown */}
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <SlidersHorizontal className="w-5 h-5 text-gray-600 dark:text-gray-400 flex-shrink-0" />
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="flex-1 sm:flex-initial px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 cursor-pointer hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-300 text-sm sm:text-base"
-            >
-              <option value="recommended">Recommended</option>
-              <option value="price-low">Price: Low to High</option>
-              <option value="price-high">Price: High to Low</option>
-              <option value="rating">Highest Rating</option>
-              <option value="capacity">Capacity</option>
-            </select>
-          </div>
+          {/* Filter Dropdown - Airbnb style */}
+          <button className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl hover:border-gray-400 dark:hover:border-gray-500">
+            <SlidersHorizontal className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filters</span>
+          </button>
         </div>
 
         {isError && (
           <div className="text-center py-20 text-red-500">
-              Failed to load rooms
+            Failed to load rooms
           </div>
         )}
 
-        {/* Room Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-          {rooms.map((room, index) => (
-            <div
-              key={room.id}
-              className="animate-in fade-in slide-in-from-bottom duration-500"
-              style={{ animationDelay: `${(index + 1) * 100}ms` }}
-            >
-              <RoomCard room={room} mode="browse" />
+        {/* Room Groups by Haven */}
+        {sortedHavenNumbers.map((havenNumber) => (
+          <div key={havenNumber} className="mb-12">
+            {/* Haven Header */}
+            <div className="mb-6 flex items-center gap-3">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                {havenNumber}
+              </h2>
+              <ChevronRight className="w-5 h-5 text-brand-primary" />
             </div>
-          ))}
-        </div>
+
+            {/* Room Grid for this Haven */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-x-6 gap-y-8">
+              {groupedRooms[havenNumber].map((room) => (
+                <div key={room.id}>
+                  <RoomCard room={room} mode="browse" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+
+        {/* Show more button - Airbnb style */}
+        {rooms.length > 20 && (
+          <div className="flex justify-center mt-12">
+            <button className="px-6 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-lg font-medium hover:bg-gray-800 dark:hover:bg-gray-100">
+              Show more
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
