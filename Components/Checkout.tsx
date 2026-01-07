@@ -64,6 +64,16 @@ const Checkout = () => {
     { skip: !bookingData.selectedRoom?.id }
   );
 
+  // Debug: Log the selected room and bookings data
+  useEffect(() => {
+    console.log('🔍 Selected Room:', bookingData.selectedRoom);
+    console.log('🔍 Room Bookings Data:', roomBookingsData);
+    if (roomBookingsData?.data) {
+      console.log('🔍 Number of bookings found:', roomBookingsData.data.length);
+      console.log('🔍 Booking details:', roomBookingsData.data);
+    }
+  }, [bookingData.selectedRoom, roomBookingsData]);
+
   // RTK Query mutation for creating bookings
   const [createBooking, { isLoading: isCreatingBooking }] = useCreateBookingMutation();
 
@@ -189,16 +199,14 @@ const Checkout = () => {
   const totalAmount = roomRate + securityDeposit + addOnsTotal;
   const remainingBalance = totalAmount - downPayment;
 
-  // Create a function to check if a date is unavailable (booked)
+  // Create a function to check if a date is unavailable (booked or blocked)
   const isDateUnavailable = useMemo(() => {
     return (date: DateValue) => {
-      if (!roomBookingsData?.data) return false;
-
       const checkDate = new Date(date.year, date.month - 1, date.day);
       checkDate.setHours(0, 0, 0, 0);
 
       // Check if the date falls within any existing booking's date range
-      return roomBookingsData.data.some((booking: any) => {
+      const isBooked = roomBookingsData?.data?.some((booking: any) => {
         // Only block dates for approved/confirmed/checked-in bookings
         // Pending bookings don't block dates until approved
         const approvedStatuses = ['approved', 'confirmed', 'check_in', 'checked-in'];
@@ -215,8 +223,19 @@ const Checkout = () => {
         // A date is unavailable if it falls between check-in and check-out (inclusive)
         return checkDate >= bookingCheckIn && checkDate <= bookingCheckOut;
       });
+
+      // Check if the date is in blocked_dates from the room
+      const isBlocked = bookingData.selectedRoom?.blocked_dates?.some((blocked: any) => {
+        const fromDate = new Date(blocked.from_date);
+        fromDate.setHours(0, 0, 0, 0);
+        const toDate = new Date(blocked.to_date);
+        toDate.setHours(0, 0, 0, 0);
+        return checkDate >= fromDate && checkDate <= toDate;
+      });
+
+      return isBooked || isBlocked;
     };
-  }, [roomBookingsData]);
+  }, [roomBookingsData, bookingData.selectedRoom]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -526,8 +545,13 @@ const handleSubmit = async (e: React.FormEvent) => {
       if (result.success) {
         toast.success(`Booking Submitted Successfully!\n\nYour booking ID is: ${bookingId}\n\nStatus: Pending Admin Approval\n\nYou will receive a confirmation email once the admin approves your booking.`);
 
-        // Clear form and redirect
-        router.push('/');
+        // Clear form and redirect based on user role
+        const userRole = (session?.user as any)?.role;
+        if (userRole === 'Owner') {
+          router.push('/admin/owners');
+        } else {
+          router.push('/');
+        }
       } else {
         setIsLoading(false);
         toast.error('Failed to create booking. Please try again or contact support.');

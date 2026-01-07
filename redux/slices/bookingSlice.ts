@@ -32,6 +32,11 @@ interface SelectedRoom {
     pricePerNight: string;
     location?: string;
     tower?: string;
+    blocked_dates?: Array<{
+        from_date: string;
+        to_date: string;
+        reason?: string;
+    }>;
 }
 
 interface BookingState {

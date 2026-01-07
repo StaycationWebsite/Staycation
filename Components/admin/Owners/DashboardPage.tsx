@@ -9,7 +9,7 @@ import {
   TrendingUp,
   FileText,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   LineChart,
   Line,
@@ -19,6 +19,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { useGetRoomBookingsQuery } from "@/redux/api/bookingsApi";
 const DashboardPage = ({
   onAddUnitClick,
   onPaymentClick,
@@ -29,6 +30,17 @@ const DashboardPage = ({
 }: any) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedHaven, setSelectedHaven] = useState(havens[0]);
+
+  // Fetch bookings for the selected haven with polling to auto-refresh
+  const { data: bookingsData } = useGetRoomBookingsQuery(
+    { havenId: selectedHaven?.uuid_id || '' },
+    {
+      skip: !selectedHaven?.uuid_id,
+      pollingInterval: 30000 // Refresh every 30 seconds
+    }
+  );
+
+  const bookings = bookingsData?.data || [];
 
   const monthName = currentMonth.toLocaleString("default", {
     month: "long",
@@ -45,19 +57,64 @@ const DashboardPage = ({
     currentMonth.getMonth() === today.getMonth() &&
     currentMonth.getFullYear() === today.getFullYear();
 
+  // Helper function to check if a date is booked
+  const isDateBooked = (date: Date) => {
+    return bookings.some((booking: any) => {
+      // Normalize check-in and check-out dates to midnight
+      const checkIn = new Date(booking.check_in_date);
+      checkIn.setHours(0, 0, 0, 0);
+
+      const checkOut = new Date(booking.check_out_date);
+      checkOut.setHours(0, 0, 0, 0);
+
+      // Normalize the comparison date
+      const compareDate = new Date(date);
+      compareDate.setHours(0, 0, 0, 0);
+
+      // Check if date falls within booking range and status is approved/confirmed/checked-in
+      return compareDate >= checkIn && compareDate <= checkOut &&
+             (booking.status === 'approved' || booking.status === 'checked-in' || booking.status === 'confirmed');
+    });
+  };
+
+  // Helper function to check if a date is blocked
+  const isDateBlocked = (date: Date) => {
+    if (!selectedHaven?.blocked_dates) return false;
+    return selectedHaven.blocked_dates.some((blocked: any) => {
+      const fromDate = new Date(blocked.from_date);
+      fromDate.setHours(0, 0, 0, 0);
+
+      const toDate = new Date(blocked.to_date);
+      toDate.setHours(0, 0, 0, 0);
+
+      const compareDate = new Date(date);
+      compareDate.setHours(0, 0, 0, 0);
+
+      return compareDate >= fromDate && compareDate <= toDate;
+    });
+  };
+
   const calendarDays = Array.from({ length: daysInMonth }, (_, i) => {
     const dayNumber = i + 1;
+    const currentDate = new Date(
+      currentMonth.getFullYear(),
+      currentMonth.getMonth(),
+      dayNumber
+    );
     const isPast = isCurrentMonth && dayNumber < today.getDate();
+
+    let status = "available";
+    if (isPast) {
+      status = "past";
+    } else if (isDateBooked(currentDate)) {
+      status = "booked";
+    } else if (isDateBlocked(currentDate)) {
+      status = "blocked";
+    }
 
     return {
       date: dayNumber,
-      status: isPast
-        ? "past"
-        : i % 3 === 0
-        ? "booked"
-        : i % 4 === 0
-        ? "blocked"
-        : "available",
+      status,
     };
   });
 
