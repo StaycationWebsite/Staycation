@@ -21,10 +21,10 @@ export default async function RoomsPage() {
   const response = await getAllHavens();
   const havens = response?.data || [];
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
+    <div className="min-h-screen bg-white dark:bg-gray-900">
       <SearchBarSticky />
       {/* Add top padding to account for fixed header + sticky search bar */}
-      <div className="pt-[220px] sm:pt-[240px] md:pt-[260px] lg:pt-[280px]">
+      <div className="pt-[220px] sm:pt-[240px] md:pt-[260px] lg:pt-[280px] bg-white dark:bg-gray-900">
         <HotelRoomListings initialHavens={havens}/>
       </div>
       <FeatureSectionMain />
