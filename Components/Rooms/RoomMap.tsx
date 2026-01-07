@@ -26,7 +26,7 @@ const RoomMap = ({ roomName, tower, location }: RoomMapProps) => {
   }, []);
 
   return (
-    <div className="w-full h-[400px] rounded-lg overflow-hidden shadow-lg border border-gray-200 dark:border-gray-700">
+    <div className="w-full h-[400px] rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
       <MapContainer
         center={defaultPosition}
         zoom={15}
