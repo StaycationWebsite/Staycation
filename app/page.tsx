@@ -1,5 +1,11 @@
 import { redirect } from 'next/navigation';
 import pool from '../backend/config/db';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: "Staycation Haven | Premium Rooms",
+  description: "Staycation Haven - Find your perfect premium rooms and havens for an unforgettable stay",
+};
 
 export default async function Home() {
   // Test database connection
