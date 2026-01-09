@@ -74,13 +74,13 @@ const RoomCard = ({ room, mode = "browse" }: RoomCardsProps) => {
             e.stopPropagation();
             setIsFavorite(!isFavorite);
           }}
-          className="absolute top-3 left-3 p-2 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-700 transition-all duration-200"
+          className="absolute top-3 left-3 p-2 rounded-full bg-black/60 dark:bg-gray-900/80 backdrop-blur-sm hover:bg-black/80 dark:hover:bg-gray-800 transition-all duration-200 shadow-lg"
         >
           <Heart
             className={`w-5 h-5 transition-all duration-200 ${
               isFavorite
                 ? "fill-red-500 text-red-500"
-                : "text-gray-700 dark:text-gray-300"
+                : "text-white"
             }`}
           />
         </button>
