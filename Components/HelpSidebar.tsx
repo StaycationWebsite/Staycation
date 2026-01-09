@@ -26,7 +26,7 @@ const HelpSidebar = ({ isOpen, onClose }: HelpSidebarProps) => {
 
       {/* Sidebar */}
       <div
-        className={`fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed right-0 top-0 h-full w-80 bg-white dark:bg-gray-800 z-50 transform transition-transform duration-300 ease-in-out ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -80,7 +80,7 @@ const HelpSidebar = ({ isOpen, onClose }: HelpSidebarProps) => {
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto h-[calc(100vh-140px)] scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
+        <div className="p-6 overflow-y-auto h-[calc(100vh-140px)] scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent hover:scrollbar-thumb-gray-400 dark:hover:scrollbar-thumb-gray-500">
           {/* Need Help Tab */}
           {activeTab === "help" && (
             <div className="space-y-4">
