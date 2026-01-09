@@ -44,19 +44,19 @@ const DatePicker = ({ label, date, onDateChange }: DatePickerProps) => {
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Custom styled button wrapper */}
-      <div className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg hover:border-[#8B4513] transition-colors duration-200 group">
+      <div className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:border-[#8B4513] transition-colors duration-200 group">
         <div className="flex items-center gap-3">
           <Calendar className={`w-5 h-5 transition-colors duration-200 ${
-            isHovered ? "text-[#8B4513]" : "text-gray-500"
+            isHovered ? "text-[#8B4513]" : "text-gray-500 dark:text-gray-400"
           }`} />
           <div className="flex-1">
-            <span className="block text-sm font-medium text-gray-700">{label}</span>
+            <span className="block text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
             {date ? (
-              <span className="block text-sm text-gray-900 mt-1">
+              <span className="block text-sm text-gray-900 dark:text-white mt-1">
                 {formatDisplayDate(date)}
               </span>
             ) : (
-              <span className="block text-sm text-gray-500 mt-1">Add date</span>
+              <span className="block text-sm text-gray-500 dark:text-gray-400 mt-1">Add date</span>
             )}
           </div>
         </div>
