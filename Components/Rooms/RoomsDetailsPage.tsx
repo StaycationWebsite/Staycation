@@ -11,6 +11,9 @@ import {
   X,
   Play,
   Heart,
+  Sparkles,
+  Clock,
+  Tag,
 } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
@@ -22,6 +25,7 @@ import { useCheckWishlistStatusQuery, useAddToWishlistMutation, useRemoveFromWis
 import toast from "react-hot-toast";
 import AmenityBadge from "./AmenityBadge";
 import dynamic from "next/dynamic";
+import Footer from "../Footer";
 
 // Dynamically import RoomMap to avoid SSR issues with Leaflet
 const RoomMap = dynamic(() => import("./RoomMap"), {
@@ -199,31 +203,38 @@ const RoomsDetailsPage = ({ room, onBack }: RoomsDetailsPageProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-900 shadow-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-500 font-semibold transition-colors duration-300"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Back to Rooms
-          </button>
-          <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-            <Home className="w-4 h-5" />
-            <span>Room Details</span>
+    <div className="min-h-screen bg-white dark:bg-gray-900 flex flex-col">
+      {/* Main Content with Top Padding for Navbar */}
+      <div className="pt-14 sm:pt-16 flex-1">
+        {/* Back Button and Breadcrumb */}
+        <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3">
+            <div className="flex items-center justify-between">
+              <button
+                onClick={onBack}
+                className="flex items-center gap-1.5 text-brand-primary dark:text-brand-primary hover:text-brand-primaryDark dark:hover:text-brand-primaryDark font-medium transition-colors duration-300 group"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:-translate-x-1 transition-transform" />
+                <span className="text-xs sm:text-sm">Back to Rooms</span>
+              </button>
+              <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 text-[10px] sm:text-xs">
+                <Home className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                <span className="hidden sm:inline">/</span>
+                <span className="hidden sm:inline">Rooms</span>
+                <span className="hidden sm:inline">/</span>
+                <span>Details</span>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Room Details Content */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Left column Images */}
-          <div className="lg:col-span-2 animate-fade-in slide-in-from-left duration-500">
+          <div className="lg:col-span-2">
             {/* Main Image */}
-            <div className="relative w-full h-96 sm:h-[500px] bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden mb-4 group">
+            <div className="relative w-full h-96 sm:h-[500px] bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden mb-4">
               {/* Images Slider */}
               <div
                 className="w-full h-full flex transition-transform duration-500"
@@ -279,10 +290,10 @@ const RoomsDetailsPage = ({ room, onBack }: RoomsDetailsPageProps) => {
                 <button
                   key={index}
                   onClick={() => setCurrentImageIndex(index)}
-                  className={`relative flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all duration-300 ${
+                  className={`relative flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 ${
                     index === currentImageIndex
-                      ? "border-orange-500 scale-105"
-                      : "border-gray-300 dark:border-gray-600 hover:border-orange-300 dark:hover:border-orange-400"
+                      ? "border-brand-primary"
+                      : "border-gray-300 dark:border-gray-600"
                   }`}
                 >
                   <Image
@@ -297,17 +308,14 @@ const RoomsDetailsPage = ({ room, onBack }: RoomsDetailsPageProps) => {
             </div>
 
             {/* Description Section */}
-            <div
-              className="mt-8 bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md animate-in fade-in slide-in-from-bottom duration-500"
-              style={{ animationDelay: "100ms" }}
-            >
-              <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
+            <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-5 shadow-sm">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white mb-2">
                 About This Room
               </h2>
-              <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
+              <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed mb-3">
                 {room.fullDescription || room.description}
               </p>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                 Experience ultimate comfort and luxury in this beautifully
                 designed room. Perfect for both business and leisure travelers,
                 this room offers everything you need for a memorable stay.
@@ -315,14 +323,11 @@ const RoomsDetailsPage = ({ room, onBack }: RoomsDetailsPageProps) => {
             </div>
 
             {/* Amenities Section */}
-            <div
-              className="mt-8 bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md animate-in fade-in slide-in-from-bottom duration-500"
-              style={{ animationDelay: "200ms" }}
-            >
-              <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">
+            <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-5 shadow-sm">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white mb-3">
                 Room Amenities
               </h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
                 {amenities.map((amenity, index) => (
                   <AmenityBadge key={index} amenity={amenity} />
                 ))}
@@ -331,26 +336,23 @@ const RoomsDetailsPage = ({ room, onBack }: RoomsDetailsPageProps) => {
 
             {/* Photo Tour Section */}
             {photoTour && (
-              <div
-                className="mt-8 bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md animate-in fade-in slide-in-from-bottom duration-500"
-                style={{ animationDelay: "250ms" }}
-              >
-                <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">
+              <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-5 shadow-sm">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white mb-2">
                   Photo Tour
                 </h2>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-4">
                   Explore every corner of this haven
                 </p>
 
                 {/* Tab navigation */}
-                <div className="flex gap-2 overflow-x-auto mb-6 pb-2">
+                <div className="flex gap-1.5 sm:gap-2 overflow-x-auto mb-4 pb-2">
                   {photoTourCategories.map((category) => (
                     <button
                       key={category}
                       onClick={() => handleCategoryChange(category)}
-                      className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-all ${
+                      className={`px-3 py-1.5 rounded-lg font-medium whitespace-nowrap transition-all text-xs sm:text-sm ${
                         activeCategory === category
-                          ? "bg-orange-500 text-white"
+                          ? "bg-brand-primary text-white"
                           : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                       }`}
                     >
@@ -372,25 +374,24 @@ const RoomsDetailsPage = ({ room, onBack }: RoomsDetailsPageProps) => {
                           <div
                             key={index}
                             onClick={() => openLightbox(photo)}
-                            className="relative break-inside-avoid mb-4 rounded-lg overflow-hidden cursor-pointer group"
+                            className="relative break-inside-avoid mb-4 rounded-lg overflow-hidden cursor-pointer"
                           >
                             <Image
                               src={photo}
                               alt={`${activeCategory} ${index + 1}`}
                               width={400}
                               height={Math.floor(Math.random() * 200) + 250}
-                              className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-300"
+                              className="w-full h-auto object-cover"
                             />
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all" />
                           </div>
                         ))}
                       </div>
 
                       {hasMore && !showAllPhotos && (
-                        <div className="text-center mt-6">
+                        <div className="text-center mt-4">
                           <button
                             onClick={() => setShowAllPhotos(true)}
-                            className="px-6 py-3 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
+                            className="px-4 py-2 bg-brand-primary text-white rounded-lg font-medium hover:bg-brand-primaryDark transition-colors text-xs sm:text-sm"
                           >
                             View All {photos.length} Photos
                           </button>
@@ -408,15 +409,12 @@ const RoomsDetailsPage = ({ room, onBack }: RoomsDetailsPageProps) => {
 
             {/* YouTube Video */}
             {room.youtubeUrl && (
-              <div
-                className="mt-8 bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md animate-in fade-in slide-in-from-bottom duration-500"
-                style={{ animationDelay: "300ms" }}
-              >
-                <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
-                  <Play className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+              <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-5 shadow-sm">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white mb-2 flex items-center gap-2">
+                  <Play className="w-4 h-4 sm:w-5 sm:h-5 text-brand-primary dark:text-brand-primary" />
                   Video Tour
                 </h2>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-4">
                   Watch a virtual tour of this beautiful room
                 </p>
                 <div className="relative w-full pb-[56.25%] rounded-lg overflow-hidden">
@@ -432,15 +430,12 @@ const RoomsDetailsPage = ({ room, onBack }: RoomsDetailsPageProps) => {
             )}
 
             {/* Location Map */}
-            <div
-              className="mt-8 bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md animate-in fade-in slide-in-from-bottom duration-500"
-              style={{ animationDelay: "400ms" }}
-            >
-              <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
-                <MapPin className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+            <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-5 shadow-sm">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white mb-2 flex items-center gap-2">
+                <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-brand-primary dark:text-brand-primary" />
                 Location
               </h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-4">
                 {room.tower && <span className="font-semibold">{room.tower}</span>}
                 {room.tower && room.location && <span>, </span>}
                 {room.location || 'Quezon City, Metro Manila'}
@@ -454,15 +449,41 @@ const RoomsDetailsPage = ({ room, onBack }: RoomsDetailsPageProps) => {
           </div>
 
           {/* Right Column */}
-          <div className="animate-fade-in slide-in-from-right duration-500">
+          <div className="lg:sticky lg:top-20 lg:self-start">
+            {/* Promotional Banner */}
+            <div className="bg-brand-primary dark:bg-brand-primaryDark rounded-lg shadow-md p-3 sm:p-4 mb-3 sm:mb-4 overflow-hidden relative">
+              {/* Decorative Elements */}
+              <div className="absolute top-0 right-0 w-20 h-20 sm:w-24 sm:h-24 bg-white/10 dark:bg-white/5 rounded-full -translate-y-10 sm:-translate-y-12 translate-x-10 sm:translate-x-12"></div>
+              <div className="absolute bottom-0 left-0 w-16 h-16 sm:w-20 sm:h-20 bg-white/10 dark:bg-white/5 rounded-full translate-y-8 sm:translate-y-10 -translate-x-8 sm:-translate-x-10"></div>
+
+              <div className="relative z-10">
+                <div className="flex items-center gap-1 sm:gap-1.5 mb-1.5">
+                  <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
+                  <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wide text-white">Limited Time Offer</span>
+                </div>
+                <h3 className="text-sm sm:text-base font-bold mb-1.5 sm:mb-2 text-white">Book Now & Save!</h3>
+                <div className="space-y-1 mb-1.5 sm:mb-2">
+                  <div className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs">
+                    <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" />
+                    <span className="text-white">Free cancellation up to 24 hours</span>
+                  </div>
+                  <div className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs">
+                    <Tag className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" />
+                    <span className="text-white">Best price guarantee</span>
+                  </div>
+                </div>
+                <p className="text-[9px] sm:text-[10px] text-white opacity-90">Don&apos;t miss out on this exclusive deal!</p>
+              </div>
+            </div>
+
             {/* Price & Booking Card */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6 sticky top-24">
-              <div className="flex items-start gap-2 mb-4">
-                <div className="flex items-center gap-1">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-5 mb-4">
+              <div className="flex items-start gap-1.5 mb-2 sm:mb-3">
+                <div className="flex items-center gap-0.5">
                   {[...Array(5)].map((_, index) => (
                     <Star
                       key={index}
-                      className={`w-5 h-5 ${
+                      className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${
                         index < Math.floor(room.rating)
                           ? "fill-yellow-400 text-yellow-400"
                           : "text-gray-300 dark:text-gray-600"
@@ -470,60 +491,61 @@ const RoomsDetailsPage = ({ room, onBack }: RoomsDetailsPageProps) => {
                     />
                   ))}
                 </div>
-                <span className="text-sm text-gray-600 dark:text-gray-400">
+                <span className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400">
                   {room.rating} ({room.reviews} reviews)
                 </span>
               </div>
 
-              <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-6">
+              <h1 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white mb-3 sm:mb-4">
                 {room.name}
               </h1>
 
-              <div className="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
-                <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Starting from</p>
-                <p className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-yellow-500 mb-1">
+              <div className="mb-3 sm:mb-4 pb-3 sm:pb-4 border-b border-gray-200 dark:border-gray-700">
+                <p className="text-[9px] sm:text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Starting from</p>
+                <p className="text-2xl sm:text-3xl font-bold text-brand-primary dark:text-brand-primary mb-0.5">
                   {room.price}
                 </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{room.pricePerNight}</p>
+                <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400">{room.pricePerNight}</p>
               </div>
 
-              <div className="mb-4 pb-4 border-b border-gray-200 dark:border-gray-700 space-y-3">
-                <div className="flex items-center gap-3">
-                  <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                  <span className="text-gray-700 dark:text-gray-300">
+              <div className="mb-3 pb-3 border-b border-gray-200 dark:border-gray-700 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-brand-primary dark:text-brand-primary flex-shrink-0" />
+                  <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
                     Up to {room.capacity} guests
                   </span>
                 </div>
                 {room.beds && (
-                  <div className="flex items-center gap-3">
-                    <Home className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                    <span className="text-gray-700 dark:text-gray-300">{room.roomSize}</span>
+                  <div className="flex items-center gap-2">
+                    <Home className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-brand-primary dark:text-brand-primary flex-shrink-0" />
+                    <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">{room.roomSize}</span>
                   </div>
                 )}
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <button
                   onClick={handleBookNow}
-                  className="w-full bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-orange-700 text-white font-bold py-4 rounded-lg transition-all duration-300 transform hover:scale-105 active:scale-95 text-lg shadow-lg hover:shadow-xl"
+                  className="w-full bg-brand-primary hover:bg-brand-primaryDark text-white font-semibold py-2.5 sm:py-3 rounded-lg transition-colors text-sm sm:text-base shadow-md"
                 >
                   Book Now
                 </button>
                 <button
                   onClick={handleWishlistToggle}
                   disabled={isLoadingWishlist}
-                  className={`w-full border-2 font-semibold py-3 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 ${
+                  className={`w-full border-2 font-medium py-2 sm:py-2.5 rounded-lg transition-colors flex items-center justify-center gap-1.5 text-xs sm:text-sm ${
                     isInWishlist
-                      ? 'bg-orange-500 border-orange-500 text-white hover:bg-orange-600 hover:border-orange-600'
-                      : 'border-gray-300 dark:border-gray-600 hover:border-orange-500 dark:hover:border-orange-400 text-gray-800 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400'
+                      ? 'bg-brand-primary border-brand-primary text-white hover:bg-brand-primaryDark hover:border-brand-primaryDark'
+                      : 'border-gray-300 dark:border-gray-600 hover:border-brand-primary dark:hover:border-brand-primary text-gray-800 dark:text-gray-300 hover:text-brand-primary dark:hover:text-brand-primary'
                   } ${isLoadingWishlist ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  <Heart className={`w-5 h-5 ${isInWishlist ? 'fill-white' : ''}`} />
-                  {isLoadingWishlist ? 'Loading...' : isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
+                  <Heart className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isInWishlist ? 'fill-white' : ''}`} />
+                  <span className="truncate">{isLoadingWishlist ? 'Loading...' : isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}</span>
                 </button>
               </div>
             </div>
           </div>
+        </div>
         </div>
       </div>
 
@@ -553,6 +575,9 @@ const RoomsDetailsPage = ({ room, onBack }: RoomsDetailsPageProps) => {
           </div>
         </div>
       )}
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 };
