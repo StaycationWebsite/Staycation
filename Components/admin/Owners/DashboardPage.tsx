@@ -31,9 +31,16 @@ const DashboardPage = ({
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedHaven, setSelectedHaven] = useState(havens[0]);
 
+  // Set initial selected haven when havens data loads
+  useEffect(() => {
+    if (havens.length > 0 && !selectedHaven) {
+      setSelectedHaven(havens[0]);
+    }
+  }, [havens]);
+
   // Fetch bookings for the selected haven with polling to auto-refresh
   const { data: bookingsData } = useGetRoomBookingsQuery(
-    { havenId: selectedHaven?.uuid_id || '' },
+    selectedHaven?.uuid_id || '',
     {
       skip: !selectedHaven?.uuid_id,
       pollingInterval: 30000 // Refresh every 30 seconds
@@ -216,12 +223,17 @@ const DashboardPage = ({
               Select Haven
             </label>
             <select
-              value={selectedHaven}
-              onChange={(e) => setSelectedHaven(e.target.value)}
+              value={selectedHaven?.uuid_id || ''}
+              onChange={(e) => {
+                const selected = havens.find((h: any) => h.uuid_id === e.target.value);
+                setSelectedHaven(selected);
+              }}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
             >
-              {havens.map((h: string) => (
-                <option key={h}>{h}</option>
+              {havens.map((h: any) => (
+                <option key={h.uuid_id} value={h.uuid_id}>
+                  {h.haven_name || h.name}
+                </option>
               ))}
             </select>
           </div>

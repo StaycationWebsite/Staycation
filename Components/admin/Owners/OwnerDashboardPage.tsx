@@ -26,10 +26,11 @@ import toast from 'react-hot-toast';
 import { useState, useEffect, useRef } from "react";
 import { signOut, useSession } from "next-auth/react";
 import Image from "next/image";
+import { useGetHavensQuery } from "@/redux/api/roomApi";
 
 export default function OwnerDashboard() {
   const { data: session} = useSession();
-   const [sidebar, setSidebar] = useState(true);
+  const [sidebar, setSidebar] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [page, setPage] = useState("dashboard");
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -54,7 +55,21 @@ export default function OwnerDashboard() {
     selectedDate: null,
     havenName: "",
   });
-  const havens = ["Haven 1", "Haven 2", "Haven 3", "Haven 4"];
+
+  // Fetch havens from database
+  const { data: havensData, isLoading: havensLoading } = useGetHavensQuery({});
+  const allHavens = (havensData as any[]) || [];
+
+  // Group havens by name to get unique haven names
+  const uniqueHavenNames = Array.from(
+    new Set(allHavens.map((h: any) => h.haven_name?.trim()))
+  ).filter(Boolean);
+
+  // Create haven objects with the first matching haven's data for each unique name
+  const havens = uniqueHavenNames.map((name: string) => {
+    const haven = allHavens.find((h: any) => h.haven_name?.trim() === name);
+    return haven;
+  }).filter(Boolean);
 
   const openModal = (modal: string) => setModals({ ...modals, [modal]: true });
   const closeModal = (modal: string) =>

@@ -574,9 +574,10 @@ export const getRoomBookings = async (
       }, { status: 404 });
     }
 
-    const roomName = havenResult.rows[0].haven_name;
+    const roomName = havenResult.rows[0].haven_name.trim();
 
     // Get all active bookings for this room (exclude cancelled and rejected)
+    // Use TRIM to handle any whitespace issues in room_name
     const query = `
       SELECT
         id,
@@ -586,13 +587,12 @@ export const getRoomBookings = async (
         status,
         room_name
       FROM bookings
-      WHERE room_name = $1
+      WHERE TRIM(room_name) = $1
         AND status NOT IN ('cancelled', 'rejected')
       ORDER BY check_in_date ASC
     `;
 
     const result = await pool.query(query, [roomName]);
-    console.log(`✅ Retrieved ${result.rows.length} active bookings for room ${roomName} (ID: ${havenId})`);
 
     return NextResponse.json({
       success: true,

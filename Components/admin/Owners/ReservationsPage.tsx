@@ -11,7 +11,7 @@ const ReservationsPage = () => {
   const [updateBookingStatus] = useUpdateBookingStatusMutation();
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
 
-  const reservations = data?.data || [];
+  const reservations = (data as any[]) || [];
 
   const handleApprove = async (bookingId: string) => {
     try {
