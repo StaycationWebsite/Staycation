@@ -31,25 +31,25 @@ const HelpSidebar = ({ isOpen, onClose }: HelpSidebarProps) => {
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">Help & Support</h2>
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Help & Support</h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
             aria-label="Close sidebar"
           >
-            <X className="w-5 h-5 text-gray-600" />
+            <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-gray-200">
+        <div className="flex border-b border-gray-200 dark:border-gray-700">
           <button
             onClick={() => setActiveTab("help")}
             className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
               activeTab === "help"
                 ? "text-brand-primary border-b-2 border-brand-primary"
-                : "text-gray-600 hover:text-gray-900"
+                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
             }`}
           >
             <HelpCircle className="w-4 h-4 mx-auto mb-1" />
@@ -60,7 +60,7 @@ const HelpSidebar = ({ isOpen, onClose }: HelpSidebarProps) => {
             className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
               activeTab === "faqs"
                 ? "text-brand-primary border-b-2 border-brand-primary"
-                : "text-gray-600 hover:text-gray-900"
+                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
             }`}
           >
             <FileText className="w-4 h-4 mx-auto mb-1" />
@@ -71,7 +71,7 @@ const HelpSidebar = ({ isOpen, onClose }: HelpSidebarProps) => {
             className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
               activeTab === "terms"
                 ? "text-brand-primary border-b-2 border-brand-primary"
-                : "text-gray-600 hover:text-gray-900"
+                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
             }`}
           >
             <Shield className="w-4 h-4 mx-auto mb-1" />
@@ -85,11 +85,11 @@ const HelpSidebar = ({ isOpen, onClose }: HelpSidebarProps) => {
           {activeTab === "help" && (
             <div className="space-y-4">
               <div className="mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                   Need Help?
                 </h3>
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  We're here to assist you 24/7. Reach out to our dedicated support team for any questions or concerns.
+                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                  We&apos;re here to assist you 24/7. Reach out to our dedicated support team for any questions or concerns.
                 </p>
               </div>
 
@@ -98,7 +98,7 @@ const HelpSidebar = ({ isOpen, onClose }: HelpSidebarProps) => {
                   <Link
                     href="/contacts"
                     onClick={onClose}
-                    className={`text-sm hover:text-brand-primary transition-colors flex items-center gap-2 group p-2 rounded-lg hover:bg-gray-50 ${pathname === '/contacts' ? 'text-brand-primary font-semibold bg-orange-50' : 'text-gray-700'}`}
+                    className={`text-sm hover:text-brand-primary transition-colors flex items-center gap-2 group p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 dark:hover:bg-gray-700 ${pathname === '/contacts' ? 'text-brand-primary font-semibold bg-brand-primarySoft dark:bg-brand-primaryDark/20' : 'text-gray-700 dark:text-gray-300'}`}
                   >
                     <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     Contact Us
@@ -108,7 +108,7 @@ const HelpSidebar = ({ isOpen, onClose }: HelpSidebarProps) => {
                   <Link
                     href="/about"
                     onClick={onClose}
-                    className={`text-sm hover:text-brand-primary transition-colors flex items-center gap-2 group p-2 rounded-lg hover:bg-gray-50 ${pathname === '/about' ? 'text-brand-primary font-semibold bg-orange-50' : 'text-gray-700'}`}
+                    className={`text-sm hover:text-brand-primary transition-colors flex items-center gap-2 group p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 dark:hover:bg-gray-700 ${pathname === '/about' ? 'text-brand-primary font-semibold bg-brand-primarySoft dark:bg-brand-primaryDark/20' : 'text-gray-700 dark:text-gray-300'}`}
                   >
                     <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     About Us
@@ -118,7 +118,7 @@ const HelpSidebar = ({ isOpen, onClose }: HelpSidebarProps) => {
                   <Link
                     href="/location"
                     onClick={onClose}
-                    className={`text-sm hover:text-brand-primary transition-colors flex items-center gap-2 group p-2 rounded-lg hover:bg-gray-50 ${pathname === '/location' ? 'text-brand-primary font-semibold bg-orange-50' : 'text-gray-700'}`}
+                    className={`text-sm hover:text-brand-primary transition-colors flex items-center gap-2 group p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 dark:hover:bg-gray-700 ${pathname === '/location' ? 'text-brand-primary font-semibold bg-brand-primarySoft dark:bg-brand-primaryDark/20' : 'text-gray-700 dark:text-gray-300'}`}
                   >
                     <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     Our Locations
@@ -127,7 +127,7 @@ const HelpSidebar = ({ isOpen, onClose }: HelpSidebarProps) => {
                 <li>
                   <a
                     href="mailto:support@staycationhaven.ph"
-                    className="text-sm hover:text-brand-primary transition-colors flex items-center gap-2 group text-gray-700 p-2 rounded-lg hover:bg-gray-50"
+                    className="text-sm hover:text-brand-primary transition-colors flex items-center gap-2 group text-gray-700 dark:text-gray-300 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 dark:hover:bg-gray-700"
                   >
                     <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     Customer Support
@@ -137,7 +137,7 @@ const HelpSidebar = ({ isOpen, onClose }: HelpSidebarProps) => {
                   <Link
                     href="/rooms"
                     onClick={onClose}
-                    className={`text-sm hover:text-brand-primary transition-colors flex items-center gap-2 group p-2 rounded-lg hover:bg-gray-50 ${pathname === '/rooms' ? 'text-brand-primary font-semibold bg-orange-50' : 'text-gray-700'}`}
+                    className={`text-sm hover:text-brand-primary transition-colors flex items-center gap-2 group p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 dark:hover:bg-gray-700 ${pathname === '/rooms' ? 'text-brand-primary font-semibold bg-brand-primarySoft dark:bg-brand-primaryDark/20' : 'text-gray-700 dark:text-gray-300'}`}
                   >
                     <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     Browse Havens
@@ -147,7 +147,7 @@ const HelpSidebar = ({ isOpen, onClose }: HelpSidebarProps) => {
                   <Link
                     href="/help-center"
                     onClick={onClose}
-                    className={`text-sm hover:text-brand-primary transition-colors flex items-center gap-2 group p-2 rounded-lg hover:bg-gray-50 ${pathname === '/help-center' ? 'text-brand-primary font-semibold bg-orange-50' : 'text-gray-700'}`}
+                    className={`text-sm hover:text-brand-primary transition-colors flex items-center gap-2 group p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 dark:hover:bg-gray-700 ${pathname === '/help-center' ? 'text-brand-primary font-semibold bg-brand-primarySoft dark:bg-brand-primaryDark/20' : 'text-gray-700 dark:text-gray-300'}`}
                   >
                     <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     Help Center
@@ -161,10 +161,10 @@ const HelpSidebar = ({ isOpen, onClose }: HelpSidebarProps) => {
           {activeTab === "faqs" && (
             <div className="space-y-4">
               <div className="mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                   FAQs & Policies
                 </h3>
-                <p className="text-sm text-gray-600 leading-relaxed">
+                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
                   Find answers to common questions and review our policies.
                 </p>
               </div>
@@ -174,7 +174,7 @@ const HelpSidebar = ({ isOpen, onClose }: HelpSidebarProps) => {
                   <Link
                     href="/faqs"
                     onClick={onClose}
-                    className={`text-sm hover:text-brand-primary transition-colors flex items-center gap-2 group p-2 rounded-lg hover:bg-gray-50 ${pathname === '/faqs' ? 'text-brand-primary font-semibold bg-orange-50' : 'text-gray-700'}`}
+                    className={`text-sm hover:text-brand-primary transition-colors flex items-center gap-2 group p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 ${pathname === '/faqs' ? 'text-brand-primary font-semibold bg-brand-primarySoft dark:bg-brand-primaryDark/20' : 'text-gray-700 dark:text-gray-300'}`}
                   >
                     <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     Frequently Asked Questions
@@ -184,7 +184,7 @@ const HelpSidebar = ({ isOpen, onClose }: HelpSidebarProps) => {
                   <Link
                     href="/booking-policy"
                     onClick={onClose}
-                    className={`text-sm hover:text-brand-primary transition-colors flex items-center gap-2 group p-2 rounded-lg hover:bg-gray-50 ${pathname === '/booking-policy' ? 'text-brand-primary font-semibold bg-orange-50' : 'text-gray-700'}`}
+                    className={`text-sm hover:text-brand-primary transition-colors flex items-center gap-2 group p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 ${pathname === '/booking-policy' ? 'text-brand-primary font-semibold bg-brand-primarySoft dark:bg-brand-primaryDark/20' : 'text-gray-700 dark:text-gray-300'}`}
                   >
                     <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     Booking Policy
@@ -194,7 +194,7 @@ const HelpSidebar = ({ isOpen, onClose }: HelpSidebarProps) => {
                   <Link
                     href="/cancellation-policy"
                     onClick={onClose}
-                    className={`text-sm hover:text-brand-primary transition-colors flex items-center gap-2 group p-2 rounded-lg hover:bg-gray-50 ${pathname === '/cancellation-policy' ? 'text-brand-primary font-semibold bg-orange-50' : 'text-gray-700'}`}
+                    className={`text-sm hover:text-brand-primary transition-colors flex items-center gap-2 group p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 ${pathname === '/cancellation-policy' ? 'text-brand-primary font-semibold bg-brand-primarySoft dark:bg-brand-primaryDark/20' : 'text-gray-700 dark:text-gray-300'}`}
                   >
                     <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     Cancellation Policy
@@ -204,7 +204,7 @@ const HelpSidebar = ({ isOpen, onClose }: HelpSidebarProps) => {
                   <Link
                     href="/payment-options"
                     onClick={onClose}
-                    className={`text-sm hover:text-brand-primary transition-colors flex items-center gap-2 group p-2 rounded-lg hover:bg-gray-50 ${pathname === '/payment-options' ? 'text-brand-primary font-semibold bg-orange-50' : 'text-gray-700'}`}
+                    className={`text-sm hover:text-brand-primary transition-colors flex items-center gap-2 group p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 ${pathname === '/payment-options' ? 'text-brand-primary font-semibold bg-brand-primarySoft dark:bg-brand-primaryDark/20' : 'text-gray-700 dark:text-gray-300'}`}
                   >
                     <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     Payment Options
@@ -214,7 +214,7 @@ const HelpSidebar = ({ isOpen, onClose }: HelpSidebarProps) => {
                   <Link
                     href="/house-rules"
                     onClick={onClose}
-                    className={`text-sm hover:text-brand-primary transition-colors flex items-center gap-2 group p-2 rounded-lg hover:bg-gray-50 ${pathname === '/house-rules' ? 'text-brand-primary font-semibold bg-orange-50' : 'text-gray-700'}`}
+                    className={`text-sm hover:text-brand-primary transition-colors flex items-center gap-2 group p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 ${pathname === '/house-rules' ? 'text-brand-primary font-semibold bg-brand-primarySoft dark:bg-brand-primaryDark/20' : 'text-gray-700 dark:text-gray-300'}`}
                   >
                     <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     House Rules
@@ -228,10 +228,10 @@ const HelpSidebar = ({ isOpen, onClose }: HelpSidebarProps) => {
           {activeTab === "terms" && (
             <div className="space-y-4">
               <div className="mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                   Terms & Privacy
                 </h3>
-                <p className="text-sm text-gray-600 leading-relaxed">
+                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
                   Review our legal policies and privacy information.
                 </p>
               </div>
@@ -241,7 +241,7 @@ const HelpSidebar = ({ isOpen, onClose }: HelpSidebarProps) => {
                   <Link
                     href="/terms-of-service"
                     onClick={onClose}
-                    className={`text-sm hover:text-brand-primary transition-colors flex items-center gap-2 group p-2 rounded-lg hover:bg-gray-50 ${pathname === '/terms-of-service' ? 'text-brand-primary font-semibold bg-orange-50' : 'text-gray-700'}`}
+                    className={`text-sm hover:text-brand-primary transition-colors flex items-center gap-2 group p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 ${pathname === '/terms-of-service' ? 'text-brand-primary font-semibold bg-brand-primarySoft dark:bg-brand-primaryDark/20' : 'text-gray-700 dark:text-gray-300'}`}
                   >
                     <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     Terms of Service
@@ -251,7 +251,7 @@ const HelpSidebar = ({ isOpen, onClose }: HelpSidebarProps) => {
                   <Link
                     href="/privacy-policy"
                     onClick={onClose}
-                    className={`text-sm hover:text-brand-primary transition-colors flex items-center gap-2 group p-2 rounded-lg hover:bg-gray-50 ${pathname === '/privacy-policy' ? 'text-brand-primary font-semibold bg-orange-50' : 'text-gray-700'}`}
+                    className={`text-sm hover:text-brand-primary transition-colors flex items-center gap-2 group p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 ${pathname === '/privacy-policy' ? 'text-brand-primary font-semibold bg-brand-primarySoft dark:bg-brand-primaryDark/20' : 'text-gray-700 dark:text-gray-300'}`}
                   >
                     <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     Privacy Policy
@@ -261,7 +261,7 @@ const HelpSidebar = ({ isOpen, onClose }: HelpSidebarProps) => {
                   <Link
                     href="/cookie-policy"
                     onClick={onClose}
-                    className={`text-sm hover:text-brand-primary transition-colors flex items-center gap-2 group p-2 rounded-lg hover:bg-gray-50 ${pathname === '/cookie-policy' ? 'text-brand-primary font-semibold bg-orange-50' : 'text-gray-700'}`}
+                    className={`text-sm hover:text-brand-primary transition-colors flex items-center gap-2 group p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 ${pathname === '/cookie-policy' ? 'text-brand-primary font-semibold bg-brand-primarySoft dark:bg-brand-primaryDark/20' : 'text-gray-700 dark:text-gray-300'}`}
                   >
                     <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     Cookie Policy
@@ -271,7 +271,7 @@ const HelpSidebar = ({ isOpen, onClose }: HelpSidebarProps) => {
                   <Link
                     href="/data-protection"
                     onClick={onClose}
-                    className={`text-sm hover:text-brand-primary transition-colors flex items-center gap-2 group p-2 rounded-lg hover:bg-gray-50 ${pathname === '/data-protection' ? 'text-brand-primary font-semibold bg-orange-50' : 'text-gray-700'}`}
+                    className={`text-sm hover:text-brand-primary transition-colors flex items-center gap-2 group p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 ${pathname === '/data-protection' ? 'text-brand-primary font-semibold bg-brand-primarySoft dark:bg-brand-primaryDark/20' : 'text-gray-700 dark:text-gray-300'}`}
                   >
                     <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     Data Protection
@@ -281,7 +281,7 @@ const HelpSidebar = ({ isOpen, onClose }: HelpSidebarProps) => {
                   <Link
                     href="/accessibility"
                     onClick={onClose}
-                    className={`text-sm hover:text-brand-primary transition-colors flex items-center gap-2 group p-2 rounded-lg hover:bg-gray-50 ${pathname === '/accessibility' ? 'text-brand-primary font-semibold bg-orange-50' : 'text-gray-700'}`}
+                    className={`text-sm hover:text-brand-primary transition-colors flex items-center gap-2 group p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 ${pathname === '/accessibility' ? 'text-brand-primary font-semibold bg-brand-primarySoft dark:bg-brand-primaryDark/20' : 'text-gray-700 dark:text-gray-300'}`}
                   >
                     <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     Accessibility
