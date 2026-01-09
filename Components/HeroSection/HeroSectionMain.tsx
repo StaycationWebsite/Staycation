@@ -111,43 +111,23 @@ const HeroSectionMain = () => {
   const dispatch = useAppDispatch();
 
   const handleSearch = () => {
-    // Validation checks
-    const missingFields: string[] = [];
-
+    // Validation - only check for location
     if (!selectedLocation) {
-      missingFields.push("location");
-    }
-    if (!checkInDate) {
-      missingFields.push("check-in date");
-    }
-    if (!checkOutDate) {
-      missingFields.push("check-out date");
-    }
-
-    if (missingFields.length > 0) {
-      let message = "Please select ";
-      if (missingFields.length === 1) {
-        message += `a ${missingFields[0]}.`;
-      } else if (missingFields.length === 2) {
-        message += `${missingFields[0]} and ${missingFields[1]}.`;
-      } else {
-        message += `${missingFields[0]}, ${missingFields[1]}, and ${missingFields[2]}.`;
-      }
-
+      const message = "Please select a location.";
       setValidationMessage(message);
       setIsValidationModalOpen(true);
       return;
     }
 
-    //Save to redux before opening modal 
+    // Save to redux and navigate to rooms page
     dispatch(setReduxLocation(selectedLocation));
     dispatch(setReduxCheckInDate(checkInDate));
     dispatch(setReduxCheckOutDate(checkOutDate));
     dispatch(setReduxGuests(guests));
-    dispatch(setIsFromSearch(true))
+    dispatch(setIsFromSearch(true));
 
-    // All fields are valid, proceed
-    setIsStayTypeModalOpen(true);
+    // Navigate to rooms page with filter applied
+    router.push('/rooms');
   }
 
   const totalGuests = guests.adults + guests.children + guests.infants;
