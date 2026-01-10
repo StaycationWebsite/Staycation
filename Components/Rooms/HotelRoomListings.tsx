@@ -325,8 +325,8 @@ const HotelRoomListings = ({ initialHavens }: HotelRoomListingsProps) => {
                 {/* Mobile Layout with Show All Overlay */}
                 {isMobile ? (
                   <div className="relative">
-                    <div 
-                      ref={(el) => scrollContainerRefs.current[havenNumber] = el}
+                    <div
+                      ref={(el) => { scrollContainerRefs.current[havenNumber] = el; }}
                       className="overflow-x-auto scrollbar-hide pb-4"
                     >
                       <div className="flex gap-4" style={{ minWidth: 'max-content' }}>
