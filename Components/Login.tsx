@@ -2,10 +2,6 @@
 
 import { ArrowRight, Mail } from "lucide-react";
 import { useState } from "react";
-<<<<<<< HEAD
-import Spinner from "./Spinner"
-=======
->>>>>>> ad7dbccb24383d2add77931ecb7e9525bd427a64
 import { useRouter } from "next/navigation";
 import { useAppDispatch } from "@/redux/hooks";
 import { setCheckInDate, setCheckOutDate, setGuests } from "@/redux/slices/bookingSlice";
@@ -15,24 +11,33 @@ import Image from "next/image";
 
 const Login = () => {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isFacebookLoading, setIsFacebookLoading] = useState(false);
   const [isGuestLoading, setIsGuestLoading] = useState(false);
   const router = useRouter();
   const dispatch = useAppDispatch();
 
   const handleSocialLogin = async (provider: string) => {
-    setIsGoogleLoading(true);
+    if (provider.toLowerCase() === "google") {
+      setIsGoogleLoading(true);
+    } else if (provider.toLowerCase() === "facebook") {
+      setIsFacebookLoading(true);
+    }
 
     try {
       if (provider.toLowerCase() === "google") {
         await signIn("google", { callbackUrl: "/rooms" });
+      } else if (provider.toLowerCase() === "facebook") {
+        await signIn("facebook", { callbackUrl: "/rooms" });
       } else {
         alert(`${provider} login not yet implemented`);
         setIsGoogleLoading(false);
+        setIsFacebookLoading(false);
       }
     } catch (error) {
       console.error("Login error:", error);
       alert("An error occurred during login");
       setIsGoogleLoading(false);
+      setIsFacebookLoading(false);
     }
   };
 
@@ -101,11 +106,12 @@ const Login = () => {
               </p>
             </div>
 
-            {/* Google Sign In */}
-            <div className="mb-6">
+            {/* Social Sign In Options */}
+            <div className="space-y-3 mb-6">
+              {/* Google Sign In */}
               <button
                 onClick={() => handleSocialLogin("google")}
-                disabled={isGoogleLoading || isGuestLoading}
+                disabled={isGoogleLoading || isFacebookLoading || isGuestLoading}
                 className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Continue with Google"
               >
@@ -121,6 +127,32 @@ const Login = () => {
                     <Mail className="w-5 h-5 text-red-600 dark:text-red-500" />
                     <span className="font-medium text-gray-700 dark:text-gray-300">
                       Continue with Google
+                    </span>
+                  </>
+                )}
+              </button>
+
+              {/* Facebook Sign In */}
+              <button
+                onClick={() => handleSocialLogin("facebook")}
+                disabled={isGoogleLoading || isFacebookLoading || isGuestLoading}
+                className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Continue with Facebook"
+              >
+                {isFacebookLoading ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-blue-200 dark:border-blue-900 border-t-blue-600 dark:border-t-blue-500 rounded-full animate-spin"></div>
+                    <span className="font-medium text-gray-700 dark:text-gray-300">
+                      Processing...
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5 text-blue-600 dark:text-blue-500" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                    </svg>
+                    <span className="font-medium text-gray-700 dark:text-gray-300">
+                      Continue with Facebook
                     </span>
                   </>
                 )}
@@ -143,7 +175,7 @@ const Login = () => {
             <div className="mb-8">
               <button
                 onClick={handleGuestLogin}
-                disabled={isGoogleLoading || isGuestLoading}
+                disabled={isGoogleLoading || isFacebookLoading || isGuestLoading}
                 className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg bg-brand-primary hover:bg-brand-primaryDark text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Continue as Guest"
               >
