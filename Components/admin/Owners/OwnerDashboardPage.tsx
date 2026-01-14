@@ -22,6 +22,7 @@ import ReviewsPage from "./ReviewsPage";
 import SettingsPage from "./SettingsPage";
 import AuditLogsPage from "./AuditLogsPage";
 import MessagesPage from "./MessagesPage";
+import NotificationModal from "../Csr/Modals/Notification";
 import toast from 'react-hot-toast';
 import { useState, useEffect, useRef } from "react";
 import { signOut, useSession } from "next-auth/react";
@@ -131,7 +132,9 @@ export default function OwnerDashboard() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [page, setPage] = useState("dashboard");
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [notificationOpen, setNotificationOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const notificationButtonRef = useRef<HTMLButtonElement | null>(null);
   const [havenView, setHavenView] = useState<"overview" | "list">("overview");
   const [modals, setModals] = useState({
     addUnit: false,
@@ -165,6 +168,30 @@ export default function OwnerDashboard() {
   };
 
   const allHavens = getAllHavens();
+
+  const notifications = [
+    {
+      id: "1",
+      title: "New booking received",
+      description: "A new booking was created for one of your havens.",
+      timestamp: "2 mins ago",
+      type: "info" as const,
+    },
+    {
+      id: "2",
+      title: "Payout processed",
+      description: "Your latest payout for this week has been processed.",
+      timestamp: "30 mins ago",
+      type: "success" as const,
+    },
+    {
+      id: "3",
+      title: "Upcoming guest arrival",
+      description: "Guest arrival scheduled later today. Review details.",
+      timestamp: "1 hr ago",
+      type: "warning" as const,
+    },
+  ];
 
   // Group havens by name to get unique haven names
   const uniqueHavenNames = Array.from(
@@ -532,7 +559,12 @@ export default function OwnerDashboard() {
 
           <div className="flex items-center gap-3">
             {/* Notifications */}
-            <button className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
+            <button
+              ref={notificationButtonRef}
+              onClick={() => setNotificationOpen(true)}
+              className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Notifications"
+            >
               <Bell className="w-6 h-6 text-gray-600" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
@@ -691,6 +723,19 @@ export default function OwnerDashboard() {
           </div>
         </div>
       </div>
+
+      {/* NOTIFICATIONS POPUP */}
+      {notificationOpen && (
+        <NotificationModal
+          notifications={notifications}
+          onClose={() => setNotificationOpen(false)}
+          onViewAll={() => {
+            setNotificationOpen(false);
+            setPage("notifications");
+          }}
+          anchorRef={notificationButtonRef}
+        />
+      )}
 
       {/* MODALS */}
       <AddUnitModal
