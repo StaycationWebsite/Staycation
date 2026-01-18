@@ -643,7 +643,7 @@ const MaintenancePage = () => {
             </div>
           </div>
 
-          {/* Assign Modal */}
+          {/* Assign MODAL */}
           <AssignToModal
             isOpen={assignModalOpen}
             onClose={() => {
