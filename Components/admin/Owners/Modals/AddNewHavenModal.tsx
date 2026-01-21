@@ -501,7 +501,7 @@ const AddNewHavenModal = ({ isOpen, onClose }: AddNewHavenModalProps) => {
               type="button"
               onClick={handleSubmit}
               disabled={isLoading}
-              className="flex-1 px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium transition-colors shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-6 py-3 bg-brand-primary hover:bg-brand-primaryDark text-white rounded-lg font-medium transition-colors shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? "Creating Haven..." : "Save Changes"}
             </button>
