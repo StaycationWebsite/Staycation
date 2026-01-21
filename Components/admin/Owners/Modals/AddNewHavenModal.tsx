@@ -1,7 +1,7 @@
 "use client";
 
 import { X, Home, DollarSign, Clock, Calendar, FileText, Star, Image as ImageIcon, Images, Youtube } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useCreateHavenMutation } from "@/redux/api/roomApi"
 import toast from 'react-hot-toast';
 import BasicInformationModal from "./BasicInformationModal";
@@ -92,6 +92,43 @@ const AddNewHavenModal = ({ isOpen, onClose }: AddNewHavenModalProps) => {
     bedroom: [],
     additional: [],
   });
+
+  // Memoize initial data for modals to prevent unnecessary re-renders/resets
+  const basicInfoInitialData = useMemo(() => ({
+    haven_name: formData.havenName,
+    tower: formData.tower,
+    floor: formData.floor,
+    view_type: formData.view,
+  }), [formData.havenName, formData.tower, formData.floor, formData.view]);
+
+  const pricingInitialData = useMemo(() => ({
+    six_hour_rate: formData.sixHourRate ? parseFloat(formData.sixHourRate) : undefined,
+    ten_hour_rate: formData.tenHourRate ? parseFloat(formData.tenHourRate) : undefined,
+    weekday_rate: formData.weekdayRate ? parseFloat(formData.weekdayRate) : undefined,
+    weekend_rate: formData.weekendRate ? parseFloat(formData.weekendRate) : undefined,
+  }), [formData.sixHourRate, formData.tenHourRate, formData.weekdayRate, formData.weekendRate]);
+
+  const checkInTimeInitialData = useMemo(() => ({
+    six_hour_check_in: formData.sixHourCheckIn,
+    ten_hour_check_in: formData.tenHourCheckIn,
+    twenty_one_hour_check_in: formData.twentyOneHourCheckIn,
+  }), [formData.sixHourCheckIn, formData.tenHourCheckIn, formData.twentyOneHourCheckIn]);
+
+  const availabilityInitialData = useMemo(() => blockedDates.map(date => ({
+    from_date: date.fromDate,
+    to_date: date.toDate,
+    reason: date.reason,
+  })), [blockedDates]);
+
+  const havenDetailsInitialData = useMemo(() => ({
+    capacity: formData.capacity ? parseInt(formData.capacity) : undefined,
+    room_size: formData.roomSize ? parseFloat(formData.roomSize) : undefined,
+    beds: formData.beds,
+    description: formData.description,
+  }), [formData.capacity, formData.roomSize, formData.beds, formData.description]);
+
+  const imagesInitialData = useMemo(() => ([]), []);
+  const photoTourInitialData = useMemo(() => ([]), []);
 
   const towers = [
     { value: "tower-a", label: "Tower A" },
@@ -486,12 +523,7 @@ const AddNewHavenModal = ({ isOpen, onClose }: AddNewHavenModalProps) => {
           });
           setOpenModal(null);
         }}
-        initialData={{
-          haven_name: formData.havenName,
-          tower: formData.tower,
-          floor: formData.floor,
-          view_type: formData.view,
-        }}
+        initialData={basicInfoInitialData}
       />
       
       <PricingManagementModal
@@ -507,12 +539,7 @@ const AddNewHavenModal = ({ isOpen, onClose }: AddNewHavenModalProps) => {
           });
           setOpenModal(null);
         }}
-        initialData={{
-          six_hour_rate: formData.sixHourRate ? parseFloat(formData.sixHourRate) : undefined,
-          ten_hour_rate: formData.tenHourRate ? parseFloat(formData.tenHourRate) : undefined,
-          weekday_rate: formData.weekdayRate ? parseFloat(formData.weekdayRate) : undefined,
-          weekend_rate: formData.weekendRate ? parseFloat(formData.weekendRate) : undefined,
-        }}
+        initialData={pricingInitialData}
       />
       
       <CheckInTimeSettingsModal
@@ -527,11 +554,7 @@ const AddNewHavenModal = ({ isOpen, onClose }: AddNewHavenModalProps) => {
           });
           setOpenModal(null);
         }}
-        initialData={{
-          six_hour_check_in: formData.sixHourCheckIn,
-          ten_hour_check_in: formData.tenHourCheckIn,
-          twenty_one_hour_check_in: formData.twentyOneHourCheckIn,
-        }}
+        initialData={checkInTimeInitialData}
       />
       
       <AvailabilityManagementModal
@@ -541,11 +564,7 @@ const AddNewHavenModal = ({ isOpen, onClose }: AddNewHavenModalProps) => {
           setBlockedDates(dates);
           setOpenModal(null);
         }}
-        initialData={blockedDates.map(date => ({
-          from_date: date.fromDate,
-          to_date: date.toDate,
-          reason: date.reason,
-        }))}
+        initialData={availabilityInitialData}
       />
       
       <HavenDetailsModal
@@ -561,12 +580,7 @@ const AddNewHavenModal = ({ isOpen, onClose }: AddNewHavenModalProps) => {
           });
           setOpenModal(null);
         }}
-        initialData={{
-          capacity: formData.capacity ? parseInt(formData.capacity) : undefined,
-          room_size: formData.roomSize ? parseFloat(formData.roomSize) : undefined,
-          beds: formData.beds,
-          description: formData.description,
-        }}
+        initialData={havenDetailsInitialData}
       />
       
       <AmenitiesModal
@@ -602,7 +616,7 @@ const AddNewHavenModal = ({ isOpen, onClose }: AddNewHavenModalProps) => {
           setHavenImages(newImages);
           setOpenModal(null);
         }}
-        initialImages={[]}
+        initialImages={imagesInitialData}
       />
       
       <PhotoTourManagementModal
@@ -612,7 +626,7 @@ const AddNewHavenModal = ({ isOpen, onClose }: AddNewHavenModalProps) => {
           setPhotoTourImages(photoTours);
           setOpenModal(null);
         }}
-        initialPhotoTours={[]}
+        initialPhotoTours={photoTourInitialData}
       />
       
       <YouTubeVideoModal
