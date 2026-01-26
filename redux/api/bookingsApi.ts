@@ -51,6 +51,38 @@ export const bookingsApi = createApi({
           body,
         };
       },
+      async onQueryStarted({ id, status }, { dispatch, queryFulfilled }) {
+        // Optimistically update the getBookings cache
+        const patchResult = dispatch(
+          bookingsApi.util.updateQueryData("getBookings", undefined, (draft) => {
+            const booking = draft.find((b) => b.id === id);
+            if (booking) {
+              booking.status = status;
+            }
+          })
+        );
+
+        // Also handle the case where it might be called with {}
+        const patchResultEmpty = dispatch(
+          bookingsApi.util.updateQueryData(
+            "getBookings",
+            {} as any,
+            (draft) => {
+              const booking = draft.find((b) => b.id === id);
+              if (booking) {
+                booking.status = status;
+              }
+            }
+          )
+        );
+
+        try {
+          await queryFulfilled;
+        } catch {
+          patchResult.undo();
+          patchResultEmpty.undo();
+        }
+      },
       invalidatesTags: ["Booking"],
     }),
 

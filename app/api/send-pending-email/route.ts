@@ -343,7 +343,7 @@ export async function POST(request: NextRequest) {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             line-height: 1.6;
             color: #1F2937;
-            background-color: #F9F6F0;
+            background-color: #F3F4F6;
             padding: 20px;
             min-height: 100vh;
           }
@@ -354,12 +354,12 @@ export async function POST(request: NextRequest) {
             background: #ffffff;
             border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 4px 20px rgba(184, 134, 11, 0.1);
-            border: 1px solid rgba(184, 134, 11, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            border: 1px solid #E5E7EB;
           }
 
           .header {
-            background-color: #6B7280;
+            background-color: #B8860B;
             color: #ffffff;
             padding: 40px 30px;
             text-align: center;
@@ -370,7 +370,6 @@ export async function POST(request: NextRequest) {
             font-size: 32px;
             font-weight: 700;
             margin-bottom: 8px;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
           }
 
           .tagline {
@@ -407,7 +406,7 @@ export async function POST(request: NextRequest) {
           }
 
           .intro-text {
-            color: #6B7280;
+            color: #4B5563;
             margin-bottom: 30px;
             line-height: 1.7;
             font-size: 16px;
@@ -416,29 +415,23 @@ export async function POST(request: NextRequest) {
           .section-title {
             font-family: 'Poppins', 'Inter', sans-serif;
             font-size: 18px;
-            color: #8B6508;
+            color: #B8860B;
             font-weight: 600;
             margin: 30px 0 20px 0;
             padding-bottom: 10px;
-            border-bottom: 2px solid #F5DEB3;
+            border-bottom: 2px solid #E5E7EB;
             display: flex;
             align-items: center;
             gap: 10px;
           }
 
           .info-card {
-            background-color: #F9F6F0;
-            border-left: 4px solid #8B6508;
+            background-color: #ffffff;
+            border: 1px solid #E5E7EB;
             padding: 25px 30px;
             margin: 20px 0;
             border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(184, 134, 11, 0.08);
-            transition: transform 0.2s ease;
-          }
-
-          .info-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(184, 134, 11, 0.12);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
           }
 
           .info-row {
@@ -446,7 +439,7 @@ export async function POST(request: NextRequest) {
             justify-content: space-between;
             align-items: center;
             padding: 12px 0;
-            border-bottom: 1px solid rgba(184, 134, 11, 0.1);
+            border-bottom: 1px solid #F3F4F6;
           }
 
           .info-row:last-child {
@@ -455,7 +448,7 @@ export async function POST(request: NextRequest) {
 
           .info-label {
             font-weight: 600;
-            color: #8B6508;
+            color: #B8860B;
             font-size: 14px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -469,13 +462,13 @@ export async function POST(request: NextRequest) {
           }
 
           .price-summary {
-            background-color: #4A2C2A;
-            color: #F9F6F0;
+            background-color: #ffffff;
+            color: #1F2937;
             padding: 30px 25px;
             border-radius: 8px;
             margin: 30px 0;
             text-align: center;
-            box-shadow: 0 4px 15px rgba(74, 44, 42, 0.2);
+            border: 2px solid #B8860B;
           }
 
           .price-row {
@@ -489,25 +482,24 @@ export async function POST(request: NextRequest) {
           .price-total {
             margin-top: 20px;
             padding-top: 20px;
-            border-top: 2px solid rgba(184, 134, 11, 0.3);
+            border-top: 1px solid #E5E7EB;
             font-size: 24px;
             font-weight: 700;
             color: #B8860B;
           }
 
           .alert-box {
-            background-color: #FFFFFF;
-            border: 1px solid #F2EBD9;
-            border-left: 4px solid #8B6508;
+            background-color: #ffffff;
+            border: 1px solid #E5E7EB;
+            border-left: 4px solid #B8860B;
             padding: 25px 30px;
             margin: 30px 0;
             border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(184, 134, 11, 0.1);
           }
 
           .alert-title {
             font-weight: 700;
-            color: #8B6508;
+            color: #B8860B;
             margin-bottom: 15px;
             font-size: 16px;
             display: flex;
@@ -517,22 +509,7 @@ export async function POST(request: NextRequest) {
 
           .alert-box ul {
             margin-left: 20px;
-            color: #5D4037;
-          }
-
-          .alert-box li {
-            margin: 10px 0;
-            line-height: 1.6;
-            position: relative;
-            padding-left: 8px;
-          }
-
-          .alert-box li::before {
-            content: '•';
-            position: absolute;
-            left: -8px;
-            color: #8B6508;
-            font-weight: bold;
+            color: #4B5563;
           }
 
           .cta-button {
@@ -544,21 +521,20 @@ export async function POST(request: NextRequest) {
             display: inline-flex;
             align-items: center;
             gap: 10px;
-            background-color: #8B6508;
+            background-color: #B8860B;
             color: white;
             padding: 14px 35px;
             text-decoration: none;
             border-radius: 8px;
             font-weight: 600;
             font-size: 16px;
-            box-shadow: 0 4px 12px rgba(184, 134, 11, 0.3);
+            box-shadow: 0 4px 12px rgba(184, 134, 11, 0.2);
             transition: all 0.3s ease;
           }
 
           .cta-button a:hover {
-            background-color: #B8860B;
+            background-color: #8B6508;
             transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(184, 134, 11, 0.4);
           }
 
           .footer {
@@ -590,7 +566,7 @@ export async function POST(request: NextRequest) {
           }
 
           .highlight {
-            color: #8B6508;
+            color: #B8860B;
             font-weight: 600;
           }
 
@@ -726,12 +702,12 @@ export async function POST(request: NextRequest) {
             </div>
 
             <!-- Receipt Attachment Notice -->
-            <div class="alert-box" style="background-color: #FEF3C7; border-left-color: #F59E0B;">
-              <div class="alert-title" style="color: #D97706;">
+            <div class="alert-box" style="background-color: #ffffff; border: 1px solid #E5E7EB; border-left: 4px solid #B8860B;">
+              <div class="alert-title" style="color: #B8860B;">
                 <i class="fas fa-file-pdf"></i>
                 <span>Your Booking Receipt is Attached</span>
               </div>
-              <ul>
+              <ul style="color: #4B5563;">
                 <li><strong>Please download and save the attached PDF receipt</strong></li>
                 <li><strong style="color: #B8860B;">IMPORTANT: Bring this receipt (printed or digital) when you check-in</strong></li>
                 <li>You will also need to present a valid government ID</li>

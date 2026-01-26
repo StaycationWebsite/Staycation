@@ -6,7 +6,7 @@
 // - All form fields from Checkout.tsx
 // - Adapted for modal context without Redux dependencies
 
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
 import {
   Calendar,
@@ -37,6 +37,9 @@ import { useCreateBookingMutation, useGetRoomBookingsQuery, useUpdateBookingStat
 import { useGetHavensQuery } from "@/redux/api/roomApi";
 import toast from "react-hot-toast";
 import Image from "next/image";
+import DateRangePicker from "@/Components/HeroSection/DateRangePicker";
+import GuestSelector from "@/Components/HeroSection/GuestSelector";
+import { formatDateSafe } from "@/lib/dateUtils";
 
 interface NewBookingModalProps {
   onClose: () => void;
@@ -175,11 +178,50 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
     extraSlippers: 0,
   });
 
-  // Fetch room bookings for date availability
-  const { data: roomBookingsData } = useGetRoomBookingsQuery(
-    selectedHaven?.uuid_id || '',
-    { skip: !selectedHaven?.uuid_id }
-  );
+  // Auto-adjust dates based on stay type selection
+  useEffect(() => {
+    if (formData.stayType && checkInDate) {
+      const checkIn = new Date(checkInDate);
+      
+      if (formData.stayType === "10 Hours - ₱1,599") {
+        // 10 hours: check-in 2:00 PM (14:00), check-out 12:00 AM next day (00:00)
+        // Set checkout to next day
+        const nextDay = new Date(checkIn);
+        nextDay.setDate(nextDay.getDate() + 1);
+        const nextDayStr = `${nextDay.getFullYear()}-${String(nextDay.getMonth() + 1).padStart(2, '0')}-${String(nextDay.getDate()).padStart(2, '0')}`;
+        
+        if (checkOutDate !== nextDayStr) {
+          setCheckOutDate(nextDayStr);
+        }
+        
+        if (formData.checkOutTime !== "00:00") {
+          setFormData(prev => ({ ...prev, checkOutTime: "00:00" }));
+        }
+      } else if (formData.stayType.includes("21 Hours")) {
+        // For 21 hours stay, check-out should be next day
+        const nextDay = new Date(checkIn);
+        nextDay.setDate(nextDay.getDate() + 1);
+        const nextDayStr = `${nextDay.getFullYear()}-${String(nextDay.getMonth() + 1).padStart(2, '0')}-${String(nextDay.getDate()).padStart(2, '0')}`;
+
+        if (checkOutDate !== nextDayStr) {
+          setCheckOutDate(nextDayStr);
+        }
+        
+        if (formData.checkOutTime !== "11:00") {
+          setFormData(prev => ({ ...prev, checkOutTime: "11:00" }));
+        }
+      } else if (formData.stayType === "Multi-Day Stay") {
+        // Ensure checkout is at least next day for multi-day
+        const nextDay = new Date(checkIn);
+        nextDay.setDate(nextDay.getDate() + 1);
+        const nextDayStr = `${nextDay.getFullYear()}-${String(nextDay.getMonth() + 1).padStart(2, '0')}-${String(nextDay.getDate()).padStart(2, '0')}`;
+        
+        if (!checkOutDate || new Date(checkOutDate) <= checkIn) {
+          setCheckOutDate(nextDayStr);
+        }
+      }
+    }
+  }, [formData.stayType, checkInDate, checkOutDate, formData.checkOutTime]);
 
   useEffect(() => {
     const rafId = requestAnimationFrame(() => {
@@ -201,12 +243,20 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
     setSelectedHaven(found);
   }, [initialBooking?.room_name, havens]);
 
-  // Ensure additional guests array length matches adults+children in edit mode
+  // Auto-calculate check-out date when check-in date is changed
   useEffect(() => {
-    if (!isEditMode) return;
-    updateAdditionalGuests(formData.adults, formData.children);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isEditMode]);
+    if (checkInDate && !isEditMode) {
+      const checkIn = new Date(checkInDate);
+      const checkOut = new Date(checkIn);
+      checkOut.setDate(checkOut.getDate() + 1);
+      const checkOutStr = `${checkOut.getFullYear()}-${String(checkOut.getMonth() + 1).padStart(2, '0')}-${String(checkOut.getDate()).padStart(2, '0')}`;
+      
+      // Only update if checkOutDate is empty or before/same as checkInDate
+      if (!checkOutDate || new Date(checkOutDate) <= checkIn) {
+        setCheckOutDate(checkOutStr);
+      }
+    }
+  }, [checkInDate, checkOutDate, isEditMode]);
 
   // Check date availability - MUST be before early return
   const isDateUnavailable = useMemo(() => {
@@ -226,31 +276,64 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
     };
   }, [roomBookingsData]);
 
-  if (!isMounted) return null;
+  // Validate date range for selected stay type
+  const getDateRangeWarning = useCallback(() => {
+    if (!checkInDate || !checkOutDate || !formData.stayType) return null;
 
-  // Calculate number of days
-  const calculateNumberOfDays = (): number => {
-    if (!checkInDate || !checkOutDate) return 0;
     const checkIn = new Date(checkInDate);
     const checkOut = new Date(checkOutDate);
+    const diffTime = checkOut.getTime() - checkIn.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (formData.stayType === "10 Hours - ₱1,599" && diffDays > 0) {
+      return "For 10-hour stays, check-in and check-out should be on the same day. The dates will be auto-adjusted.";
+    }
+
+    if (formData.stayType.includes("21 Hours") && diffDays !== 1) {
+      return "For 21-hour stays, check-out should be the next day after check-in. The dates will be auto-adjusted.";
+    }
+
+    if (formData.stayType === "Multi-Day Stay" && diffDays < 2) {
+      return "For multi-day stays, please select at least 2 nights.";
+    }
+
+    return null;
+  }, [checkInDate, checkOutDate, formData.stayType]);
+
+  if (!isMounted) return null;
+
+  // Calculate number of days for multi-day stay
+  const calculateNumberOfDays = (): number => {
+    if (!checkInDate || !checkOutDate) return 0;
+
+    const checkIn = new Date(checkInDate);
+    const checkOut = new Date(checkOutDate);
+
+    // Calculate difference in milliseconds
     const diffTime = Math.abs(checkOut.getTime() - checkIn.getTime());
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    // Convert to days
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    return diffDays;
   };
 
-  // Calculate room rate
+  // Calculate room rate from selected stay type
   const getRoomRateFromStayType = (): number => {
     if (!formData.stayType || !selectedHaven) return 0;
+
     if (formData.stayType === "10 Hours - ₱1,599") {
-      return selectedHaven.six_hour_rate || 1599;
+      return 1599;
     } else if (formData.stayType.includes("weekday")) {
-      return selectedHaven.weekday_rate || 1799;
+      return 1799;
     } else if (formData.stayType.includes("Fri-Sat")) {
-      return selectedHaven.weekend_rate || 1999;
+      return 1999;
     } else if (formData.stayType === "Multi-Day Stay") {
+      // For multi-day, calculate: base rate × number of days
       const baseRate = selectedHaven.weekday_rate || 1799;
-      return baseRate * calculateNumberOfDays();
+      const numberOfDays = calculateNumberOfDays();
+      return baseRate * numberOfDays;
     }
-    return selectedHaven.ten_hour_rate || 0;
+    return 0;
   };
 
   const roomRate = getRoomRateFromStayType();
@@ -370,6 +453,19 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
       checkInTime: defaultCheckInTime,
       checkOutTime: defaultCheckOutTime,
     }));
+
+    // Auto-calculate check-out date if check-in date is already selected
+    if (checkInDate && selectedStayType) {
+      const checkIn = new Date(checkInDate);
+      const checkOut = new Date(checkIn);
+
+      if (selectedStayType === "10 Hours - ₱1,599" || selectedStayType.includes("21 Hours") || selectedStayType === "Multi-Day Stay") {
+        checkOut.setDate(checkOut.getDate() + 1);
+      }
+
+      const checkOutStr = `${checkOut.getFullYear()}-${String(checkOut.getMonth() + 1).padStart(2, '0')}-${String(checkOut.getDate()).padStart(2, '0')}`;
+      setCheckOutDate(checkOutStr);
+    }
   };
 
   const handleAddOnChange = (item: keyof AddOns, increment: boolean) => {
@@ -383,17 +479,34 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
     const element = errorRefs.current[fieldName];
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Add shake animation
+      element.classList.add('animate-shake');
+      setTimeout(() => element.classList.remove('animate-shake'), 500);
     }
   };
 
   const validateStep1 = (): boolean => {
+    setErrors({});
     const newErrors: Record<string, string> = {};
     if (!formData.firstName) newErrors.firstName = "First name is required";
     if (!formData.lastName) newErrors.lastName = "Last name is required";
-    if (!formData.age) newErrors.age = "Age is required";
+    if (!formData.age) {
+      newErrors.age = "Age is required";
+    } else if (Number(formData.age) < 18) {
+      newErrors.age = "Main guest must be at least 18 years old to book";
+    }
     if (!formData.gender) newErrors.gender = "Please select a gender";
-    if (!formData.email) newErrors.email = "Email is required";
-    if (!formData.phone) newErrors.phone = "Phone number is required";
+    if (!formData.email) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+    if (!formData.phone) {
+      newErrors.phone = "Phone number is required";
+    } else if (!/^\+?[0-9\s-]{7,20}$/.test(formData.phone)) {
+      newErrors.phone = "Please enter a valid phone number";
+    }
+
     if (formData.age && parseInt(formData.age) >= 10 && !formData.validId) {
       newErrors.validId = "Valid ID is required for guests 10+ years old";
     }
@@ -422,6 +535,7 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
   };
 
   const validateStep2 = (): boolean => {
+    setErrors({});
     const newErrors: Record<string, string> = {};
     if (!formData.stayType) newErrors.stayType = "Please select a stay type";
     if (!checkInDate) newErrors.checkInDate = "Check-in date is required";
@@ -429,6 +543,15 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
     if (!formData.checkInTime) newErrors.checkInTime = "Check-in time is required";
     if (!formData.checkOutTime) newErrors.checkOutTime = "Check-out time is required";
     if (!selectedHaven) newErrors.roomName = "Please select a room/haven";
+
+    if (checkInDate && checkOutDate) {
+      const checkIn = new Date(`${checkInDate}T${formData.checkInTime || "00:00"}`);
+      const checkOut = new Date(`${checkOutDate}T${formData.checkOutTime || "00:00"}`);
+      if (checkOut <= checkIn) {
+        newErrors.checkOutDate = "Check-out must be after check-in";
+      }
+    }
+
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) {
       const firstErrorKey = Object.keys(newErrors)[0];
@@ -440,6 +563,10 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
   };
 
   const validateStep4 = (): boolean => {
+    // Only validate if we are actually on Step 4
+    if (currentStep !== 4) return true;
+
+    setErrors({});
     const newErrors: Record<string, string> = {};
     if (!formData.paymentProof) {
       newErrors.paymentProof = "Proof of payment is required";
@@ -474,6 +601,30 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
     }
   };
 
+  const handleGuestChange = (type: "adults" | "children" | "infants", value: number) => {
+    if (type === 'adults' || type === 'children') {
+      const newAdults = type === 'adults' ? value : formData.adults;
+      const newChildren = type === 'children' ? value : formData.children;
+      const newTotal = newAdults + newChildren;
+
+      if (newTotal > 4) {
+        toast.error("Maximum 4 guests allowed (adults + children). Infants are not counted.");
+        return;
+      }
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      [type]: value,
+    }));
+
+    if (type === 'adults' || type === 'children') {
+      const newAdults = type === 'adults' ? value : formData.adults;
+      const newChildren = type === 'children' ? value : formData.children;
+      updateAdditionalGuests(newAdults, newChildren);
+    }
+  };
+
   const handleBack = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
@@ -482,6 +633,10 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Guard: Only validate Step 4 if we are actually on Step 4
+    if (currentStep !== 4) return;
+    
     if (!validateStep4()) return;
 
     try {
@@ -582,11 +737,21 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
 
   return createPortal(
     <>
+      <style jsx>{`
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+          20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        .animate-shake {
+          animation: shake 0.5s ease-in-out;
+        }
+      `}</style>
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998]" onClick={onClose} />
       <div className="fixed inset-0 flex items-center justify-center px-4 py-4 z-[9999]">
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-5xl max-h-[95vh] flex flex-col overflow-hidden">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-5xl max-h-[95vh] flex flex-col overflow-visible">
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-gray-800 dark:to-gray-800 flex-shrink-0">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-gray-800 dark:to-gray-800 flex-shrink-0 overflow-visible">
             <div className="flex-1 min-w-0">
               <p className="text-xs font-semibold text-orange-500 uppercase tracking-[0.2em]">
                 Booking manager
@@ -602,6 +767,7 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
               </p>
             </div>
             <button
+              type="button"
               onClick={onClose}
               className="ml-4 p-2 rounded-full hover:bg-white/70 dark:hover:bg-gray-700 transition-colors flex-shrink-0"
               aria-label="Close modal"
@@ -655,20 +821,19 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto overflow-x-visible px-6 py-4 space-y-6">
             {/* STEP 1: Guest Information */}
             {currentStep === 1 && (
               <div className="space-y-6">
                 {/* Main Guest */}
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-                  <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
                     <User className="w-6 h-6 text-brand-primary" />
                     Guest Information
                   </h2>
 
                   <div className="flex items-center gap-2 mb-4 text-brand-primary">
-                    <User className="w-5 h-5" />
-                    <h3 className="font-semibold">Adult 1 (Main Guest)</h3>
+                    <h3 className="font-semibold text-sm sm:text-base">Adult 1 (Main Guest)</h3>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -684,9 +849,10 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
                           handleInputChange(e);
                           setErrors(prev => ({...prev, firstName: ''}));
                         }}
-                        className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                        className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 ${
                           errors.firstName ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                         }`}
+                        placeholder="Enter first name"
                       />
                       {errors.firstName && (
                         <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
@@ -708,9 +874,10 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
                           handleInputChange(e);
                           setErrors(prev => ({...prev, lastName: ''}));
                         }}
-                        className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                        className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 ${
                           errors.lastName ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                         }`}
+                        placeholder="Enter last name"
                       />
                       {errors.lastName && (
                         <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
@@ -737,6 +904,7 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
                         className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
                           errors.age ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                         }`}
+                        placeholder="Enter age"
                       />
                       {errors.age && (
                         <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
@@ -789,6 +957,7 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
                         className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
                           errors.email ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                         }`}
+                        placeholder="Enter email"
                       />
                       {errors.email && (
                         <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
@@ -813,6 +982,7 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
                         className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
                           errors.phone ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                         }`}
+                        placeholder="e.g., +63 912 345 6789"
                       />
                       {errors.phone && (
                         <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
@@ -832,6 +1002,7 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
                         value={formData.facebookLink}
                         onChange={handleInputChange}
                         className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        placeholder="e.g., Juan Dela Cruz"
                       />
                     </div>
                   </div>
@@ -842,7 +1013,7 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
                   }`}>
                     <div className="flex items-center gap-2 mb-3">
                       <CreditCard className={`w-5 h-5 ${errors.validId ? 'text-red-600' : 'text-blue-600'}`} />
-                      <h3 className={`font-semibold ${errors.validId ? 'text-red-800' : 'text-blue-800'}`}>
+                      <h3 className={`font-semibold text-sm sm:text-base ${errors.validId ? 'text-red-800' : 'text-blue-800'}`}>
                         Valid ID (Required for guests 10+ years old)
                       </h3>
                     </div>
@@ -854,13 +1025,14 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
                         className="hidden"
                         id="valid-id"
                       />
-                      <label htmlFor="valid-id" className="cursor-pointer inline-flex flex-col items-center justify-center p-6 bg-white dark:bg-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600">
-                        <Upload className="w-12 h-12 text-blue-500 mb-3" />
-                        <p className="text-blue-600 font-medium mb-1">Click to upload ID photo</p>
-                        <p className="text-xs text-gray-500">PNG, JPG, JPEG up to 5MB</p>
-                      </label>
-                      {formData.validIdPreview && (
-                        <div className="mt-4">
+                      {!formData.validIdPreview ? (
+                        <label htmlFor="valid-id" className="cursor-pointer inline-flex flex-col items-center justify-center p-6 bg-white dark:bg-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 border-2 border-gray-200 dark:border-gray-600">
+                          <Upload className="w-12 h-12 text-blue-500 mb-3" />
+                          <p className="text-blue-600 font-medium mb-1 text-sm sm:text-base">Click to upload ID photo</p>
+                          <p className="text-xs text-gray-500">PNG, JPG, JPEG up to 5MB</p>
+                        </label>
+                      ) : (
+                        <div className="mt-4 flex flex-col items-center">
                           <Image
                             src={formData.validIdPreview}
                             alt="Valid ID preview"
@@ -868,6 +1040,21 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
                             height={200}
                             className="max-w-xs mx-auto rounded-lg shadow-md border-2 border-green-500"
                           />
+                          <div className="mt-3 flex gap-2">
+                            <label
+                              htmlFor="valid-id"
+                              className="cursor-pointer px-3 py-1 bg-blue-100 text-blue-700 rounded-md text-sm hover:bg-blue-200 transition-colors"
+                            >
+                              Change
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => setFormData(prev => ({ ...prev, validId: null, validIdPreview: '' }))}
+                              className="px-3 py-1 bg-red-100 text-red-700 rounded-md text-sm hover:bg-red-200 transition-colors"
+                            >
+                              Remove
+                            </button>
+                          </div>
                         </div>
                       )}
                       {errors.validId && (
@@ -880,58 +1067,6 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
                   </div>
                 </div>
 
-                {/* Guest Count */}
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-                  <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
-                    <Users className="w-6 h-6 text-brand-primary" />
-                    Number of Guests
-                  </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Adults (10+ years) *
-                      </label>
-                      <input
-                        type="number"
-                        name="adults"
-                        value={formData.adults}
-                        onChange={handleInputChange}
-                        min="1"
-                        max="4"
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Children (4-9 years)
-                      </label>
-                      <input
-                        type="number"
-                        name="children"
-                        value={formData.children}
-                        onChange={handleInputChange}
-                        min="0"
-                        max="4"
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Infants (0-3 years)
-                      </label>
-                      <input
-                        type="number"
-                        name="infants"
-                        value={formData.infants}
-                        onChange={handleInputChange}
-                        min="0"
-                        max="2"
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      />
-                    </div>
-                  </div>
-                </div>
-
                 {/* Additional Guests */}
                 {additionalGuests.map((guest, index) => {
                   const guestNumber = index + 2;
@@ -939,7 +1074,7 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
                   const guestType = isAdult ? `Adult ${guestNumber}` : `Child ${guestNumber - (formData.adults - 1)}`;
 
                   return (
-                    <div key={index} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+                    <div key={index} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
                       <div className="flex items-center gap-2 mb-4 text-brand-primary">
                         <User className="w-5 h-5" />
                         <h3 className="font-semibold">{guestType}</h3>
@@ -959,6 +1094,7 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
                             className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
                               errors[`guest${index}FirstName`] ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                             }`}
+                            placeholder="Enter first name"
                           />
                           {errors[`guest${index}FirstName`] && (
                             <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
@@ -981,6 +1117,7 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
                             className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
                               errors[`guest${index}LastName`] ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                             }`}
+                            placeholder="Enter last name"
                           />
                           {errors[`guest${index}LastName`] && (
                             <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
@@ -1005,6 +1142,7 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
                             className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
                               errors[`guest${index}Age`] ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                             }`}
+                            placeholder="Enter age"
                           />
                           {errors[`guest${index}Age`] && (
                             <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
@@ -1052,12 +1190,13 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
                             className="hidden"
                             id={`valid-id-${index}`}
                           />
-                          <label htmlFor={`valid-id-${index}`} className="cursor-pointer inline-flex flex-col items-center justify-center p-6 bg-white dark:bg-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600">
-                            <Upload className="w-12 h-12 text-blue-500 mb-3" />
-                            <p className="text-blue-600 font-medium mb-1">Click to upload ID photo</p>
-                          </label>
-                          {guest.validIdPreview && (
-                            <div className="mt-4">
+                          {!guest.validIdPreview ? (
+                            <label htmlFor={`valid-id-${index}`} className="cursor-pointer inline-flex flex-col items-center justify-center p-6 bg-white dark:bg-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 border-2 border-gray-200 dark:border-gray-600">
+                              <Upload className="w-12 h-12 text-blue-500 mb-3" />
+                              <p className="text-blue-600 font-medium mb-1">Click to upload ID photo</p>
+                            </label>
+                          ) : (
+                            <div className="mt-4 flex flex-col items-center">
                               <Image
                                 src={guest.validIdPreview}
                                 alt={`Guest ${guestNumber} Valid ID preview`}
@@ -1065,6 +1204,26 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
                                 height={200}
                                 className="max-w-xs mx-auto rounded-lg shadow-md border-2 border-green-500"
                               />
+                              <div className="mt-3 flex gap-2">
+                                <label
+                                  htmlFor={`valid-id-${index}`}
+                                  className="cursor-pointer px-3 py-1 bg-blue-100 text-blue-700 rounded-md text-sm hover:bg-blue-200 transition-colors"
+                                >
+                                  Change
+                                </label>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                      const updated = [...additionalGuests];
+                                      updated[index].validId = null;
+                                      updated[index].validIdPreview = '';
+                                      setAdditionalGuests(updated);
+                                  }}
+                                  className="px-3 py-1 bg-red-100 text-red-700 rounded-md text-sm hover:bg-red-200 transition-colors"
+                                >
+                                  Remove
+                                </button>
+                              </div>
                             </div>
                           )}
                           {errors[`guest${index}ValidId`] && (
@@ -1095,9 +1254,9 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
 
             {/* STEP 2: Booking Details */}
             {currentStep === 2 && (
-              <div className="space-y-6">
+              <div className="space-y-6 overflow-visible">
                 {/* Room Selection */}
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 overflow-visible relative z-[60]">
                   <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
                     <Calendar className="w-6 h-6 text-brand-primary" />
                     Booking Details
@@ -1155,24 +1314,27 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
                         {errors.stayType}
                       </p>
                     )}
+                    {/* Date range warning based on stay type */}
+                    {getDateRangeWarning() && (
+                      <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
+                        <p className="text-sm text-yellow-800 dark:text-yellow-300 flex items-center gap-2">
+                          <Info className="w-4 h-4 flex-shrink-0" />
+                          {getDateRangeWarning()}
+                        </p>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div ref={(el) => { errorRefs.current.checkInDate = el; }}>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Check-in Date *
+                        Select Dates *
                       </label>
-                      <input
-                        type="date"
-                        value={checkInDate}
-                        onChange={(e) => {
-                          setCheckInDate(e.target.value);
-                          setErrors(prev => ({...prev, checkInDate: ''}));
-                        }}
-                        min={new Date().toISOString().split('T')[0]}
-                        className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
-                          errors.checkInDate ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                        }`}
+                      <DateRangePicker
+                        checkInDate={checkInDate}
+                        checkOutDate={checkOutDate}
+                        onCheckInChange={setCheckInDate}
+                        onCheckOutChange={setCheckOutDate}
                       />
                       {errors.checkInDate && (
                         <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
@@ -1182,33 +1344,32 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
                       )}
                     </div>
 
-                    <div ref={(el) => { errorRefs.current.checkOutDate = el; }}>
+                    <div ref={(el) => { errorRefs.current.guestCount = el; }}>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Check-out Date *
+                        Number of Guests *
                       </label>
-                      <input
-                        type="date"
-                        value={checkOutDate}
-                        onChange={(e) => {
-                          setCheckOutDate(e.target.value);
-                          setErrors(prev => ({...prev, checkOutDate: ''}));
+                      <GuestSelector
+                        guests={{
+                          adults: formData.adults,
+                          children: formData.children,
+                          infants: formData.infants,
                         }}
-                        min={checkInDate || new Date().toISOString().split('T')[0]}
-                        className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
-                          errors.checkOutDate ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                        }`}
+                        onGuestChange={handleGuestChange}
                       />
-                      {errors.checkOutDate && (
+                      {errors.guestCount && (
                         <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
                           <AlertCircle className="w-4 h-4" />
-                          {errors.checkOutDate}
+                          {errors.guestCount}
                         </p>
                       )}
                     </div>
+                  </div>
 
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div ref={(el) => { errorRefs.current.checkInTime = el; }}>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Check-in Time *
+                        {checkInDate && <span className="text-xs text-gray-500 dark:text-gray-400 font-normal ml-2">({checkInDate})</span>}
                       </label>
                       <input
                         type="time"
@@ -1233,18 +1394,20 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
                     <div ref={(el) => { errorRefs.current.checkOutTime = el; }}>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Check-out Time *
+                        {checkOutDate && <span className="text-xs text-gray-500 dark:text-gray-400 font-normal ml-2">({checkOutDate})</span>}
                       </label>
                       <input
                         type="time"
                         name="checkOutTime"
                         value={formData.checkOutTime}
+                        readOnly={formData.stayType !== "Multi-Day Stay" && !!formData.stayType}
                         onChange={(e) => {
                           handleInputChange(e);
                           setErrors(prev => ({...prev, checkOutTime: ''}));
                         }}
                         className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
                           errors.checkOutTime ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                        }`}
+                        } ${formData.stayType !== "Multi-Day Stay" && formData.stayType ? 'bg-gray-100 dark:bg-gray-600 cursor-not-allowed' : ''}`}
                       />
                       {errors.checkOutTime && (
                         <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
@@ -1261,7 +1424,7 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
                   <button
                     type="button"
                     onClick={handleBack}
-                    className="flex-1 flex items-center justify-center gap-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-bold py-3 rounded-lg"
+                    className="flex-1 flex items-center justify-center gap-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-semibold py-3 rounded-lg transition-all duration-300"
                   >
                     <ArrowLeft className="w-5 h-5" />
                     Back
@@ -1269,9 +1432,9 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
                   <button
                     type="button"
                     onClick={handleNext}
-                    className="flex-1 flex items-center justify-center gap-2 bg-brand-primary hover:bg-brand-primaryDark text-white font-bold py-3 rounded-lg shadow-lg"
+                    className="flex-1 flex items-center justify-center gap-2 bg-brand-primary hover:bg-brand-primaryDark text-white font-semibold py-3 rounded-lg shadow-lg transition-all duration-300"
                   >
-                    Next Step
+                    Continue
                     <ChevronRight className="w-5 h-5" />
                   </button>
                 </div>
@@ -1281,11 +1444,15 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
             {/* STEP 3: Add-ons */}
             {currentStep === 3 && (
               <div className="space-y-6">
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-                  <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
                     <Package className="w-6 h-6 text-brand-primary" />
                     Add-ons (Optional)
                   </h2>
+
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">
+                    Enhance your stay with these optional amenities. You can skip this step if you don&apos;t need any add-ons.
+                  </p>
 
                   <div className="space-y-3">
                     {[
@@ -1334,6 +1501,15 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
                       </p>
                     </div>
                   )}
+
+                  <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg">
+                    <p className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                      <Info className="w-4 h-4" />
+                      <span>
+                        Add-ons will be added to your total bill and reflected in the price breakdown.
+                      </span>
+                    </p>
+                  </div>
                 </div>
 
                 {/* Action Buttons */}
@@ -1341,7 +1517,7 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
                   <button
                     type="button"
                     onClick={handleBack}
-                    className="flex-1 flex items-center justify-center gap-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-bold py-3 rounded-lg"
+                    className="flex-1 flex items-center justify-center gap-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-semibold py-3 rounded-lg transition-all duration-300"
                   >
                     <ArrowLeft className="w-5 h-5" />
                     Back
@@ -1349,9 +1525,9 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
                   <button
                     type="button"
                     onClick={handleNext}
-                    className="flex-1 flex items-center justify-center gap-2 bg-brand-primary hover:bg-brand-primaryDark text-white font-bold py-3 rounded-lg shadow-lg"
+                    className="flex-1 flex items-center justify-center gap-2 bg-brand-primary hover:bg-brand-primaryDark text-white font-semibold py-3 rounded-lg shadow-lg transition-all duration-300"
                   >
-                    Next Step
+                    Continue
                     <ChevronRight className="w-5 h-5" />
                   </button>
                 </div>
@@ -1360,9 +1536,9 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
 
             {/* STEP 4: Payment & Review */}
             {currentStep === 4 && (
-              <div className="space-y-6">
+              <div className="space-y-6 overflow-visible">
                 {/* Booking Summary */}
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 overflow-visible">
                   <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
                     <Receipt className="w-6 h-6 text-brand-primary" />
                     Booking Summary
@@ -1397,7 +1573,13 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
                         Check-in
                       </p>
                       <p className="font-semibold text-gray-900 dark:text-white">
-                        {checkInDate ? new Date(checkInDate).toLocaleDateString() : "N/A"} at {formData.checkInTime || "N/A"}
+                        {checkInDate ? new Date(checkInDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : "N/A"} at {formData.checkInTime ? (() => {
+                          const [hours, minutes] = formData.checkInTime.split(':');
+                          const hour = parseInt(hours, 10);
+                          const ampm = hour >= 12 ? 'PM' : 'AM';
+                          const hour12 = hour % 12 || 12;
+                          return `${hour12}:${minutes} ${ampm}`;
+                        })() : "N/A"}
                       </p>
                     </div>
                     <div>
@@ -1406,7 +1588,13 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
                         Check-out
                       </p>
                       <p className="font-semibold text-gray-900 dark:text-white">
-                        {checkOutDate ? new Date(checkOutDate).toLocaleDateString() : "N/A"} at {formData.checkOutTime || "N/A"}
+                        {checkOutDate ? new Date(checkOutDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : "N/A"} at {formData.checkOutTime ? (() => {
+                          const [hours, minutes] = formData.checkOutTime.split(':');
+                          const hour = parseInt(hours, 10);
+                          const ampm = hour >= 12 ? 'PM' : 'AM';
+                          const hour12 = hour % 12 || 12;
+                          return `${hour12}:${minutes} ${ampm}`;
+                        })() : "N/A"}
                       </p>
                     </div>
                     <div>
@@ -1426,7 +1614,14 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
                     <h3 className="font-bold text-lg mb-4 text-gray-800 dark:text-white">Price Breakdown</h3>
                     <div className="space-y-2 mb-4">
                       <div className="flex justify-between text-gray-700 dark:text-gray-300">
-                        <span>Room Rate{formData.stayType === "Multi-Day Stay" && numberOfDays > 0 && ` (${numberOfDays} ${numberOfDays === 1 ? 'day' : 'days'})`}</span>
+                        <span>
+                          Room Rate
+                          {formData.stayType === "Multi-Day Stay" && numberOfDays > 0 && (
+                            <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
+                              ({numberOfDays} {numberOfDays === 1 ? 'night' : 'nights'})
+                            </span>
+                          )}
+                        </span>
                         <span className="font-semibold">₱{roomRate.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between text-gray-700 dark:text-gray-300">
@@ -1459,6 +1654,16 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
                         <span className="font-bold text-green-800 dark:text-green-200">₱{remainingBalance.toLocaleString()}</span>
                       </div>
                     </div>
+
+                    <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
+                      <p className="text-sm text-yellow-800 dark:text-yellow-300 flex items-center gap-2">
+                        <Info className="w-4 h-4" />
+                        <span>
+                          <strong>Note:</strong> Security deposit is refundable the next day upon
+                          checkout if no missing/broken items.
+                        </span>
+                      </p>
+                    </div>
                   </div>
                 </div>
 
@@ -1470,26 +1675,34 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
                   </h2>
 
                   <div className="space-y-3 mb-6">
-                    <label className="flex items-center gap-3 p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:border-brand-primary transition-colors bg-white dark:bg-gray-700">
+                    <label className="flex items-center gap-3 p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:border-brand-primary dark:hover:border-brand-primary transition-colors bg-white dark:bg-gray-700">
                       <input
                         type="radio"
                         name="paymentMethod"
                         value="gcash"
                         checked={formData.paymentMethod === "gcash"}
                         onChange={handleInputChange}
-                        className="w-4 h-4 text-brand-primary accent-brand-primary"
+                        className="w-4 h-4 text-blue-600 accent-blue-600"
                       />
-                      <span className="font-medium text-gray-900 dark:text-white">GCash</span>
+                      <div className="relative w-32 h-10">
+                        <Image
+                          src="/6553cc4c-gcash-logo-svg.avif"
+                          alt="GCash Logo"
+                          fill
+                          className="object-contain"
+                          sizes="(max-width: 768px) 100vw, 128px"
+                        />
+                      </div>
                     </label>
 
-                    <label className="flex items-center gap-3 p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:border-brand-primary transition-colors bg-white dark:bg-gray-700">
+                    <label className="flex items-center gap-3 p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:border-brand-primary dark:hover:border-brand-primary transition-colors bg-white dark:bg-gray-700">
                       <input
                         type="radio"
                         name="paymentMethod"
                         value="bank"
                         checked={formData.paymentMethod === "bank"}
                         onChange={handleInputChange}
-                        className="w-4 h-4 text-brand-primary accent-brand-primary"
+                        className="w-4 h-4 text-blue-600 accent-blue-600"
                       />
                       <span className="font-medium text-gray-900 dark:text-white">Bank Transfer</span>
                     </label>
@@ -1503,12 +1716,23 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
                         Pay via GCash
                       </h3>
                       <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
-                        Scan the QR code below to pay your <strong>DOWNPAYMENT of ₱{downPayment}</strong>
+                        Scan the QR code below to pay your <strong>DOWNPAYMENT of ₱{downPayment}</strong> to secure your booking
                       </p>
                       <div className="bg-white dark:bg-gray-700 rounded-lg p-8 text-center mb-4">
                         <div className="w-64 h-64 mx-auto bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center">
-                          <p className="text-gray-500 dark:text-gray-400">GCash QR Code</p>
+                          <p className="text-gray-500 dark:text-gray-400">GCash QR Code will be loaded here</p>
                         </div>
+                      </div>
+                      <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+                        <p className="font-semibold">Instructions:</p>
+                        <ol className="list-decimal list-inside space-y-1 ml-2">
+                          <li>Open your GCash app</li>
+                          <li>Tap &quot;Send Money&quot; or &quot;Pay QR&quot;</li>
+                          <li>Scan the QR code above</li>
+                          <li>Enter amount: ₱{downPayment}</li>
+                          <li>Complete the payment</li>
+                          <li>Upload screenshot below</li>
+                        </ol>
                       </div>
                     </div>
                   ) : (
@@ -1535,6 +1759,17 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
                           <span className="font-bold text-green-600 dark:text-green-400 text-xl">₱{downPayment}</span>
                         </div>
                       </div>
+                      <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+                        <p className="font-semibold">Instructions:</p>
+                        <ol className="list-decimal list-inside space-y-1 ml-2">
+                          <li>Open your banking app or visit your bank</li>
+                          <li>Select &quot;Transfer to Another Account&quot;</li>
+                          <li>Enter the bank details above</li>
+                          <li>Transfer exactly ₱{downPayment}</li>
+                          <li>Save your transaction receipt</li>
+                          <li>Upload proof of payment below</li>
+                        </ol>
+                      </div>
                     </div>
                   )}
 
@@ -1557,15 +1792,16 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
                         className="hidden"
                         id="payment-proof"
                       />
-                      <label htmlFor="payment-proof" className="cursor-pointer">
-                        <Upload className={`w-12 h-12 mx-auto mb-4 ${errors.paymentProof ? 'text-red-400' : 'text-gray-400'}`} />
-                        <p className={`font-medium mb-2 ${errors.paymentProof ? 'text-red-600' : 'text-gray-600 dark:text-gray-300'}`}>
-                          Click to upload payment screenshot
-                        </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">PNG, JPG, JPEG up to 5MB</p>
-                      </label>
-                      {formData.paymentProofPreview && (
-                        <div className="mt-4">
+                      {!formData.paymentProofPreview ? (
+                        <label htmlFor="payment-proof" className="cursor-pointer">
+                          <Upload className={`w-12 h-12 mx-auto mb-4 ${errors.paymentProof ? 'text-red-400' : 'text-gray-400'}`} />
+                          <p className={`font-medium mb-2 ${errors.paymentProof ? 'text-red-600' : 'text-gray-600 dark:text-gray-300'}`}>
+                            Click to upload payment screenshot
+                          </p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">PNG, JPG, JPEG up to 5MB</p>
+                        </label>
+                      ) : (
+                        <div className="mt-4 flex flex-col items-center">
                           <Image
                             src={formData.paymentProofPreview}
                             alt="Payment proof preview"
@@ -1573,6 +1809,21 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
                             height={200}
                             className="max-w-xs mx-auto rounded-lg shadow-md"
                           />
+                          <div className="mt-3 flex gap-2">
+                            <label
+                              htmlFor="payment-proof"
+                              className="cursor-pointer px-3 py-1 bg-blue-100 text-blue-700 rounded-md text-sm hover:bg-blue-200 transition-colors"
+                            >
+                              Change
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => setFormData(prev => ({ ...prev, paymentProof: null, paymentProofPreview: '' }))}
+                              className="px-3 py-1 bg-red-100 text-red-700 rounded-md text-sm hover:bg-red-200 transition-colors"
+                            >
+                              Remove
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -1634,7 +1885,7 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
                   <button
                     type="button"
                     onClick={handleBack}
-                    className="flex-1 flex items-center justify-center gap-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-bold py-3 rounded-lg"
+                    className="flex-1 flex items-center justify-center gap-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-semibold py-3 rounded-lg transition-all duration-300"
                   >
                     <ArrowLeft className="w-5 h-5" />
                     Back
@@ -1642,9 +1893,19 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="flex-1 bg-brand-primary hover:bg-brand-primaryDark text-white font-bold py-3 rounded-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 bg-brand-primary hover:bg-brand-primaryDark text-white font-semibold py-3 rounded-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2"
                   >
-                    {isLoading ? "Saving..." : isEditMode ? "Save Changes" : "Save Booking"}
+                    {isLoading ? (
+                      <>
+                        <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        {isEditMode ? "Saving Changes..." : "Processing..."}
+                      </>
+                    ) : (
+                      isEditMode ? "Save Changes" : "Complete Booking"
+                    )}
                   </button>
                 </div>
               </div>

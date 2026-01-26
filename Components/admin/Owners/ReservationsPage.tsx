@@ -18,7 +18,8 @@ import {
   Plus, // added (was used but not imported)
 } from "lucide-react";
 import Image from "next/image"; // added (used in modal)
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import toast from "react-hot-toast";
 import {
   useGetBookingsQuery,
   useUpdateBookingStatusMutation,
@@ -35,9 +36,14 @@ const ReservationsPage = () => {
 
   const { data, isLoading, refetch } = useGetBookingsQuery({});
   const [updateBookingStatus] = useUpdateBookingStatusMutation();
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
 
   const reservations: Booking[] = data ?? [];
+
+  const selectedBooking = useMemo(() => {
+    if (!selectedBookingId) return null;
+    return reservations.find((r) => r.id === selectedBookingId) || null;
+  }, [selectedBookingId, reservations]);
 
   const formatShortDate = (date?: string | null) =>
     date
@@ -57,16 +63,20 @@ const ReservationsPage = () => {
 
   const handleApprove = async (bookingId: string) => {
     try {
-      await updateBookingStatus({
-        id: bookingId,
-        status: "approved",
-      }).unwrap();
-
-      alert("Booking approved! Confirmation email will be sent to the guest.");
-      refetch();
+      await toast.promise(
+        updateBookingStatus({
+          id: bookingId,
+          status: "approved",
+        }).unwrap(),
+        {
+          loading: "Approving booking...",
+          success: "Booking approved! Confirmation email sent to the guest.",
+          error: "Failed to approve booking. Please try again.",
+        },
+      );
+      await refetch();
     } catch (error) {
       console.error("Error approving booking:", error);
-      alert("Failed to approve booking. Please try again.");
     }
   };
 
@@ -74,17 +84,21 @@ const ReservationsPage = () => {
     const reason = prompt("Please enter rejection reason:");
     if (!reason) return;
     try {
-      await updateBookingStatus({
-        id: bookingId,
-        status: "rejected",
-        rejection_reason: reason,
-      }).unwrap();
-
-      alert("Booking rejected. Guest will be notified.");
-      refetch();
+      await toast.promise(
+        updateBookingStatus({
+          id: bookingId,
+          status: "rejected",
+          rejection_reason: reason,
+        }).unwrap(),
+        {
+          loading: "Rejecting booking...",
+          success: "Booking rejected. Guest will be notified.",
+          error: "Failed to reject booking. Please try again.",
+        },
+      );
+      await refetch();
     } catch (error) {
       console.error("Error rejecting booking:", error);
-      alert("Failed to reject booking. Please try again.");
     }
   };
 
@@ -92,14 +106,21 @@ const ReservationsPage = () => {
     try {
       const booking = reservations.find((r) => r.id === bookingId);
       if (!booking) {
-        alert("Booking not found");
+        toast.error("Booking not found");
         return;
       }
 
-      await updateBookingStatus({
-        id: bookingId,
-        status: "checked-in",
-      }).unwrap();
+      await toast.promise(
+        updateBookingStatus({
+          id: bookingId,
+          status: "checked-in",
+        }).unwrap(),
+        {
+          loading: "Checking in guest...",
+          success: "Guest checked in successfully!",
+          error: "Failed to check in. Please try again.",
+        },
+      );
 
       try {
         const emailData = {
@@ -115,24 +136,19 @@ const ReservationsPage = () => {
           guests: `${booking.adults || 0} Adults, ${booking.children || 0} Children, ${booking.infants || 0} Infants`,
         };
 
-        const emailResponse = await fetch("/api/send-checkin-email", {
+        fetch("/api/send-checkin-email", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(emailData),
-        });
+        }).catch(err => console.error("Email sending error:", err));
 
-        if (!emailResponse.ok) {
-          console.error("Failed to send check-in email");
-        }
       } catch (emailError) {
-        console.error("Email sending error:", emailError);
+        console.error("Email prep error:", emailError);
       }
 
-      alert("Guest checked in successfully! Confirmation email sent.");
-      refetch();
+      await refetch();
     } catch (error) {
       console.error("Error checking in:", error);
-      alert("Failed to check in. Please try again.");
     }
   };
 
@@ -140,14 +156,21 @@ const ReservationsPage = () => {
     try {
       const booking = reservations.find((r) => r.id === bookingId);
       if (!booking) {
-        alert("Booking not found");
+        toast.error("Booking not found");
         return;
       }
 
-      await updateBookingStatus({
-        id: bookingId,
-        status: "completed",
-      }).unwrap();
+      await toast.promise(
+        updateBookingStatus({
+          id: bookingId,
+          status: "completed",
+        }).unwrap(),
+        {
+          loading: "Checking out guest...",
+          success: "Guest checked out successfully!",
+          error: "Failed to check out. Please try again.",
+        },
+      );
 
       try {
         const emailData = {
@@ -162,24 +185,19 @@ const ReservationsPage = () => {
           remainingBalance: Number(booking.remaining_balance),
         };
 
-        const emailResponse = await fetch("/api/send-checkout-email", {
+        fetch("/api/send-checkout-email", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(emailData),
-        });
+        }).catch(err => console.error("Email sending error:", err));
 
-        if (!emailResponse.ok) {
-          console.error("Failed to send check-out email");
-        }
       } catch (emailError) {
-        console.error("Email sending error:", emailError);
+        console.error("Email prep error:", emailError);
       }
 
-      alert("Guest checked out successfully! Thank you email sent.");
-      refetch();
+      await refetch();
     } catch (error) {
       console.error("Error checking out:", error);
-      alert("Failed to check out. Please try again.");
     }
   };
 
@@ -228,11 +246,11 @@ const ReservationsPage = () => {
   const currentReservations = filteredReservations.slice(startIndex, endIndex);
 
   const handleViewDetails = (booking: Booking) => {
-    setSelectedBooking(booking);
+    setSelectedBookingId(booking.id);
   };
 
   const closeModal = () => {
-    setSelectedBooking(null);
+    setSelectedBookingId(null);
   };
 
   const goToFirstPage = () => setCurrentPage(1);
@@ -437,19 +455,13 @@ const ReservationsPage = () => {
                 {selectedBooking.status === "pending" && (
                   <>
                     <button
-                      onClick={() => {
-                        handleApprove(selectedBooking.id);
-                        closeModal();
-                      }}
+                      onClick={() => handleApprove(selectedBooking.id)}
                       className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2"
                     >
                       <Check className="w-5 h-5" /> Approve
                     </button>
                     <button
-                      onClick={() => {
-                        handleReject(selectedBooking.id);
-                        closeModal();
-                      }}
+                      onClick={() => handleReject(selectedBooking.id)}
                       className="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2"
                     >
                       <X className="w-5 h-5" /> Reject
@@ -460,10 +472,7 @@ const ReservationsPage = () => {
                 {(selectedBooking.status === "approved" ||
                   selectedBooking.status === "confirmed") && (
                   <button
-                    onClick={() => {
-                      handleCheckIn(selectedBooking.id);
-                      closeModal();
-                    }}
+                    onClick={() => handleCheckIn(selectedBooking.id)}
                     className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                   >
                     Check In Guest
@@ -472,10 +481,7 @@ const ReservationsPage = () => {
 
                 {selectedBooking.status === "checked-in" && (
                   <button
-                    onClick={() => {
-                      handleCheckOut(selectedBooking.id);
-                      closeModal();
-                    }}
+                    onClick={() => handleCheckOut(selectedBooking.id)}
                     className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
                   >
                     Check Out Guest

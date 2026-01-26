@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { formatDateSafe } from "@/lib/dateUtils";
 
@@ -22,11 +23,51 @@ const DateRangePicker = ({
   const [currentMonthOffset, setCurrentMonthOffset] = useState(0);
   const [hoveredDate, setHoveredDate] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+
+  const updatePosition = useCallback(() => {
+    if (isOpen && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const dropdownHeight = 450; // approximate max height
+      
+      // Determine if there's enough space below, else open above
+      const spaceBelow = viewportHeight - rect.bottom;
+      const openAbove = spaceBelow < dropdownHeight && rect.top > dropdownHeight;
+      
+      setDropdownPosition({
+        top: openAbove 
+          ? rect.top + window.scrollY - dropdownHeight - 8 
+          : rect.bottom + window.scrollY + 8,
+        left: rect.left + window.scrollX + rect.width / 2
+      });
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen) {
+      updatePosition();
+      window.addEventListener('resize', updatePosition);
+      window.addEventListener('scroll', updatePosition, true);
+    }
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [isOpen, updatePosition]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      // Check if click is outside trigger button AND outside portal content
+      const target = event.target as Node;
+      const portalContent = document.getElementById('calendar-portal-content');
+      
+      if (
+        containerRef.current && 
+        !containerRef.current.contains(target) && 
+        (!portalContent || !portalContent.contains(target))
+      ) {
         setIsOpen(false);
         setSelectingCheckOut(false);
         setHoveredDate(null);
@@ -177,7 +218,7 @@ const DateRangePicker = ({
             const shouldShowHover = !isPast && !isCheckIn && !isCheckOut && !isInRange && !isHoveredRange;
 
             return (
-              <button
+              <button type="button"
                 key={dateString}
                 onClick={() => !isPast && handleDateClick(dateString)}
                 onMouseEnter={() => !isPast && setHoveredDate(dateString)}
@@ -218,7 +259,7 @@ const DateRangePicker = ({
   return (
     <div ref={containerRef} className="relative sm:col-span-1 h-12 sm:h-14">
       {/* Date Range Display Button - Airbnb Style */}
-      <button
+      <button type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="w-full h-full flex items-center gap-2 px-3 sm:px-4 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-full hover:border-[#8B4513] transition-all duration-200 focus:outline-none"
         onMouseEnter={(e) => {
@@ -245,11 +286,19 @@ const DateRangePicker = ({
       </button>
 
       {/* Calendar Dropdown - Responsive Dual Month View */}
-      {isOpen && (
-        <div className="absolute top-full left-0 right-0 sm:left-1/2 sm:-translate-x-1/2 mt-2 bg-white dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 shadow-2xl z-50 p-4 sm:p-6 w-full sm:w-[680px] max-w-[95vw] sm:max-w-none max-h-[80vh] overflow-y-auto">
+      {isOpen && createPortal(
+        <div 
+          id="calendar-portal-content"
+          className="absolute mt-2 bg-white dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 shadow-2xl z-[10000] p-4 sm:p-6 w-full sm:w-[680px] max-w-[95vw] max-h-[80vh] overflow-y-auto"
+          style={{
+            top: dropdownPosition.top,
+            left: dropdownPosition.left,
+            transform: 'translateX(-50%)',
+          }}
+        >
           {/* Navigation Header */}
           <div className="flex items-center justify-between mb-4 sm:mb-6 sticky top-0 bg-white dark:bg-gray-700 p-2 -mx-4 sm:-mx-6 z-10">
-            <button
+            <button type="button"
               onClick={() => canGoBack && setCurrentMonthOffset(currentMonthOffset - 1)}
               disabled={!canGoBack}
               className={`p-2 rounded-lg transition-all ${
@@ -267,7 +316,7 @@ const DateRangePicker = ({
               </p>
             )}
 
-            <button
+            <button type="button"
               onClick={() => canGoForward && setCurrentMonthOffset(currentMonthOffset + 1)}
               disabled={!canGoForward}
               className={`p-2 rounded-lg transition-all ${
@@ -294,7 +343,7 @@ const DateRangePicker = ({
 
           {/* Clear Button */}
           {(checkInDate || checkOutDate) && (
-            <button
+            <button type="button"
               onClick={() => {
                 onCheckInChange("");
                 onCheckOutChange("");
@@ -306,7 +355,8 @@ const DateRangePicker = ({
               Clear dates
             </button>
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

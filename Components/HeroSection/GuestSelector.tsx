@@ -53,7 +53,7 @@ const GuestSelector = ({ guests, onGuestChange }: GuestSelectorProps) => {
           <p className="text-xs text-gray-500 dark:text-gray-400">{description}</p>
         </div>
         <div className="flex items-center gap-3">
-          <button
+          <button type="button"
             onClick={() => !isMinimum && onGuestChange(type, count - 1)}
             disabled={isMinimum}
             className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
@@ -67,7 +67,7 @@ const GuestSelector = ({ guests, onGuestChange }: GuestSelectorProps) => {
           <span className="w-8 text-center font-semibold text-sm text-gray-700 dark:text-gray-300">
             {count}
           </span>
-          <button
+          <button type="button"
             onClick={() => onGuestChange(type, count + 1)}
             className="w-8 h-8 rounded-full border-2 border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-white flex items-center justify-center transition-all duration-300 active:scale-95"
           >
@@ -80,7 +80,7 @@ const GuestSelector = ({ guests, onGuestChange }: GuestSelectorProps) => {
 
   return (
     <div ref={containerRef} className="relative w-full h-12 sm:h-14">
-      <button
+      <button type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="w-full h-full flex items-center gap-2 px-3 sm:px-4 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-full hover:border-[#8B4513] transition-all duration-200 focus:outline-none"
         onMouseEnter={(e) => {
