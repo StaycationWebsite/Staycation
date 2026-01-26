@@ -14,7 +14,8 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-  CreditCard, // added (was used but not imported)
+  CreditCard,
+  Plus, // added (was used but not imported)
 } from "lucide-react";
 import Image from "next/image"; // added (used in modal)
 import { useState } from "react";
@@ -505,9 +506,10 @@ const ReservationsPage = () => {
           </div>
           <button 
             onClick={() => setIsNewReservationModalOpen(true)}
-            className="px-6 py-3 bg-gradient-to-r from-orange-500 to-yellow-500 text-white rounded-lg font-semibold hover:shadow-lg transition-all"
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand-primary to-brand-primaryDark text-white rounded-lg hover:shadow-lg hover:scale-[1.02] transition-all font-semibold shadow-[rgba(186,144,60,0.35)]"
           >
-            + New Reservation
+            <Plus className="w-5 h-5" />
+            New Booking
           </button>
         </div>
 
