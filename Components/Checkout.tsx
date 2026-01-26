@@ -380,14 +380,18 @@ const Checkout = () => {
 
   // Calculate number of days for multi-day stay
   const calculateNumberOfDays = (): number => {
-    if (!bookingData.checkInDate || !bookingData.checkOutDate) return 0;
+    // Use local state for immediate feedback, fallback to Redux
+    const checkInStr = localCheckInDate || bookingData.checkInDate;
+    const checkOutStr = localCheckOutDate || bookingData.checkOutDate;
 
-    const checkIn = new Date(bookingData.checkInDate);
-    const checkOut = new Date(bookingData.checkOutDate);
+    if (!checkInStr || !checkOutStr) return 0;
+
+    const checkIn = new Date(checkInStr);
+    const checkOut = new Date(checkOutStr);
 
     // Calculate difference in milliseconds
     const diffTime = Math.abs(checkOut.getTime() - checkIn.getTime());
-    // Convert to days
+    // Convert to days (nights)
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     return diffDays;
@@ -414,6 +418,8 @@ const Checkout = () => {
     }
     return 0;
   };
+
+  const [isAddonsExpanded, setIsAddonsExpanded] = useState(false);
 
   const roomRate = getRoomRateFromStayType();
   const numberOfDays = calculateNumberOfDays();
@@ -2073,9 +2079,9 @@ const Checkout = () => {
                           <div className="flex justify-between text-gray-700 dark:text-gray-300">
                             <span>
                               Room Rate
-                              {formData.stayType === "Multi-Day Stay" && numberOfDays > 0 && (
+                              {numberOfDays > 0 && (
                                 <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
-                                  ({numberOfDays} {numberOfDays === 1 ? 'day' : 'days'})
+                                  ({numberOfDays} {numberOfDays === 1 ? 'night' : 'nights'})
                                 </span>
                               )}
                             </span>
@@ -2097,19 +2103,33 @@ const Checkout = () => {
                           </div>
                         </div>
 
-                        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4 space-y-2">
-                          <h4 className="font-bold text-green-800 dark:text-green-300 flex items-center gap-2">
+                        <div className="bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800/30 rounded-xl p-4 space-y-2">
+                          <h4 className="font-bold text-green-800 dark:text-green-300 flex items-center gap-2 mb-3">
                             <Wallet className="w-5 h-5" />
-                            Payment
+                            Payment Schedule
                           </h4>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-green-700 dark:text-green-300">Downpayment (Pay Online to Secure Booking)</span>
-                            <span className="font-bold text-green-800 dark:text-green-200">₱{downPayment.toLocaleString()}</span>
+                          
+                          <div className="flex flex-col items-center text-center bg-white/50 dark:bg-black/10 rounded-lg p-3 mb-2">
+                            <span className="text-sm font-bold text-green-700 dark:text-green-400 uppercase tracking-wide">
+                              Downpayment (Pay Now)
+                            </span>
+                            <span className="text-3xl font-extrabold text-green-800 dark:text-green-300 my-1">
+                              ₱{downPayment.toLocaleString()}
+                            </span>
+                            <span className="text-xs text-green-600 dark:text-green-500">
+                              to secure your booking
+                            </span>
                           </div>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-green-700 dark:text-green-300">Remaining Balance (Pay Upon Check-in)</span>
+
+                          <div className="flex justify-between text-sm px-2">
+                            <span className="text-green-700 dark:text-green-300 font-medium">Remaining Balance</span>
                             <span className="font-bold text-green-800 dark:text-green-200">
-                              ₱{(totalAmount - downPayment).toLocaleString()}
+                              ₱{(totalAmount - downPayment > 0 ? totalAmount - downPayment : 0).toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="text-right px-2">
+                            <span className="text-xs text-green-600 dark:text-green-500">
+                              (Pay Upon Check-in)
                             </span>
                           </div>
                         </div>
@@ -2468,9 +2488,16 @@ const Checkout = () => {
 
                 {/* Date Selection */}
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Select Dates
-                  </label>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Select Dates
+                    </label>
+                    {localCheckInDate && localCheckOutDate && numberOfDays > 0 && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-brand-primary/10 text-brand-primary border border-brand-primary/20">
+                        {numberOfDays} Night{numberOfDays !== 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </div>
                   <DateRangePicker
                     checkInDate={localCheckInDate}
                     checkOutDate={localCheckOutDate}
@@ -2499,7 +2526,7 @@ const Checkout = () => {
                     <div className="flex justify-between">
                       <span className="text-gray-600 dark:text-gray-400">
                         Room Rate
-                        {formData.stayType === "Multi-Day Stay" && numberOfDays > 0 && (
+                        {numberOfDays > 0 && (
                           <span className="text-xs ml-1">({numberOfDays} {numberOfDays === 1 ? 'night' : 'nights'})</span>
                         )}
                       </span>
@@ -2514,11 +2541,46 @@ const Checkout = () => {
                       </span>
                     </div>
                     {addOnsTotal > 0 && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Add-ons</span>
-                        <span className="font-medium text-gray-800 dark:text-white">
-                          ₱{addOnsTotal.toLocaleString()}
-                        </span>
+                      <div className="flex flex-col">
+                        <div 
+                          className="flex justify-between cursor-pointer group"
+                          onClick={() => setIsAddonsExpanded(!isAddonsExpanded)}
+                        >
+                          <span className="text-gray-600 dark:text-gray-400 flex items-center gap-1 group-hover:text-brand-primary transition-colors">
+                            {isAddonsExpanded ? <Minus className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
+                            Add-ons
+                          </span>
+                          <span className="font-medium text-gray-800 dark:text-white">
+                            ₱{addOnsTotal.toLocaleString()}
+                          </span>
+                        </div>
+                        
+                        {/* Expandable Add-ons Details */}
+                        {isAddonsExpanded && (
+                          <div className="mt-2 pl-4 space-y-1 border-l-2 border-gray-100 dark:border-gray-700">
+                            {Object.entries(addOns).map(([key, quantity]) => {
+                              if (quantity > 0) {
+                                const price = ADD_ON_PRICES[key as keyof AddOns];
+                                const label = {
+                                  poolPass: "Pool Pass",
+                                  towels: "Towels",
+                                  bathRobe: "Bath Robe",
+                                  extraComforter: "Extra Comforter",
+                                  guestKit: "Guest Kit",
+                                  extraSlippers: "Extra Slippers",
+                                }[key];
+                                
+                                return (
+                                  <div key={key} className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                                    <span>{quantity}x {label}</span>
+                                    <span>₱{(quantity * price).toLocaleString()}</span>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            })}
+                          </div>
+                        )}
                       </div>
                     )}
                     <div className="flex justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
@@ -2531,13 +2593,30 @@ const Checkout = () => {
                 </div>
 
                 {/* Down Payment Info */}
-                <div className="mt-4 p-3 bg-brand-primary/5 dark:bg-brand-primary/10 rounded-lg border border-brand-primary/20">
-                  <p className="text-center text-sm font-medium text-brand-primary dark:text-brand-primary">
-                    Down payment: ₱{downPayment.toLocaleString()}
-                  </p>
-                  <p className="text-center text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Pay the remaining balance upon check-in
-                  </p>
+                <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/10 rounded-xl border border-green-200 dark:border-green-800/30">
+                  <div className="flex flex-col items-center text-center">
+                    <span className="text-sm font-semibold text-green-700 dark:text-green-400 uppercase tracking-wide mb-1">
+                      Downpayment (Pay Now)
+                    </span>
+                    <span className="text-3xl font-extrabold text-green-800 dark:text-green-300 my-1">
+                      ₱{downPayment.toLocaleString()}
+                    </span>
+                    <span className="text-xs text-green-600 dark:text-green-500 mt-1">
+                      to secure your booking
+                    </span>
+                    
+                    <div className="w-full h-px bg-green-200 dark:bg-green-800/50 my-3"></div>
+                    
+                    <div className="flex justify-between w-full text-sm">
+                      <span className="text-green-700 dark:text-green-400">Remaining Balance</span>
+                      <span className="font-bold text-green-800 dark:text-green-300">
+                         ₱{(totalAmount - downPayment > 0 ? totalAmount - downPayment : 0).toLocaleString()}
+                      </span>
+                    </div>
+                    <span className="text-xs text-green-600 dark:text-green-500 mt-1 w-full text-right">
+                      (Pay Later Upon Check-in)
+                    </span>
+                  </div>
                 </div>
 
                 {/* Booking Info from Search */}
