@@ -2433,7 +2433,7 @@ const Checkout = () => {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 lg:hidden">
                       <button
                         type="button"
                         onClick={handleBack}
