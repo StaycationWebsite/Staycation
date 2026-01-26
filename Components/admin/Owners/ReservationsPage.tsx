@@ -23,12 +23,14 @@ import {
   useUpdateBookingStatusMutation,
 } from "@/redux/api/bookingsApi";
 import { Booking, AdditionalGuest } from "@/types/booking";
+import NewBookingModal from "@/Components/admin/Csr/Modals/NewBookings";
 
 const ReservationsPage = () => {
   const [filter, setFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isNewReservationModalOpen, setIsNewReservationModalOpen] = useState(false);
 
   const { data, isLoading, refetch } = useGetBookingsQuery({});
   const [updateBookingStatus] = useUpdateBookingStatusMutation();
@@ -501,7 +503,10 @@ const ReservationsPage = () => {
               Manage all your bookings and reservations
             </p>
           </div>
-          <button className="px-6 py-3 bg-gradient-to-r from-orange-500 to-yellow-500 text-white rounded-lg font-semibold hover:shadow-lg transition-all">
+          <button 
+            onClick={() => setIsNewReservationModalOpen(true)}
+            className="px-6 py-3 bg-gradient-to-r from-orange-500 to-yellow-500 text-white rounded-lg font-semibold hover:shadow-lg transition-all"
+          >
             + New Reservation
           </button>
         </div>
@@ -886,6 +891,16 @@ const ReservationsPage = () => {
           </div>
         )}
       </div>
+
+      {isNewReservationModalOpen && (
+        <NewBookingModal
+          onClose={() => setIsNewReservationModalOpen(false)}
+          onSuccess={() => {
+            setIsNewReservationModalOpen(false);
+            refetch();
+          }}
+        />
+      )}
     </>
   );
 };
