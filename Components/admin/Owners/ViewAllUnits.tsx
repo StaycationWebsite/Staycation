@@ -275,7 +275,7 @@ const ViewAllUnits = ({ onAddUnitClick, hideHeader = false }: ViewAllUnitsProps)
               <tr>
                 <th
                   onClick={() => handleSort("haven_name")}
-                  className="text-left py-5 px-6 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap w-[30%]"
+                  className="text-left py-5 px-6 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap w-[30%] border-r border-gray-200 dark:border-gray-600 last:border-r-0"
                 >
                   <div className="flex items-center gap-2">
                     Property Details
@@ -284,7 +284,7 @@ const ViewAllUnits = ({ onAddUnitClick, hideHeader = false }: ViewAllUnitsProps)
                 </th>
                 <th
                   onClick={() => handleSort("six_hour_rate")}
-                  className="text-left py-5 px-6 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
+                  className="text-left py-5 px-6 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap border-r border-gray-200 dark:border-gray-600 last:border-r-0"
                 >
                   <div className="flex items-center gap-2">
                     Hourly Rates
@@ -293,7 +293,7 @@ const ViewAllUnits = ({ onAddUnitClick, hideHeader = false }: ViewAllUnitsProps)
                 </th>
                 <th
                   onClick={() => handleSort("weekday_rate")}
-                  className="text-left py-5 px-6 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
+                  className="text-left py-5 px-6 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap border-r border-gray-200 dark:border-gray-600 last:border-r-0"
                 >
                   <div className="flex items-center gap-2">
                     Daily Rates
@@ -302,20 +302,20 @@ const ViewAllUnits = ({ onAddUnitClick, hideHeader = false }: ViewAllUnitsProps)
                 </th>
                 <th
                   onClick={() => handleSort("status")}
-                  className="text-center py-5 px-6 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
+                  className="text-center py-5 px-6 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap border-r border-gray-200 dark:border-gray-600 last:border-r-0"
                 >
                   <div className="flex items-center justify-center gap-2">
                     Status
                     <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
                   </div>
                 </th>
-                <th className="text-center py-5 px-6 text-sm font-bold text-gray-700 dark:text-gray-200 whitespace-nowrap">Actions</th>
+                <th className="text-center py-5 px-6 text-sm font-bold text-gray-700 dark:text-gray-200 whitespace-nowrap border-r border-gray-200 dark:border-gray-600 last:border-r-0">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
               {paginatedUnits.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+                  <td colSpan={5} className="py-10 text-center text-sm text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-600 last:border-r-0">
                     No units found.
                   </td>
                 </tr>
@@ -325,7 +325,7 @@ const ViewAllUnits = ({ onAddUnitClick, hideHeader = false }: ViewAllUnitsProps)
                     key={unit.uuid_id || unit.id}
                     className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                   >
-                    <td className="py-6 px-6">
+                    <td className="py-6 px-6 border-r border-gray-200 dark:border-gray-600 last:border-r-0">
                       <div className="flex items-start gap-4">
                         <div className="w-10 h-10 bg-brand-primary/10 rounded-lg flex items-center justify-center text-brand-primary mt-1">
                           <Home className="w-5 h-5" />
@@ -344,7 +344,7 @@ const ViewAllUnits = ({ onAddUnitClick, hideHeader = false }: ViewAllUnitsProps)
                         </div>
                       </div>
                     </td>
-                    <td className="py-6 px-6">
+                    <td className="py-6 px-6 border-r border-gray-200 dark:border-gray-600 last:border-r-0">
                       <div className="space-y-1">
                         <div className="text-sm">
                           <span className="text-gray-500 dark:text-gray-400 w-8 inline-block">6H:</span>
@@ -356,7 +356,7 @@ const ViewAllUnits = ({ onAddUnitClick, hideHeader = false }: ViewAllUnitsProps)
                         </div>
                       </div>
                     </td>
-                    <td className="py-6 px-6">
+                    <td className="py-6 px-6 border-r border-gray-200 dark:border-gray-600 last:border-r-0">
                       <div className="space-y-1">
                         <div className="text-sm">
                           <span className="text-gray-500 dark:text-gray-400 w-16 inline-block">Weekday:</span>
@@ -368,12 +368,12 @@ const ViewAllUnits = ({ onAddUnitClick, hideHeader = false }: ViewAllUnitsProps)
                         </div>
                       </div>
                     </td>
-                    <td className="py-6 px-6 text-center">
+                    <td className="py-6 px-6 text-center border-r border-gray-200 dark:border-gray-600 last:border-r-0">
                       <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap capitalize ${getStatusColor(unit.status || "Available")}`}>
                         {unit.status || "Available"}
                       </span>
                     </td>
-                    <td className="py-6 px-6">
+                    <td className="py-6 px-6 border-r border-gray-200 dark:border-gray-600 last:border-r-0">
                       <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={() => handleEdit(unit)}
