@@ -639,6 +639,25 @@ const Checkout = () => {
     setAdditionalGuests(updatedGuests);
   };
 
+  const handleCheckOutDateChange = (date: string) => {
+    setLocalCheckOutDate(date);
+
+    if (localCheckInDate && date) {
+      const checkIn = new Date(localCheckInDate);
+      const checkOut = new Date(date);
+      const diffTime = checkOut.getTime() - checkIn.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      // Auto-Switch to Multi-Day Stay if > 1 night
+      if (diffDays > 1) {
+         if (formData.stayType !== "Multi-Day Stay") {
+            setFormData(prev => ({ ...prev, stayType: "Multi-Day Stay" }));
+            toast.success("Switched to Multi-Day Stay based on date range");
+         }
+      }
+    }
+  };
+
   const handleStayTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedStayType = e.target.value;
 
@@ -669,18 +688,54 @@ const Checkout = () => {
       const checkInDate = new Date(bookingData.checkInDate);
       const checkOutDate = new Date(checkInDate);
 
+      // Prevent Invalid Hourly Stay Selection - Reset dates if switching to hourly from multi-day
+      // Calculate current duration
+      let currentDiffDays = 0;
+      if (localCheckOutDate) {
+          const currentCheckOut = new Date(localCheckOutDate);
+          const diffTime = currentCheckOut.getTime() - checkInDate.getTime();
+          currentDiffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      }
+
       if (selectedStayType === "10 Hours - ₱1,599") {
-        // 10 hours: check-in 2:00 PM, check-out 12:00 AM next day
-        checkOutDate.setDate(checkOutDate.getDate() + 1);
+        // 10 hours: check-in 2:00 PM, check-out 12:00 AM next day (same calendar day logic for date picker usually, or +1 if crossing midnight)
+        // Adjust logic: 10 hours usually ends same day or very early next day.
+        // If current duration is > 1 day, reset to +1 day max or same day.
+        // Let's stick to the previous logic: 10 hours -> same day or +1 if needed.
+        if (currentDiffDays > 1) {
+             checkOutDate.setDate(checkOutDate.getDate() + 1); // Reset to next day for safety or same day
+             toast.success("Date range reset for 10-hour stay");
+        } else {
+             // Keep existing date if valid
+             if (localCheckOutDate) return; 
+             checkOutDate.setDate(checkOutDate.getDate() + 1);
+        }
       } else if (selectedStayType.includes("21 Hours")) {
         // 21 hours: check-in 2:00 PM, check-out 11:00 AM next day
-        checkOutDate.setDate(checkOutDate.getDate() + 1);
+        if (currentDiffDays > 1) {
+             checkOutDate.setDate(checkOutDate.getDate() + 1);
+             toast.success("Date range reset for 21-hour stay");
+        } else {
+             if (localCheckOutDate) {
+                 const currentCheckOut = new Date(localCheckOutDate);
+                 // If it is already next day, keep it.
+                 const diff = Math.ceil((currentCheckOut.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
+                 if (diff === 1) return;
+             }
+             checkOutDate.setDate(checkOutDate.getDate() + 1);
+        }
       } else if (selectedStayType === "Multi-Day Stay") {
-        // Multi-day: add 1 day by default
-        checkOutDate.setDate(checkOutDate.getDate() + 1);
+        // Multi-day: add 1 day by default if not set
+        if (!localCheckOutDate) {
+            checkOutDate.setDate(checkOutDate.getDate() + 1);
+        } else {
+            return; // Don't change existing dates for multi-day
+        }
       }
 
       const checkOutStr = `${checkOutDate.getFullYear()}-${String(checkOutDate.getMonth() + 1).padStart(2, '0')}-${String(checkOutDate.getDate()).padStart(2, '0')}`;
+      // Update local state and Redux
+      setLocalCheckOutDate(checkOutStr);
       dispatch(setCheckOutDate(checkOutStr));
     }
   };
@@ -1790,7 +1845,7 @@ const Checkout = () => {
                           checkInDate={localCheckInDate}
                           checkOutDate={localCheckOutDate}
                           onCheckInChange={setLocalCheckInDate}
-                          onCheckOutChange={setLocalCheckOutDate}
+                          onCheckOutChange={handleCheckOutDateChange}
                         />
                       </div>
 
@@ -2502,7 +2557,7 @@ const Checkout = () => {
                     checkInDate={localCheckInDate}
                     checkOutDate={localCheckOutDate}
                     onCheckInChange={setLocalCheckInDate}
-                    onCheckOutChange={setLocalCheckOutDate}
+                    onCheckOutChange={handleCheckOutDateChange}
                   />
                 </div>
 
@@ -2696,7 +2751,7 @@ const Checkout = () => {
                 checkInDate={localCheckInDate}
                 checkOutDate={localCheckOutDate}
                 onCheckInChange={setLocalCheckInDate}
-                onCheckOutChange={setLocalCheckOutDate}
+                onCheckOutChange={handleCheckOutDateChange}
               />
             </div>
 
