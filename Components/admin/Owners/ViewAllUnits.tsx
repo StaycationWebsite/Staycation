@@ -195,8 +195,8 @@ const ViewAllUnits = ({ onAddUnitClick, hideHeader = false }: ViewAllUnitsProps)
     <div className="space-y-6 animate-in fade-in duration-700">
       {/* Header */}
       {!hideHeader && (
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm w-full md:w-auto">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
             <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Haven Management</h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your property units, rates, and availability</p>
           </div>
