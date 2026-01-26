@@ -76,8 +76,10 @@ const getRoomStatus = (booking: Booking): "occupied" | "available" | "checkout-p
 
 const CleaningManagement = () => {
   // Fetch bookings data
-  const { data: bookings = [], isLoading, refetch } = useGetBookingsQuery({});
+  const { data: bookings = [], isLoading, refetch, error } = useGetBookingsQuery({});
   const [updateCleaningStatus] = useUpdateCleaningStatusMutation();
+
+  const dataError = error ? "Failed to load bookings data" : null;
 
   // Filter states
   const [roomStatusFilter, setRoomStatusFilter] = useState<"all" | "occupied" | "available" | "checkout-pending">("all");
@@ -263,6 +265,19 @@ const CleaningManagement = () => {
 
   // Fix: Define totalTasks safely to prevent ReferenceError
   const totalTasks = filteredRooms?.length ?? 0;
+
+  const handleAssignCleaner = () => {
+    if (!selectedCleaningId || !cleanerName.trim()) {
+      setModalError("Please enter a cleaner name");
+      return;
+    }
+    // TODO: Implement actual assignment API call
+    toast.success(`Assigned ${cleanerName} to room`);
+    setShowAssignModal(false);
+    setCleanerName("");
+    setSelectedCleaningId(null);
+    setModalError(null);
+  };
 
   const statCards = [
     {
@@ -573,17 +588,17 @@ const CleaningManagement = () => {
             </p>
           </div>
           <div className="divide-y divide-gray-100 dark:divide-gray-800">
-            {filteredRecords
-              .filter((r: CleaningRecord) => r.cleaningStatus === "pending")
+            {filteredRooms
+              .filter((r) => r.cleaning_status === "pending")
               .slice(0, 5)
-              .map((room: CleaningRecord) => (
+              .map((room) => (
                 <div
                   key={room.id}
                   className="px-6 py-4 flex items-center justify-between"
                 >
                   <div>
                     <p className="font-semibold text-gray-800 dark:text-gray-100">
-                      {room.roomName}
+                      {room.room_name}
                     </p>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       Guest: {room.guestName}
@@ -600,7 +615,7 @@ const CleaningManagement = () => {
                   </button>
                 </div>
               ))}
-            {filteredRecords.filter((r: CleaningRecord) => r.cleaningStatus === "pending").length === 0 && (
+            {filteredRooms.filter((r) => r.cleaning_status === "pending").length === 0 && (
               <div className="px-6 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
                 No pending cleaning tasks
               </div>
