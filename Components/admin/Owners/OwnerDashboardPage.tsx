@@ -16,7 +16,7 @@ import PoliciesModal from "./Modals/PoliciesModal";
 import NotificationModal from "./Modals/NotificationModal";
 import MessageModal from "./Modals/MessageModal";
 import StaffActivityPage from "./StaffActivityPage";
-import ViewAllUnits from "./ViewAllUnits";
+import ViewAllUnits from "./ViewAllUnits";1
 import ProfilePage from "./ProfilePage";
 import AnalyticsPage from "./AnalyticsPage";
 import ReservationsPage from "./ReservationsPage";

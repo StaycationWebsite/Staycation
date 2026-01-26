@@ -330,307 +330,146 @@ export async function POST(request: NextRequest) {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Booking Pending Approval - Staycation Haven</title>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
         <style>
-          * {
+          body {
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: #F3F4F6;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-          }
-
-          body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            line-height: 1.6;
             color: #1F2937;
-            background-color: #F9F6F0;
-            padding: 20px;
-            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
           }
-
           .email-container {
-            max-width: 680px;
-            margin: 0 auto;
-            background: #ffffff;
-            border-radius: 12px;
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #FFFFFF;
+            border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 4px 20px rgba(184, 134, 11, 0.1);
-            border: 1px solid rgba(184, 134, 11, 0.1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
           }
-
           .header {
-            background-color: #6B7280;
-            color: #ffffff;
-            padding: 40px 30px;
+            background-color: #B8860B; /* Brand Gold */
+            color: #FFFFFF;
+            padding: 32px 24px;
             text-align: center;
           }
-
-          .logo {
-            font-family: 'Poppins', 'Inter', sans-serif;
-            font-size: 32px;
-            font-weight: 700;
-            margin-bottom: 8px;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          .logo-text {
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: -0.5px;
+            margin: 0;
           }
-
-          .tagline {
-            font-size: 16px;
-            font-weight: 400;
-            opacity: 0.95;
-            margin-bottom: 20px;
-          }
-
           .status-badge {
             background-color: rgba(255, 255, 255, 0.2);
-            color: white;
-            padding: 8px 20px;
-            border-radius: 20px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #FFFFFF;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 4px 12px;
+            border-radius: 100px;
+            display: inline-block;
+            margin-top: 12px;
           }
-
           .content {
-            padding: 40px 35px;
-            background: #ffffff;
+            padding: 40px 32px;
           }
-
           .greeting {
-            font-size: 24px;
-            color: #1F2937;
-            margin-bottom: 16px;
-            font-weight: 600;
-            font-family: 'Inter', sans-serif;
-          }
-
-          .intro-text {
-            color: #6B7280;
-            margin-bottom: 30px;
-            line-height: 1.7;
-            font-size: 16px;
-          }
-
-          .section-title {
-            font-family: 'Poppins', 'Inter', sans-serif;
             font-size: 18px;
-            color: #8B6508;
-            font-weight: 600;
-            margin: 30px 0 20px 0;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #F5DEB3;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            font-weight: bold;
+            margin-bottom: 16px;
+            color: #111827;
           }
-
-          .info-card {
-            background-color: #F9F6F0;
-            border-left: 4px solid #8B6508;
-            padding: 25px 30px;
-            margin: 20px 0;
+          .intro-text {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #4B5563;
+            margin-bottom: 32px;
+          }
+          .card {
+            background-color: #FFFFFF;
+            border: 1px solid #E5E7EB;
             border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(184, 134, 11, 0.08);
-            transition: transform 0.2s ease;
+            padding: 24px;
+            margin-bottom: 24px;
           }
-
-          .info-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(184, 134, 11, 0.12);
+          .section-title {
+            font-size: 13px;
+            font-weight: bold;
+            color: #9CA3AF;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid #F3F4F6;
+            padding-bottom: 8px;
           }
-
           .info-row {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid rgba(184, 134, 11, 0.1);
-          }
-
-          .info-row:last-child {
-            border-bottom: none;
-          }
-
-          .info-label {
-            font-weight: 600;
-            color: #8B6508;
+            margin-bottom: 12px;
             font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
           }
-
+          .info-row:last-child {
+            margin-bottom: 0;
+          }
+          .info-label {
+            color: #6B7280;
+          }
           .info-value {
             color: #1F2937;
-            font-weight: 500;
-            font-size: 15px;
+            font-weight: 600;
             text-align: right;
           }
-
-          .price-summary {
-            background-color: #4A2C2A;
-            color: #F9F6F0;
-            padding: 30px 25px;
+          .payment-card {
+            background-color: #FFFFFF;
+            border: 1px solid #B8860B; /* Brand Gold Border */
             border-radius: 8px;
-            margin: 30px 0;
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(74, 44, 42, 0.2);
+            padding: 24px;
+            margin-bottom: 24px;
           }
-
-          .price-row {
+          .total-row {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin: 12px 0;
-            font-size: 16px;
-          }
-
-          .price-total {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 2px solid rgba(184, 134, 11, 0.3);
-            font-size: 24px;
-            font-weight: 700;
-            color: #B8860B;
-          }
-
-          .alert-box {
-            background-color: #FFFFFF;
-            border: 1px solid #F2EBD9;
-            border-left: 4px solid #8B6508;
-            padding: 25px 30px;
-            margin: 30px 0;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(184, 134, 11, 0.1);
-          }
-
-          .alert-title {
-            font-weight: 700;
-            color: #8B6508;
-            margin-bottom: 15px;
-            font-size: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-          }
-
-          .alert-box ul {
-            margin-left: 20px;
-            color: #5D4037;
-          }
-
-          .alert-box li {
-            margin: 10px 0;
-            line-height: 1.6;
-            position: relative;
-            padding-left: 8px;
-          }
-
-          .alert-box li::before {
-            content: '•';
-            position: absolute;
-            left: -8px;
-            color: #8B6508;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #E5E7EB;
             font-weight: bold;
-          }
-
-          .cta-button {
-            text-align: center;
-            margin: 40px 0;
-          }
-
-          .cta-button a {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            background-color: #8B6508;
-            color: white;
-            padding: 14px 35px;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 600;
             font-size: 16px;
-            box-shadow: 0 4px 12px rgba(184, 134, 11, 0.3);
-            transition: all 0.3s ease;
+            color: #1F2937;
           }
-
-          .cta-button a:hover {
-            background-color: #B8860B;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(184, 134, 11, 0.4);
+          .highlight-value {
+            color: #B8860B;
+            font-size: 18px;
           }
-
           .footer {
-            background-color: #1F2937;
-            color: #D1D5DB;
-            padding: 35px 30px;
+            background-color: #F9FAFB;
+            padding: 24px;
             text-align: center;
-          }
-
-          .footer-info {
-            margin: 10px 0;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-          }
-
-          .footer-divider {
-            height: 1px;
-            background-color: #374151;
-            margin: 20px 0;
-          }
-
-          .footer-copyright {
-            font-size: 13px;
+            font-size: 12px;
             color: #9CA3AF;
-            margin-top: 15px;
+            border-top: 1px solid #E5E7EB;
           }
-
-          .highlight {
-            color: #8B6508;
-            font-weight: 600;
+          .action-button {
+            display: block;
+            width: 100%;
+            background-color: #B8860B;
+            color: #FFFFFF;
+            text-align: center;
+            padding: 14px 0;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 15px;
+            margin-top: 24px;
           }
-
           @media only screen and (max-width: 600px) {
             .email-container {
-              border-radius: 0;
+              width: 100%;
               margin: 0;
+              border-radius: 0;
             }
-
-            .header {
-              padding: 30px 20px;
-            }
-
-            .logo {
-              font-size: 28px;
-            }
-
             .content {
-              padding: 30px 20px;
-            }
-
-            .info-row {
-              flex-direction: column;
-              align-items: flex-start;
-              gap: 8px;
-            }
-
-            .info-value {
-              text-align: left;
-            }
-
-            .price-row {
-              flex-direction: column;
-              gap: 8px;
-              text-align: left;
-            }
-
-            .footer-info {
-              flex-direction: column;
-              gap: 5px;
+              padding: 24px 20px;
             }
           }
         </style>
@@ -639,157 +478,75 @@ export async function POST(request: NextRequest) {
         <div class="email-container">
           <!-- Header -->
           <div class="header">
-            <div class="logo">
-              <i class="fas fa-umbrella-beach"></i> Staycation Haven
-            </div>
-            <div class="tagline">Your Perfect Getaway Awaits</div>
-            <div class="status-badge">
-              <i class="fas fa-clock"></i>
-              <span>Pending Approval</span>
-            </div>
+            <h1 class="logo-text">Staycation Haven</h1>
+            <div class="status-badge">Pending Approval</div>
           </div>
 
           <!-- Content -->
           <div class="content">
-            <div class="greeting">Dear ${bookingData.firstName} ${bookingData.lastName},</div>
-
+            <div class="greeting">Hello ${bookingData.firstName},</div>
             <p class="intro-text">
-              Thank you for choosing <span class="highlight">Staycation Haven</span>! We have received your booking request 
-              and it is currently pending approval from our team. We will review your booking 
-              and get back to you within 24 hours.
+              We have received your booking request! Our team is currently reviewing your details. 
+              You will receive a confirmation email once your stay is approved.
             </p>
 
-            <!-- Booking Information -->
-            <h2 class="section-title">
-              <i class="fas fa-clipboard-list"></i>
-              <span>Booking Information</span>
-            </h2>
-            <div class="info-card">
+            <!-- Booking Details Card -->
+            <div class="card">
+              <div class="section-title">Stay Details</div>
               <div class="info-row">
                 <span class="info-label">Booking ID</span>
                 <span class="info-value">${bookingData.bookingId}</span>
               </div>
               <div class="info-row">
-                <span class="info-label">Room Type</span>
+                <span class="info-label">Room</span>
                 <span class="info-value">${bookingData.roomName}</span>
               </div>
-            </div>
-
-            <!-- Stay Details -->
-            <h2 class="section-title">
-              <i class="fas fa-calendar-alt"></i>
-              <span>Stay Details</span>
-            </h2>
-            <div class="info-card">
               <div class="info-row">
-                <span class="info-label">Check-in Date</span>
-                <span class="info-value">${bookingData.checkInDate}</span>
+                <span class="info-label">Check-in</span>
+                <span class="info-value">${bookingData.checkInDate} <span style="color:#9CA3AF; font-weight:400;">(${bookingData.checkInTime})</span></span>
               </div>
               <div class="info-row">
-                <span class="info-label">Check-in Time</span>
-                <span class="info-value">${bookingData.checkInTime}</span>
+                <span class="info-label">Check-out</span>
+                <span class="info-value">${bookingData.checkOutDate} <span style="color:#9CA3AF; font-weight:400;">(${bookingData.checkOutTime})</span></span>
               </div>
               <div class="info-row">
-                <span class="info-label">Check-out Date</span>
-                <span class="info-value">${bookingData.checkOutDate}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Check-out Time</span>
-                <span class="info-value">${bookingData.checkOutTime}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Number of Guests</span>
+                <span class="info-label">Guests</span>
                 <span class="info-value">${bookingData.guests}</span>
               </div>
             </div>
 
-            <!-- Payment Summary -->
-            <h2 class="section-title">
-              <i class="fas fa-credit-card"></i>
-              <span>Payment Summary</span>
-            </h2>
-            <div class="price-summary">
-              <div class="price-row">
-                <span>Payment Method:</span>
-                <span>${bookingData.paymentMethod === 'gcash' ? 'GCash' : bookingData.paymentMethod === 'bank_transfer' ? 'Bank Transfer' : bookingData.paymentMethod}</span>
+            <!-- Payment Card -->
+            <div class="payment-card">
+              <div class="section-title" style="color: #B8860B; border-bottom-color: #F3F4F6;">Payment Summary</div>
+              <div class="info-row">
+                <span class="info-label">Method</span>
+                <span class="info-value" style="text-transform: capitalize;">${String(bookingData.paymentMethod).replace(/_/g, ' ')}</span>
               </div>
-              <div class="price-row">
-                <span>Down Payment:</span>
-                <span>₱${Number(bookingData.downPayment).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <div class="info-row">
+                <span class="info-label">Total Amount</span>
+                <span class="info-value">₱${Number(bookingData.totalAmount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>
               </div>
-              <div class="price-total">
-                <div class="price-row">
-                  <span>Total Amount:</span>
-                  <span>₱${Number(bookingData.totalAmount).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                </div>
+              <div class="total-row">
+                <span>Down Payment (Paid)</span>
+                <span class="highlight-value">₱${Number(bookingData.downPayment).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div class="info-row" style="margin-top: 12px; color: #6B7280; font-size: 13px;">
+                <span>Remaining Balance (Due at Check-in)</span>
+                <span>₱${(Number(bookingData.totalAmount) - Number(bookingData.downPayment)).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>
               </div>
             </div>
 
-            <!-- Receipt Attachment Notice -->
-            <div class="alert-box" style="background-color: #FEF3C7; border-left-color: #F59E0B;">
-              <div class="alert-title" style="color: #D97706;">
-                <i class="fas fa-file-pdf"></i>
-                <span>Your Booking Receipt is Attached</span>
-              </div>
-              <ul>
-                <li><strong>Please download and save the attached PDF receipt</strong></li>
-                <li><strong style="color: #B8860B;">IMPORTANT: Bring this receipt (printed or digital) when you check-in</strong></li>
-                <li>You will also need to present a valid government ID</li>
-                <li>The receipt contains your booking QR code for quick check-in</li>
-              </ul>
-            </div>
-
-            <!-- Important Information -->
-            <div class="alert-box">
-              <div class="alert-title">
-                <i class="fas fa-sync-alt"></i>
-                <span>What Happens Next?</span>
-              </div>
-              <ul>
-                <li>Our team will review your booking request and payment proof</li>
-                <li>You will receive a confirmation email once your booking is approved</li>
-                <li>This usually takes 12-24 hours during business days</li>
-                <li>Keep this email and the attached receipt for your records</li>
-                <li>If you have any questions, feel free to contact us</li>
-                <li>Please ensure your payment proof is clear and complete</li>
-              </ul>
-            </div>
-
-            <p class="intro-text" style="margin-top: 30px;">
-              Thank you for your patience! We're excited to host you at <span class="highlight">Staycation Haven</span>. 
-              If you have any urgent concerns or questions about your booking, please don't 
-              hesitate to reach out to us directly.
+            <p style="font-size: 14px; color: #6B7280; text-align: center; margin-top: 32px;">
+              A copy of your receipt has been attached to this email.
             </p>
 
-            <!-- Call to Action -->
-            <div class="cta-button">
-              <a href="http://localhost:3000">
-                <span>Visit Our Website</span>
-                <i class="fas fa-arrow-right"></i>
-              </a>
-            </div>
+            <a href="http://localhost:3000" class="action-button">Visit Our Website</a>
           </div>
 
           <!-- Footer -->
           <div class="footer">
-            <div class="footer-info">
-              <i class="fas fa-envelope"></i>
-              <span>staycationhaven9@gmail.com</span>
-            </div>
-            <div class="footer-info">
-              <i class="fas fa-phone"></i>
-              <span>+63 123 456 7890</span>
-            </div>
-            <div class="footer-info">
-              <i class="fas fa-map-marker-alt"></i>
-              <span>Your Perfect Destination</span>
-            </div>
-
-            <div class="footer-divider"></div>
-
-            <div class="footer-copyright">
-              &copy; ${new Date().getFullYear()} Staycation Haven. All rights reserved.
-            </div>
+            <p style="margin: 0 0 8px 0;">&copy; ${new Date().getFullYear()} Staycation Haven. All rights reserved.</p>
+            <p style="margin: 0;">You are receiving this email because you made a booking at Staycation Haven.</p>
           </div>
         </div>
       </body>
