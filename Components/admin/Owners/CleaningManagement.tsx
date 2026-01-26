@@ -261,6 +261,9 @@ const CleaningManagement = () => {
   const cleaningPendingCount = filteredRooms.filter((room) => room.cleaning_status === "pending").length;
   const cleaningInProgressCount = filteredRooms.filter((room) => room.cleaning_status === "in-progress").length;
 
+  // Fix: Define totalTasks safely to prevent ReferenceError
+  const totalTasks = filteredRooms?.length ?? 0;
+
   const statCards = [
     {
       id: "total",
