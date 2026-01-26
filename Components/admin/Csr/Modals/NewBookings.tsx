@@ -145,6 +145,12 @@ export default function NewBookingModal({ onClose, initialBooking, onSuccess }: 
   const [checkInDate, setCheckInDate] = useState(initialBooking?.check_in_date || "");
   const [checkOutDate, setCheckOutDate] = useState(initialBooking?.check_out_date || "");
 
+  // Fetch room bookings for date availability
+  const { data: roomBookingsData } = useGetRoomBookingsQuery(
+    selectedHaven?.uuid_id || '',
+    { skip: !selectedHaven?.uuid_id }
+  );
+
   const [formData, setFormData] = useState({
     firstName: initialBooking?.guest_first_name || "",
     lastName: initialBooking?.guest_last_name || "",
