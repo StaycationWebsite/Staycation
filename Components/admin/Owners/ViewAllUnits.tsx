@@ -197,7 +197,7 @@ const ViewAllUnits = ({ onAddUnitClick, hideHeader = false }: ViewAllUnitsProps)
       {!hideHeader && (
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">All Haven Units</h1>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Haven Management</h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your property units, rates, and availability</p>
           </div>
           <button
@@ -217,7 +217,7 @@ const ViewAllUnits = ({ onAddUnitClick, hideHeader = false }: ViewAllUnitsProps)
             
             {/* Show Entries */}
             <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">Show</label>
+              <label className="text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">Show</label>
               <select
                 value={entriesPerPage}
                 onChange={(e) => {
@@ -231,7 +231,7 @@ const ViewAllUnits = ({ onAddUnitClick, hideHeader = false }: ViewAllUnitsProps)
                 <option value="25">25</option>
                 <option value="50">50</option>
               </select>
-              <label className="text-sm text-gray-600 whitespace-nowrap">entries</label>
+              <label className="text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">entries</label>
             </div>
 
             {/* Search */}
@@ -249,7 +249,7 @@ const ViewAllUnits = ({ onAddUnitClick, hideHeader = false }: ViewAllUnitsProps)
 
           {/* Filter Status */}
           <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-gray-600" />
+            <Filter className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             <select
               value={filterStatus}
               onChange={(e) => {
@@ -267,77 +267,117 @@ const ViewAllUnits = ({ onAddUnitClick, hideHeader = false }: ViewAllUnitsProps)
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900 overflow-hidden">
+      {/* Table - Desktop View */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900 overflow-hidden hidden lg:block">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1050px]">
+          <table className="w-full">
             <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border-b-2 border-gray-200 dark:border-gray-600">
               <tr>
-                <th onClick={() => handleSort("haven_name")} className="text-left py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap">
-                  <div className="flex items-center gap-2">Haven Name <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" /></div>
+                <th
+                  onClick={() => handleSort("haven_name")}
+                  className="text-left py-5 px-6 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap w-[30%]"
+                >
+                  <div className="flex items-center gap-2">
+                    Property Details
+                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+                  </div>
                 </th>
-                <th onClick={() => handleSort("tower")} className="text-left py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap">
-                  <div className="flex items-center gap-2">Tower <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" /></div>
+                <th
+                  onClick={() => handleSort("six_hour_rate")}
+                  className="text-left py-5 px-6 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
+                >
+                  <div className="flex items-center gap-2">
+                    Hourly Rates
+                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+                  </div>
                 </th>
-                <th onClick={() => handleSort("floor")} className="text-left py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap">
-                  <div className="flex items-center gap-2">Floor <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" /></div>
+                <th
+                  onClick={() => handleSort("weekday_rate")}
+                  className="text-left py-5 px-6 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
+                >
+                  <div className="flex items-center gap-2">
+                    Daily Rates
+                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+                  </div>
                 </th>
-                <th onClick={() => handleSort("view_type")} className="text-left py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap">
-                  <div className="flex items-center gap-2">View <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" /></div>
+                <th
+                  onClick={() => handleSort("status")}
+                  className="text-center py-5 px-6 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    Status
+                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+                  </div>
                 </th>
-                <th onClick={() => handleSort("six_hour_rate")} className="text-center py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap">
-                  <div className="flex items-center justify-center gap-2">6H Rate <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" /></div>
-                </th>
-                <th onClick={() => handleSort("ten_hour_rate")} className="text-center py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap">
-                  <div className="flex items-center justify-center gap-2">10H Rate <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" /></div>
-                </th>
-                <th onClick={() => handleSort("weekday_rate")} className="text-center py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap">
-                  <div className="flex items-center justify-center gap-2">Weekday <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" /></div>
-                </th>
-                <th onClick={() => handleSort("weekend_rate")} className="text-center py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap">
-                  <div className="flex items-center justify-center gap-2">Weekend <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" /></div>
-                </th>
-                <th onClick={() => handleSort("status")} className="text-center py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap">
-                  <div className="flex items-center justify-center gap-2">Status <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" /></div>
-                </th>
-                <th className="text-center py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 whitespace-nowrap">Actions</th>
+                <th className="text-center py-5 px-6 text-sm font-bold text-gray-700 dark:text-gray-200 whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
               {paginatedUnits.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+                  <td colSpan={5} className="py-10 text-center text-sm text-gray-500 dark:text-gray-400">
                     No units found.
                   </td>
                 </tr>
               ) : (
                 paginatedUnits.map((unit) => (
-                  <tr key={unit.uuid_id || unit.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                    <td className="py-4 px-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-brand-primary rounded-lg flex items-center justify-center text-white font-bold shadow-sm">
+                  <tr
+                    key={unit.uuid_id || unit.id}
+                    className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <td className="py-6 px-6">
+                      <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 bg-brand-primary/10 rounded-lg flex items-center justify-center text-brand-primary mt-1">
                           <Home className="w-5 h-5" />
                         </div>
-                        <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">{unit.haven_name}</span>
+                        <div>
+                          <span className="block text-base font-bold text-brand-primary mb-1">
+                            {unit.haven_name}
+                          </span>
+                          <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                            <span>{unit.tower}</span>
+                            <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
+                            <span>{unit.floor}</span>
+                            <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
+                            <span>{unit.view_type}</span>
+                          </div>
+                        </div>
                       </div>
                     </td>
-                    <td className="py-4 px-4"><span className="text-sm text-gray-700 dark:text-gray-200">{unit.tower}</span></td>
-                    <td className="py-4 px-4"><span className="text-sm text-gray-700 dark:text-gray-200">{unit.floor}</span></td>
-                    <td className="py-4 px-4"><span className="text-sm text-gray-700 dark:text-gray-200">{unit.view_type}</span></td>
-                    <td className="py-4 px-4 text-center"><span className="text-sm font-semibold text-gray-800 dark:text-gray-100">₱{unit.six_hour_rate}</span></td>
-                    <td className="py-4 px-4 text-center"><span className="text-sm font-semibold text-gray-800 dark:text-gray-100">₱{unit.ten_hour_rate}</span></td>
-                    <td className="py-4 px-4 text-center"><span className="text-sm font-semibold text-gray-800 dark:text-gray-100">₱{unit.weekday_rate}</span></td>
-                    <td className="py-4 px-4 text-center"><span className="text-sm font-semibold text-gray-800 dark:text-gray-100">₱{unit.weekend_rate}</span></td>
-                    <td className="py-4 px-4 text-center">
-                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${getStatusColor(unit.status || "Available")}`}>
+                    <td className="py-6 px-6">
+                      <div className="space-y-1">
+                        <div className="text-sm">
+                          <span className="text-gray-500 dark:text-gray-400 w-8 inline-block">6H:</span>
+                          <span className="font-semibold text-gray-800 dark:text-gray-100">₱{unit.six_hour_rate}</span>
+                        </div>
+                        <div className="text-sm">
+                          <span className="text-gray-500 dark:text-gray-400 w-8 inline-block">10H:</span>
+                          <span className="font-semibold text-gray-800 dark:text-gray-100">₱{unit.ten_hour_rate}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-6 px-6">
+                      <div className="space-y-1">
+                        <div className="text-sm">
+                          <span className="text-gray-500 dark:text-gray-400 w-16 inline-block">Weekday:</span>
+                          <span className="font-semibold text-gray-800 dark:text-gray-100">₱{unit.weekday_rate}</span>
+                        </div>
+                        <div className="text-sm">
+                          <span className="text-gray-500 dark:text-gray-400 w-16 inline-block">Weekend:</span>
+                          <span className="font-semibold text-gray-800 dark:text-gray-100">₱{unit.weekend_rate}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-6 px-6 text-center">
+                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap capitalize ${getStatusColor(unit.status || "Available")}`}>
                         {unit.status || "Available"}
                       </span>
                     </td>
-                    <td className="py-4 px-4">
-                      <div className="flex items-center justify-center gap-1">
+                    <td className="py-6 px-6">
+                      <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={() => handleEdit(unit)}
-                          className="p-2 text-brand-primary hover:bg-brand-primaryLighter rounded-lg transition-colors"
+                          className="p-2 text-brand-primary hover:bg-brand-primary/10 rounded-lg transition-colors"
                           title="Edit"
                         >
                           <Edit className="w-4 h-4" />
@@ -357,8 +397,84 @@ const ViewAllUnits = ({ onAddUnitClick, hideHeader = false }: ViewAllUnitsProps)
             </tbody>
           </table>
         </div>
+      </div>
 
-        {/* Footer / Pagination */}
+      {/* Mobile/Tablet Card View */}
+      <div className="lg:hidden space-y-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900 overflow-hidden p-4">
+        {paginatedUnits.length === 0 ? (
+          <div className="py-8 text-center text-gray-500">No units found.</div>
+        ) : (
+          paginatedUnits.map((unit) => (
+            <div
+              key={unit.uuid_id || unit.id}
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900 p-4 border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all"
+            >
+              {/* Header */}
+              <div className="flex items-start justify-between mb-3 pb-3 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-brand-primary rounded-lg flex items-center justify-center text-white font-bold shadow-sm">
+                    <Home className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-gray-800 dark:text-gray-100">{unit.haven_name}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{unit.tower} - {unit.floor}</p>
+                  </div>
+                </div>
+                <span className={`px-3 py-1 rounded-full text-xs font-bold capitalize ${getStatusColor(unit.status || "Available")}`}>
+                  {unit.status || "Available"}
+                </span>
+              </div>
+
+              {/* View Type */}
+              <div className="mb-3 pb-3 border-b border-gray-200 dark:border-gray-700">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">View Type</p>
+                <span className="text-sm font-medium text-gray-800 dark:text-gray-100">{unit.view_type}</span>
+              </div>
+
+              {/* Rates */}
+              <div className="grid grid-cols-2 gap-3 mb-3 pb-3 border-b border-gray-200 dark:border-gray-700">
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">6H Rate</p>
+                  <span className="font-semibold text-gray-800 dark:text-gray-100">₱{unit.six_hour_rate}</span>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">10H Rate</p>
+                  <span className="font-semibold text-gray-800 dark:text-gray-100">₱{unit.ten_hour_rate}</span>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Weekday</p>
+                  <span className="font-semibold text-gray-800 dark:text-gray-100">₱{unit.weekday_rate}</span>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Weekend</p>
+                  <span className="font-semibold text-gray-800 dark:text-gray-100">₱{unit.weekend_rate}</span>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  onClick={() => handleEdit(unit)}
+                  className="p-2 text-brand-primary hover:bg-brand-primaryLighter rounded-lg transition-colors"
+                  title="Edit"
+                >
+                  <Edit className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => handleDeleteClick(unit)}
+                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  title="Delete"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Pagination */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900 overflow-hidden">
         <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 px-6 py-4 border-t border-gray-200 dark:border-gray-600">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-sm text-gray-600 dark:text-gray-300">
