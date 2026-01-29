@@ -11,30 +11,46 @@ import {
   XCircle,
   Clock,
   ArrowUpDown,
+  Info,
   User,
   ChevronsLeft,
   ChevronLeft,
   ChevronRight,
   ChevronsRight,
   Image as ImageIcon,
+  CreditCard,
 } from "lucide-react";
 import { useCallback, useMemo, useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
+import type { UpdateBookingPaymentPayload } from "@/types/bookingPayment";
 import {
   useGetBookingPaymentsQuery,
   useUpdateBookingPaymentMutation,
 } from "@/redux/api/bookingPaymentsApi";
 
-import type { BookingPayment } from "@/types/bookingPayment";
 type PaymentStatus = "Paid" | "Pending" | "Rejected";
 
 interface PaymentRow {
   id?: string;
   booking_id: string;
   guest: string;
-  amount: string;
-  // numeric amount to allow numeric sorting
-  amountValue?: number;
+
+  // Formatted and numeric totals for display/sorting
+  totalAmount: string;
+  totalAmountValue?: number;
+
+  // Original down payment submitted
+  downPayment: string;
+  downPaymentValue?: number;
+
+  // Cumulative amount paid so far (amount_paid)
+  amountPaid: string;
+  amountPaidValue?: number;
+  // Remaining balance (total - amount_paid), non-negative
+  remaining: string;
+  remainingValue?: number;
+
   payment_proof?: string | null;
   status: PaymentStatus;
   statusColor: string;
@@ -157,25 +173,85 @@ function RejectModal({
         onClick={onCancel}
       />
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-6 border border-gray-100 dark:border-gray-700">
-          <h3 className="text-lg font-bold mb-2 text-gray-900 dark:text-gray-100">
-            Reject Payment
-          </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-            Provide a reason for rejecting the payment (optional).
-          </p>
-          <textarea
-            value={localReason}
-            onChange={(e) => setLocalReason(e.target.value)}
-            className="w-full p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 mb-4"
-            rows={4}
-            placeholder="Rejection reason (optional)"
-          />
-          <div className="flex justify-end gap-3">
+        <div className="fixed z-[9991] w-full max-w-md max-h-[90vh] bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-500 rounded-lg">
+                <XCircle className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                  Reject Payment
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Provide a reason for rejecting the payment (optional).
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={onCancel}
+              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            </button>
+          </div>
+
+          <div className="p-6 space-y-6 max-h-[calc(90vh-200px)] overflow-y-auto">
+            {/* Payment Information */}
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-3">
+              <div className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                <User className="w-4 h-4" />
+                Payment Information
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                    Payer:
+                  </span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    {payment.guest}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                    Payment ID:
+                  </span>
+                  <span className="text-sm font-mono text-gray-900 dark:text-gray-100">
+                    {payment.id}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                    Amount:
+                  </span>
+                  <span className="text-sm text-gray-900 dark:text-gray-100">
+                    {formatCurrency(Number(payment.booking?.down_payment ?? 0))}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Rejection Reason (optional)
+              </label>
+              <textarea
+                value={localReason}
+                onChange={(e) => setLocalReason(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                rows={4}
+                placeholder="Rejection reason (optional)"
+              />
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="flex justify-end gap-2 p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
             <button
               onClick={onCancel}
               type="button"
-              className="px-4 py-2 rounded-lg bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 font-medium text-sm"
             >
               Cancel
             </button>
@@ -183,7 +259,7 @@ function RejectModal({
               onClick={() => onConfirm(payment.id!, localReason)}
               type="button"
               disabled={updatingPaymentId === payment.id}
-              className="px-4 py-2 rounded-lg bg-red-600 dark:bg-red-600 text-white hover:bg-red-700 dark:hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center"
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center"
             >
               {updatingPaymentId === payment.id ? (
                 <svg
@@ -207,8 +283,259 @@ function RejectModal({
                   />
                 </svg>
               ) : (
-                <span className="font-semibold">Reject</span>
+                <>
+                  <XCircle className="w-4 h-4" />
+                  <span className="font-semibold ml-1">Reject</span>
+                </>
               )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ApproveModal({
+  isOpen,
+  payment,
+  onCancel,
+  onConfirm,
+  updatingPaymentId,
+}: {
+  isOpen: boolean;
+  payment: PaymentRow | null;
+  onCancel: () => void;
+  onConfirm: (payment: PaymentRow, amount: number) => Promise<void>;
+  updatingPaymentId: string | null;
+}) {
+  const [localAmount, setLocalAmount] = useState<string>("");
+
+  useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    if (payment && isOpen) {
+      // Default the input to the submitted payment amount (if present), otherwise
+      // fallback to the remaining balance. This makes approving a submitted proof
+      // fast (amount prefilled) while still being convenient for check-in
+      // collections (remaining balance prefilled).
+      timeoutId = setTimeout(() => {
+        const explicitRemaining = payment.booking?.remaining_balance;
+        const remaining =
+          typeof explicitRemaining !== "undefined" && explicitRemaining !== null
+            ? Number(explicitRemaining)
+            : !Number.isNaN(Number(payment.booking?.total_amount ?? NaN))
+              ? Math.max(
+                  0,
+                  Number(payment.booking?.total_amount ?? 0) -
+                    Number(
+                      payment.booking?.amount_paid ??
+                        payment.booking?.down_payment ??
+                        0,
+                    ),
+                )
+              : 0;
+        setLocalAmount(remaining > 0 ? String(remaining) : "");
+      }, 0);
+    }
+    return () => {
+      if (timeoutId !== null) clearTimeout(timeoutId);
+    };
+  }, [payment, isOpen]);
+
+  if (!isOpen || !payment) return null;
+
+  const amountNum = parseFloat(localAmount || "0");
+
+  // Compute previous remaining (prefer server value, otherwise derive).
+  // We require full settlement when this modal is being used to collect the
+  // remaining balance (i.e. when there is no submitted down payment).
+  const submitted = Number(payment.booking?.down_payment ?? 0);
+  const explicitRemaining = payment.booking?.remaining_balance;
+  const prevRemaining =
+    typeof explicitRemaining !== "undefined" && explicitRemaining !== null
+      ? Number(explicitRemaining)
+      : !Number.isNaN(Number(payment.booking?.total_amount ?? NaN))
+        ? Math.max(
+            0,
+            Number(payment.booking?.total_amount ?? 0) -
+              Number(
+                payment.booking?.amount_paid ??
+                  payment.booking?.down_payment ??
+                  0,
+              ),
+          )
+        : 0;
+
+  // Underpay = this is a direct collection (no submitted down payment) AND
+  // the entered amount is less than the remaining balance.
+  const isUnderpay = submitted <= 0 && amountNum < prevRemaining;
+
+  const handleConfirm = () => {
+    if (isNaN(amountNum) || amountNum < 0) {
+      toast.error("Please enter a valid amount");
+      return;
+    }
+    if (isUnderpay) {
+      toast.error(`Amount must be at least ${formatCurrency(prevRemaining)}`);
+      return;
+    }
+    onConfirm(payment, amountNum);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[9999]">
+      <div
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={onCancel}
+      />
+      <div className="fixed inset-0 flex items-center justify-center p-4">
+        <div className="fixed z-[9991] w-full max-w-md max-h-[90vh] bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-500 rounded-lg">
+                <CheckCircle className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                  Approve Payment
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Enter the amount to be recorded and approve the payment.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={onCancel}
+              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            </button>
+          </div>
+
+          <div className="p-6 space-y-6 max-h-[calc(90vh-200px)] overflow-y-auto">
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-3">
+              <div className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                <DollarSign className="w-4 h-4" />
+                Payment Summary
+              </div>
+              <div className="grid grid-cols-2 gap-4 text-sm text-gray-700 dark:text-gray-300">
+                <div>
+                  <div className="text-xs text-gray-500">Total Amount</div>
+                  <div className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                    {payment.totalAmount}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">Remaining Balance</div>
+                  <div className="text-lg font-bold text-orange-700 dark:text-orange-300">
+                    {payment.remaining}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Amount to collect
+              </label>
+              <input
+                type="number"
+                value={localAmount}
+                onChange={(e) => setLocalAmount(e.target.value)}
+                min="0"
+                step="0.01"
+                placeholder=""
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              />
+              {isUnderpay && (
+                <div className="text-sm text-red-600 mt-2">
+                  Amount must be at least {formatCurrency(prevRemaining)}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="flex justify-end gap-2 p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+            <button
+              onClick={onCancel}
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 font-medium text-sm"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleConfirm}
+              disabled={
+                updatingPaymentId === payment.id ||
+                isNaN(amountNum) ||
+                amountNum < 0 ||
+                isUnderpay
+              }
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center gap-2 text-sm"
+            >
+              {updatingPaymentId === payment.id ? (
+                <>
+                  <div className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="w-4 h-4" />
+                  Confirm Approve
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ChangeModal({
+  isOpen,
+  amount,
+  onClose,
+}: {
+  isOpen: boolean;
+  amount: number;
+  onClose: () => void;
+}) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[9999]">
+      <div className="fixed inset-0 bg-black/50" onClick={onClose} />
+      <div className="fixed inset-0 flex items-center justify-center p-4">
+        <div className="fixed z-[9991] w-full max-w-md bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden p-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-orange-500 rounded-lg">
+              <DollarSign className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                Change
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Please return the following change to the guest
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6 text-center">
+            <div className="text-sm text-gray-500">Change Amount</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-2">
+              {formatCurrency(amount)}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 p-4">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 font-medium text-sm"
+            >
+              Close
             </button>
           </div>
         </div>
@@ -226,6 +553,35 @@ export default function PaymentPage() {
   const [entriesPerPage, setEntriesPerPage] = useState(5);
   const [sortField, setSortField] = useState<keyof PaymentRow | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const { data: session } = useSession();
+
+  const logEmployeeActivity = useCallback(
+    async (
+      activityType: string,
+      description: string,
+      entityType?: string | null,
+      entityId?: string | null,
+    ) => {
+      const employeeId = session?.user?.id;
+      if (!employeeId) return;
+      try {
+        await fetch("/api/admin/activity-logs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            employee_id: employeeId,
+            activity_type: activityType,
+            description,
+            entity_type: entityType ?? null,
+            entity_id: entityId ?? null,
+          }),
+        });
+      } catch (err) {
+        console.error("Failed to create employee activity log:", err);
+      }
+    },
+    [session?.user?.id],
+  );
 
   // Compute server-side filter status (map UI filter to DB values)
   const serverStatusParam =
@@ -260,16 +616,35 @@ export default function PaymentPage() {
   const [updatingPaymentId, setUpdatingPaymentId] = useState<string | null>(
     null,
   );
+  const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
+  const [isChangeModalOpen, setIsChangeModalOpen] = useState(false);
+  const [changeAmount, setChangeAmount] = useState<number>(0);
 
   const payments = useMemo<PaymentRow[]>(() => {
     return (paymentsRaw || []).map((p) => {
-      const amountValue = Number(p.total_amount ?? 0);
+      const totalAmountValue = Number(p.total_amount ?? 0);
+      const downPaymentValue = Number(p.down_payment ?? 0);
+      // amount_paid may be null for older records — fall back to down_payment
+      const amountPaidValue = Number(p.amount_paid ?? p.down_payment ?? 0);
+      // Prefer an explicit stored remaining_balance if available; otherwise derive it from totals
+      const remainingValue =
+        typeof p.remaining_balance !== "undefined" &&
+        p.remaining_balance !== null
+          ? Math.max(0, Number(p.remaining_balance))
+          : Math.max(0, totalAmountValue - amountPaidValue);
+
       const row: PaymentRow = {
         id: p.id,
         booking_id: p.booking_id ?? String(p.booking_fk ?? ""),
         guest: `${p.guest_first_name ?? ""} ${p.guest_last_name ?? ""}`.trim(),
-        amount: formatCurrency(amountValue),
-        amountValue,
+        totalAmount: formatCurrency(totalAmountValue),
+        totalAmountValue,
+        downPayment: formatCurrency(downPaymentValue),
+        downPaymentValue,
+        amountPaid: formatCurrency(amountPaidValue),
+        amountPaidValue,
+        remaining: formatCurrency(remainingValue),
+        remainingValue,
         payment_proof: p.payment_proof_url ?? undefined,
         status: mapStatusToUI(p.payment_status),
         statusColor: getStatusColorClass(p.payment_status),
@@ -281,6 +656,7 @@ export default function PaymentPage() {
           guest_email: p.guest_email ?? undefined,
           guest_phone: p.guest_phone ?? undefined,
           down_payment: p.down_payment,
+          amount_paid: p.amount_paid,
           total_amount: p.total_amount,
           remaining_balance: p.remaining_balance,
           payment_proof_url: p.payment_proof_url,
@@ -298,72 +674,137 @@ export default function PaymentPage() {
   const isLoadingTable = isPaymentsLoading || isPaymentsFetching;
 
   // Handlers
-  const handleView = useCallback((row: PaymentRow) => {
-    if (!row?.id) {
-      toast.error("Payment ID not available");
-      return;
-    }
-    setSelectedPayment(row);
-    setIsViewModalOpen(true);
-  }, []);
+  const handleView = useCallback(
+    (row: PaymentRow) => {
+      if (!row?.id) {
+        toast.error("Payment ID not available");
+        return;
+      }
+      // Log view action (fire-and-forget)
+      logEmployeeActivity?.(
+        "VIEW_PAYMENT",
+        `Viewed payment ${row.booking_id}`,
+        "payment",
+        row.id,
+      );
+      setSelectedPayment(row);
+      setIsViewModalOpen(true);
+    },
+    [logEmployeeActivity],
+  );
 
   const handleCloseView = useCallback(() => {
     setSelectedPayment(null);
     setIsViewModalOpen(false);
   }, []);
 
-  const handleApprove = useCallback(
-    async (row: PaymentRow, options?: { keepOpen?: boolean }) => {
-      if (!row?.id) {
+  const handleConfirmApprove = useCallback(
+    async (payment: PaymentRow, amount: number) => {
+      if (!payment?.id) {
         toast.error("Payment ID not available");
         return;
       }
-      setUpdatingPaymentId(row.id);
-      const toastId = toast.loading("Approving payment...");
-      try {
-        await updateBookingPayment({
-          id: row.id,
-          payment_status: "approved",
-        }).unwrap();
-        toast.success("Payment approved", { id: toastId });
 
-        // Refresh payments and optionally update the currently-open modal row
-        const refetchRes = await refetch();
-        const updatedPayment = (refetchRes?.data || []).find(
-          (p: BookingPayment) => p.id === row.id,
+      setUpdatingPaymentId(payment.id);
+
+      // Compute the change amount upfront and show the change modal immediately
+      const prevRemainingForChange = (() => {
+        const explicit = payment.booking?.remaining_balance;
+        if (typeof explicit !== "undefined" && explicit !== null)
+          return Number(explicit);
+        const totalAmt = Number(payment.booking?.total_amount ?? NaN);
+        const paidAmt = Number(
+          payment.booking?.amount_paid ?? payment.booking?.down_payment ?? 0,
         );
+        return !Number.isNaN(totalAmt) ? Math.max(0, totalAmt - paidAmt) : 0;
+      })();
+      const appliedAmountForChange = Math.min(
+        Math.max(Number(amount), 0),
+        Math.max(prevRemainingForChange, 0),
+      );
+      const changeAmt = Math.max(0, Number(amount) - appliedAmountForChange);
 
-        if (options?.keepOpen && updatedPayment) {
-          setSelectedPayment((prev) =>
-            prev && prev.id === row.id
-              ? {
-                  ...prev,
-                  status: mapStatusToUI(updatedPayment.payment_status),
-                  statusColor: getStatusColorClass(
-                    updatedPayment.payment_status,
-                  ),
-                  booking: {
-                    ...prev.booking,
-                    updated_at:
-                      updatedPayment.reviewed_at ?? updatedPayment.created_at,
-                    status: updatedPayment.payment_status,
-                    down_payment: updatedPayment.down_payment,
-                    total_amount: updatedPayment.total_amount,
-                    remaining_balance: updatedPayment.remaining_balance,
-                    payment_proof_url: updatedPayment.payment_proof_url,
-                  },
-                }
-              : prev,
-          );
-        }
+      // Optimistically close the approve modal and show the change modal so the
+      // user sees immediate feedback while the server processes the request.
+      setIsApproveModalOpen(false);
+      setChangeAmount(changeAmt);
+      setIsChangeModalOpen(true);
+      // Log change modal display
+      logEmployeeActivity?.(
+        "SHOW_CHANGE_MODAL",
+        `Displayed change modal for booking ${payment.booking_id} with change amount ${changeAmt}`,
+        "payment",
+        payment.id,
+      );
+
+      // Show an immediate success toast; we'll update it to an
+      // error message if the server rejects the mutation.
+      const toastId = toast.success("Payment approved");
+
+      // Log client-side attempt to approve
+      logEmployeeActivity?.(
+        "ATTEMPT_APPROVE_PAYMENT",
+        `Attempted to approve payment ${payment.booking_id} with amount ${amount}`,
+        "payment",
+        payment.id,
+      );
+
+      try {
+        // amount_paid is maintained server-side via collect_amount.
+        const payload: Partial<UpdateBookingPaymentPayload> & {
+          id: string;
+          collect_amount?: number;
+          reviewed_by?: string | null;
+        } = {
+          id: payment.id,
+          payment_status: "approved",
+          collect_amount: Number(amount),
+          reviewed_by: session?.user?.id ?? undefined,
+        };
+
+        await updateBookingPayment(payload).unwrap();
+        // optimistic update — no success toast (UI already reflects change)
+
+        // Refresh payments and update UI (server authoritative)
+        await refetch();
       } catch (err) {
         console.error("Approve error:", err);
-        toast.error("Failed to approve payment", { id: toastId });
+        let msg = "Failed to approve payment";
+        // Prefer server-provided message when available and perform safe type checks.
+        if (err && typeof err === "object") {
+          const errObj = err as Record<string, unknown>;
+          const data = errObj["data"];
+          if (data && typeof data === "object") {
+            const dataObj = data as Record<string, unknown>;
+            if (typeof dataObj["error"] === "string") {
+              msg = dataObj["error"] as string;
+            } else if (typeof dataObj["message"] === "string") {
+              msg = dataObj["message"] as string;
+            }
+          } else {
+            if (typeof errObj["error"] === "string") {
+              msg = errObj["error"] as string;
+            } else if (typeof errObj["message"] === "string") {
+              msg = errObj["message"] as string;
+            }
+          }
+        } else if (typeof err === "string") {
+          msg = err;
+        }
+        toast.error(
+          `Failed to approve payment: ${msg}. Reverting optimistic changes and restoring UI.`,
+          { id: toastId },
+        );
+
+        // Roll back UI changes if the mutation failed
+        setIsChangeModalOpen(false);
+        setChangeAmount(0);
+        setIsApproveModalOpen(true);
       } finally {
         setUpdatingPaymentId(null);
       }
     },
-    [updateBookingPayment, refetch],
+    [updateBookingPayment, refetch, logEmployeeActivity, session],
   );
 
   const onSearchChange = (value: string) => {
@@ -374,17 +815,27 @@ export default function PaymentPage() {
     setCurrentPage(1);
   }, [searchTerm]);
 
-  const openRejectModal = useCallback((row: PaymentRow) => {
-    if (!row?.id) {
-      toast.error("Payment ID not available");
-      return;
-    }
-    // Keep the selected payment set so the reject modal has context,
-    // and close the view modal before opening the reject modal.
-    setSelectedPayment(row);
-    setIsViewModalOpen(false);
-    setIsRejectModalOpen(true);
-  }, []);
+  const openRejectModal = useCallback(
+    (row: PaymentRow) => {
+      if (!row?.id) {
+        toast.error("Payment ID not available");
+        return;
+      }
+      // Log modal open
+      logEmployeeActivity?.(
+        "OPEN_REJECT_MODAL",
+        `Opened reject modal for booking ${row.booking_id}`,
+        "payment",
+        row.id,
+      );
+      // Keep the selected payment set so the reject modal has context,
+      // and close the view modal before opening the reject modal.
+      setSelectedPayment(row);
+      setIsViewModalOpen(false);
+      setIsRejectModalOpen(true);
+    },
+    [logEmployeeActivity],
+  );
 
   const handleConfirmReject = useCallback(
     async (id: string, reason: string) => {
@@ -392,32 +843,90 @@ export default function PaymentPage() {
         toast.error("Payment ID not available");
         return;
       }
+      // Keep the selected payment so we can restore it if the mutation fails
+      const originalSelected = selectedPayment;
+
       setUpdatingPaymentId(id);
-      const toastId = toast.loading("Rejecting payment...");
+
+      // Optimistically close modal and clear selection so the UI responds
+      setIsRejectModalOpen(false);
+      setSelectedPayment(null);
+
+      // Show an immediate success toast; we'll update it if the
+      // server rejects the mutation.
+      const toastId = toast.success("Payment rejected");
+
+      // Log client-side attempt to reject
+      logEmployeeActivity?.(
+        "ATTEMPT_REJECT_PAYMENT",
+        `Attempted to reject payment ${id} with reason: ${reason || "N/A"}`,
+        "payment",
+        id,
+      );
+
       try {
         await updateBookingPayment({
           id,
           payment_status: "rejected",
           rejection_reason: reason || undefined,
+          reviewed_by: session?.user?.id ?? undefined,
         }).unwrap();
-        toast.success("Payment rejected", { id: toastId });
+        // optimistic update — no success toast (UI already reflects change)
         refetch();
-        setIsRejectModalOpen(false);
-        setSelectedPayment(null);
       } catch (err) {
         console.error("Reject error:", err);
-        toast.error("Failed to reject payment", { id: toastId });
+        let msg = "Failed to reject payment";
+        if (err && typeof err === "object") {
+          const errObj = err as Record<string, unknown>;
+          const data = errObj["data"];
+          if (data && typeof data === "object") {
+            const dataObj = data as Record<string, unknown>;
+            if (typeof dataObj["error"] === "string") {
+              msg = dataObj["error"] as string;
+            } else if (typeof dataObj["message"] === "string") {
+              msg = dataObj["message"] as string;
+            }
+          } else {
+            if (typeof errObj["error"] === "string") {
+              msg = errObj["error"] as string;
+            } else if (typeof errObj["message"] === "string") {
+              msg = errObj["message"] as string;
+            }
+          }
+        } else if (typeof err === "string") {
+          msg = err;
+        }
+        toast.error(
+          `Failed to reject payment: ${msg}. Reverting optimistic changes and restoring UI.`,
+          { id: toastId },
+        );
+
+        // Restore selection and reopen the reject modal so the user can retry
+        setSelectedPayment(originalSelected);
+        setIsRejectModalOpen(true);
       } finally {
         setUpdatingPaymentId(null);
       }
     },
-    [updateBookingPayment, refetch],
+    [
+      updateBookingPayment,
+      refetch,
+      selectedPayment,
+      logEmployeeActivity,
+      session,
+    ],
   );
 
   const handleCancelReject = useCallback(() => {
+    logEmployeeActivity?.(
+      "CANCEL_REJECT_MODAL",
+      `Cancelled reject for payment ${selectedPayment?.booking_id ?? "N/A"}`,
+      "payment",
+      selectedPayment?.id ?? null,
+    );
     setIsRejectModalOpen(false);
     setSelectedPayment(null);
-  }, []);
+  }, [logEmployeeActivity, selectedPayment]);
 
   const filteredPayments = useMemo(() => {
     const q = (searchTerm || "").toLowerCase();
@@ -437,10 +946,25 @@ export default function PaymentPage() {
     const copy = [...filteredPayments];
     if (!sortField) return copy;
     return copy.sort((a, b) => {
-      // Numeric sort for amount (use amountValue)
-      if (sortField === "amount") {
-        const aNum = a.amountValue ?? 0;
-        const bNum = b.amountValue ?? 0;
+      // Numeric sorts for the new currency columns
+      if (sortField === "totalAmount") {
+        const aNum = a.totalAmountValue ?? 0;
+        const bNum = b.totalAmountValue ?? 0;
+        return sortDirection === "asc" ? aNum - bNum : bNum - aNum;
+      }
+      if (sortField === "downPayment") {
+        const aNum = a.downPaymentValue ?? 0;
+        const bNum = b.downPaymentValue ?? 0;
+        return sortDirection === "asc" ? aNum - bNum : bNum - aNum;
+      }
+      if (sortField === "amountPaid") {
+        const aNum = a.amountPaidValue ?? 0;
+        const bNum = b.amountPaidValue ?? 0;
+        return sortDirection === "asc" ? aNum - bNum : bNum - aNum;
+      }
+      if (sortField === "remaining") {
+        const aNum = a.remainingValue ?? 0;
+        const bNum = b.remainingValue ?? 0;
         return sortDirection === "asc" ? aNum - bNum : bNum - aNum;
       }
       const key = String(sortField);
@@ -625,15 +1149,53 @@ export default function PaymentPage() {
                     <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:text-gray-300 dark:group-hover:text-gray-100" />
                   </div>
                 </th>
+
                 <th
-                  onClick={() => handleSort("amount")}
+                  onClick={() => handleSort("totalAmount")}
                   className="text-right py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
                 >
                   <div className="flex items-center justify-end gap-2">
-                    Amount
+                    Total Amount
                     <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:text-gray-300 dark:group-hover:text-gray-100" />
                   </div>
                 </th>
+
+                <th
+                  onClick={() => handleSort("downPayment")}
+                  className="text-right py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
+                >
+                  <div className="flex items-center justify-end gap-2">
+                    Down Payment
+                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:text-gray-300 dark:group-hover:text-gray-100" />
+                  </div>
+                </th>
+
+                <th
+                  onClick={() => handleSort("amountPaid")}
+                  className="text-right py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
+                >
+                  <div className="flex items-center justify-end gap-2">
+                    Amount Paid
+                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:text-gray-300 dark:group-hover:text-gray-100" />
+                  </div>
+                </th>
+
+                <th
+                  onClick={() => handleSort("remaining")}
+                  className="text-right py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group whitespace-nowrap"
+                >
+                  <div className="flex items-center justify-end gap-2">
+                    Remaining Balance
+                    <span
+                      title="Remaining Balance = Total Amount - Amount Paid"
+                      className="ml-1 text-gray-400 flex items-center"
+                    >
+                      <Info className="w-4 h-4" />
+                    </span>
+                    <ArrowUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:text-gray-300 dark:group-hover:text-gray-100" />
+                  </div>
+                </th>
+
                 <th className="text-center py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 whitespace-nowrap">
                   Payment Proof
                 </th>
@@ -675,7 +1237,28 @@ export default function PaymentPage() {
                     </td>
                     <td className="py-4 px-4 text-right">
                       <span className="font-bold text-gray-800 dark:text-gray-100 text-sm whitespace-nowrap">
-                        {payment.amount}
+                        {payment.totalAmount}
+                      </span>
+                    </td>
+                    <td className="py-4 px-4 text-right">
+                      <span className="font-bold text-gray-800 dark:text-gray-100 text-sm whitespace-nowrap">
+                        {payment.downPayment}
+                      </span>
+                    </td>
+                    <td className="py-4 px-4 text-right">
+                      <span className="font-bold text-gray-800 dark:text-gray-100 text-sm whitespace-nowrap">
+                        {payment.amountPaid}
+                      </span>
+                    </td>
+                    <td className="py-4 px-4 text-right">
+                      <span
+                        className={`font-bold text-sm whitespace-nowrap ${
+                          (payment.remainingValue ?? 0) > 0
+                            ? "text-orange-700 dark:text-orange-300"
+                            : "text-green-700 dark:text-green-300"
+                        }`}
+                      >
+                        {payment.remaining}
                       </span>
                     </td>
                     <td className="py-4 px-4 text-center">
@@ -684,6 +1267,14 @@ export default function PaymentPage() {
                           href={payment.payment_proof}
                           target="_blank"
                           rel="noreferrer"
+                          onClick={() =>
+                            logEmployeeActivity?.(
+                              "VIEW_PAYMENT_PROOF",
+                              `Viewed payment proof for booking ${payment.booking_id}`,
+                              "payment",
+                              payment.id,
+                            )
+                          }
                           className="inline-flex items-center gap-2 px-3 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
                         >
                           <ImageIcon className="w-4 h-4" />
@@ -715,7 +1306,16 @@ export default function PaymentPage() {
                         </button>
 
                         <button
-                          onClick={() => handleApprove(payment)}
+                          onClick={() => {
+                            setSelectedPayment(payment);
+                            setIsApproveModalOpen(true);
+                            logEmployeeActivity?.(
+                              "OPEN_APPROVE_MODAL",
+                              `Opened approve modal for booking ${payment.booking_id}`,
+                              "payment",
+                              payment.id,
+                            );
+                          }}
                           disabled={
                             !payment.id || updatingPaymentId === payment.id
                           }
@@ -846,32 +1446,76 @@ export default function PaymentPage() {
               <div className="grid grid-cols-2 gap-3 mb-3 pb-3">
                 <div>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                    Amount
+                    Total Amount
                   </p>
                   <p className="font-bold text-gray-800 dark:text-gray-100">
-                    {payment.amount}
+                    {payment.totalAmount}
                   </p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                    Payment Proof
+                    Down Payment
                   </p>
-                  {payment.payment_proof ? (
-                    <a
-                      href={payment.payment_proof}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700 dark:hover:text-blue-400"
-                    >
-                      <ImageIcon className="w-4 h-4" />
-                      View
-                    </a>
-                  ) : (
-                    <span className="text-sm text-gray-400 dark:text-gray-500">
-                      No proof
-                    </span>
-                  )}
+                  <p className="font-bold text-gray-800 dark:text-gray-100">
+                    {payment.downPayment}
+                  </p>
                 </div>
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                    Amount Paid
+                  </p>
+                  <p className="font-bold text-gray-800 dark:text-gray-100">
+                    {payment.amountPaid}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-2">
+                    Remaining Balance
+                    <span
+                      title="Remaining Balance = Total Amount - Amount Paid"
+                      className="text-gray-400 flex items-center"
+                    >
+                      <Info className="w-3 h-3" />
+                    </span>
+                  </p>
+                  <p
+                    className={`font-bold ${
+                      (payment.remainingValue ?? 0) > 0
+                        ? "text-orange-700 dark:text-orange-300"
+                        : "text-green-700 dark:text-green-300"
+                    }`}
+                  >
+                    {payment.remaining}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mb-3 pb-3 border-b border-gray-200 dark:border-gray-600">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                  Payment Proof
+                </p>
+                {payment.payment_proof ? (
+                  <a
+                    href={payment.payment_proof}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() =>
+                      logEmployeeActivity?.(
+                        "VIEW_PAYMENT_PROOF",
+                        `Viewed payment proof for booking ${payment.booking_id}`,
+                        "payment",
+                        payment.id,
+                      )
+                    }
+                    className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700 dark:hover:text-blue-400"
+                  >
+                    <ImageIcon className="w-4 h-4" /> View
+                  </a>
+                ) : (
+                  <span className="text-sm text-gray-400 dark:text-gray-500">
+                    No proof
+                  </span>
+                )}
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-200 dark:border-gray-600">
@@ -886,7 +1530,16 @@ export default function PaymentPage() {
                 </button>
 
                 <button
-                  onClick={() => handleApprove(payment)}
+                  onClick={() => {
+                    setSelectedPayment(payment);
+                    setIsApproveModalOpen(true);
+                    logEmployeeActivity?.(
+                      "OPEN_APPROVE_MODAL",
+                      `Opened approve modal for booking ${payment.booking_id}`,
+                      "payment",
+                      payment.id,
+                    );
+                  }}
                   disabled={!payment.id || updatingPaymentId === payment.id}
                   className="p-2 inline-flex items-center justify-center text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Approve"
@@ -1029,26 +1682,31 @@ export default function PaymentPage() {
           />
           <div className="fixed inset-0 flex items-center justify-center px-4 py-8 z-[9999]">
             <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-5xl max-h-[60vh] flex flex-col overflow-hidden border border-gray-100 dark:border-gray-700">
-              {/* Header (sticky, gradient) */}
-              <div className="sticky top-0 bg-gradient-to-r from-orange-500 to-yellow-500 dark:from-orange-600 dark:to-yellow-600 text-white p-6 rounded-t-3xl flex justify-between items-center">
-                <div>
-                  <p className="text-sm font-semibold uppercase tracking-[0.2em] opacity-90">
-                    Payment Details
-                  </p>
-                  <h2 className="text-3xl font-bold mt-1">
-                    {selectedPayment.booking_id}
-                  </h2>
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-orange-500 rounded-lg">
+                    <CreditCard className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                      Payment Details
+                    </h2>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Booking: {selectedPayment.booking_id}
+                    </p>
+                  </div>
                 </div>
                 <button
                   onClick={handleCloseView}
-                  className="p-2 rounded-full hover:bg-white/20 dark:hover:bg-white/10 transition-colors"
+                  className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
                 >
-                  <X className="w-6 h-6 text-white" />
+                  <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                 </button>
               </div>
 
               {/* Content */}
-              <div className="flex-1 overflow-y-auto px-8 py-6 space-y-8">
+              <div className="p-6 space-y-6 max-h-[calc(90vh-200px)] overflow-y-auto">
                 {/* Guest & Payment Info (status badge moved to the right side of this card header) */}
                 <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 border border-gray-100 dark:border-gray-700">
                   <div className="flex items-center justify-between mb-4">
@@ -1078,7 +1736,16 @@ export default function PaymentPage() {
                       value={selectedPayment.booking_id}
                     />
                     <InfoField label="Guest" value={selectedPayment.guest} />
-                    <InfoField label="Amount" value={selectedPayment.amount} />
+                    <InfoField
+                      label="Amount"
+                      value={
+                        <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                          {formatCurrency(
+                            Number(selectedPayment.booking?.down_payment ?? 0),
+                          )}
+                        </span>
+                      }
+                    />
                     <InfoField
                       label="Payment Proof"
                       value={
@@ -1125,9 +1792,7 @@ export default function PaymentPage() {
                       label="Total Amount"
                       value={
                         <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                          {formatCurrency(
-                            Number(selectedPayment.booking?.total_amount ?? 0),
-                          )}
+                          {selectedPayment.totalAmount}
                         </span>
                       }
                     />
@@ -1142,14 +1807,24 @@ export default function PaymentPage() {
                       }
                     />
                     <InfoField
+                      label="Amount Paid"
+                      value={
+                        <span className="text-green-700 dark:text-green-300 font-semibold">
+                          {selectedPayment.amountPaid}
+                        </span>
+                      }
+                    />
+                    <InfoField
                       label="Remaining Balance"
                       value={
-                        <span className="text-orange-700 dark:text-orange-300 font-semibold">
-                          {formatCurrency(
-                            Number(
-                              selectedPayment.booking?.remaining_balance ?? 0,
-                            ),
-                          )}
+                        <span
+                          className={`font-semibold ${
+                            Number(selectedPayment.remainingValue ?? 0) > 0
+                              ? "text-orange-700 dark:text-orange-300"
+                              : "text-green-700 dark:text-green-300"
+                          }`}
+                        >
+                          {selectedPayment.remaining}
                         </span>
                       }
                     />
@@ -1163,7 +1838,7 @@ export default function PaymentPage() {
               </div>
 
               {/* Footer (actions) */}
-              <div className="px-8 py-5 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row justify-between gap-3 bg-white dark:bg-gray-900">
+              <div className="flex items-center justify-between gap-2 p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   Last updated:{" "}
                   {selectedPayment.booking?.updated_at
@@ -1182,9 +1857,9 @@ export default function PaymentPage() {
 
                   <button
                     type="button"
-                    onClick={async () => {
+                    onClick={() => {
                       if (!selectedPayment) return;
-                      await handleApprove(selectedPayment, { keepOpen: true });
+                      setIsApproveModalOpen(true);
                     }}
                     disabled={
                       mapStatusToUI(
@@ -1200,21 +1875,12 @@ export default function PaymentPage() {
                   <button
                     type="button"
                     onClick={() => {
-                      // Close the view modal and open the reject modal without
-                      // clearing `selectedPayment` so the reject modal has its context.
                       setIsViewModalOpen(false);
                       setIsRejectModalOpen(true);
                     }}
-                    disabled={
-                      mapStatusToUI(
-                        selectedPayment.booking?.status ??
-                          selectedPayment.status,
-                      ) === "Rejected" ||
-                      updatingPaymentId === selectedPayment.id
-                    }
-                    className="px-6 py-2.5 rounded-xl bg-red-600 dark:bg-red-600 text-white font-semibold hover:bg-red-700 dark:hover:bg-red-700 transition inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-6 py-2.5 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition inline-flex items-center gap-2"
                   >
-                    <X className="w-4 h-4" /> Reject
+                    <XCircle className="w-4 h-4" /> Reject
                   </button>
                 </div>
               </div>
@@ -1224,12 +1890,26 @@ export default function PaymentPage() {
       )}
 
       <RejectModal
-        key={selectedPayment?.id}
+        key={`reject-${selectedPayment?.id}`}
         isOpen={isRejectModalOpen}
         payment={selectedPayment}
         onCancel={handleCancelReject}
         onConfirm={handleConfirmReject}
         updatingPaymentId={updatingPaymentId}
+      />
+      <ApproveModal
+        key={`approve-${selectedPayment?.id}`}
+        isOpen={isApproveModalOpen}
+        payment={selectedPayment}
+        onCancel={() => setIsApproveModalOpen(false)}
+        onConfirm={handleConfirmApprove}
+        updatingPaymentId={updatingPaymentId}
+      />
+      <ChangeModal
+        key={`change-${selectedPayment?.id}`}
+        isOpen={isChangeModalOpen}
+        amount={changeAmount}
+        onClose={() => setIsChangeModalOpen(false)}
       />
     </div>
   );
